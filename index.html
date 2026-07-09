@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChatBeat - The Fun Never Ends</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+body { font-family: 'Inter', sans-serif; background: #0B141A; color: #E9EDEF; }
+.shine { background: linear-gradient(90deg, #00A884, #0277BD, #0B141A); background-size: 200% 200%; animation: shine 5s ease infinite; }
+@keyframes shine { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+.scroll-hide::-webkit-scrollbar { display: none; }
+.scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.chat-bg { background-image: url('https://user-images.githubusercontent.com/150825/78894622-5d64c400-7a21-11ea-9b8e-1e5b1b7a2c3f.png'); }
+.btn-icon { padding: 10px; border-radius: 50%; }
+.btn-icon:hover { background: #2A3942; }
+</style>
+</head>
+<body class="h-screen flex-col">
+
+<!-- COVER PAGE -->
+<div id="cover-page" class="flex-1 flex-col items-center justify-center p-4 shine">
+ <div class="w-full max-w-md bg-[#111B21]/90 p-8 rounded-2xl shadow-2xl backdrop-blur-sm">
+  <h1 class="text-4xl font-bold text-center text-[#00A884] mb-3">Welcome to ChatBeat 🎉</h1>
+  <p class="text-center text-sm text-gray-200 mb-6">
+    This is the best place for fun, jokes, laughter and connecting!
+    <br>Promote your business, your page, your TikTok. Share memes, drop jokes, and meet real people.
+    <br>No hiding. Just chat. Everyone is welcome as long as you register ✨
+  </p>
+  <input id="name-input" type="text" placeholder="Enter your UNIQUE Name" class="w-full p-3 mb-3 bg-[#2A3942] rounded-lg outline-none">
+  <input id="email-input" type="email" placeholder="Email" class="w-full p-3 mb-3 bg-[#2A3942] rounded-lg outline-none">
+  <input id="pass-input" type="password" placeholder="Password" class="w-full p-3 mb-4 bg-[#2A3942] rounded-lg outline-none">
+  <button id="register-btn" class="w-full bg-[#00A884] p-3 rounded-lg font-bold mb-2 hover:bg-[#028a6e]">Register</button>
+  <button id="login-btn" class="w-full bg-[#0277BD] p-3 rounded-lg font-bold hover:bg-[#01579B]">Sign In</button>
+  <p id="cover-error" class="text-red-500 text-sm mt-3 text-center"></p>
+ </div>
+ <footer id="footer-cover" class="text-center text-xs text-gray-400 mt-4"></footer>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" class="hidden flex-1 flex-col">
+ <!-- TOP NAV -->
+ <div class="bg-[#202C33] p-3 flex justify-between items-center">
+  <h2 class="text-xl font-bold text-[#00A884]">ChatBeat</h2>
+  <div class="flex gap-4">
+   <button onclick="showPage('posts')" class="hover:text-[#00A884]"><i data-lucide="image" size="20"></i></button>
+   <button onclick="showPage('chat')" class="hover:text-[#00A884]"><i data-lucide="message-circle" size="20"></i></button>
+   <button onclick="showPage('profile')" class="hover:text-[#00A884]"><i data-lucide="user" size="20"></i></button>
+   <button id="logout-btn" class="hover:text-red-400"><i data-lucide="log-out" size="20"></i></button>
+  </div>
+ </div>
+
+ <!-- POSTS PAGE -->
+ <div id="posts-page" class="flex-1 overflow-y-auto scroll-hide p-4">
+  <div class="max-w-2xl mx-auto bg-[#202C33] p-4 rounded-lg mb-4">
+   <textarea id="post-text" placeholder="What's funny today?" class="w-full p-3 bg-[#2A3942] rounded-lg outline-none mb-2"></textarea>
+   <input id="post-image" type="file" accept="image/*" class="mb-2 text-sm">
+   <button id="post-btn" class="bg-[#00A884] px-4 py-2 rounded-lg font-bold">Post</button>
+  </div>
+  <div id="posts-feed" class="max-w-2xl mx-auto space-y-4"></div>
+ </div>
+
+ <!-- CHAT PAGE -->
+ <div id="chat-page" class="hidden flex-1 flex flex-col chat-bg">
+  <div id="chat-messages" class="flex-1 overflow-y-auto scroll-hide p-4 space-y-3"></div>
+  <div class="p-3 bg-[#202C33] flex items-center gap-2">
+   <input id="chat-input" type="text" placeholder="Type a message" class="flex-1 p-3 bg-[#2A3942] rounded-lg outline-none text-sm">
+   <button id="mic-btn" class="btn-icon"><i data-lucide="mic" size="20"></i></button>
+   <button id="img-btn" class="btn-icon"><i data-lucide="image" size="20"></i></button>
+   <button id="send-btn" class="btn-icon bg-[#00A884] hover:bg-[#028a6e]"><i data-lucide="send" size="20"></i></button>
+  </div>
+ </div>
+
+ <!-- PROFILE PAGE -->
+ <div id="profile-page" class="hidden flex-1 p-4 overflow-y-auto">
+  <div class="max-w-md mx-auto bg-[#202C33] p-6 rounded-lg">
+   <h3 class="text-xl font-bold mb-4">Your Profile</h3>
+   <p>Name: <span id="profile-name"></span></p>
+   <p>Email: <span id="profile-email"></span></p>
+   <button id="edit-profile-btn" class="mt-3 bg-[#0277BD] px-4 py-2 rounded-lg">Edit Profile</button>
+   <button id="delete-account-btn" class="mt-3 bg-red-600 px-4 py-2 rounded-lg">Delete Account</button>
+  </div>
+ </div>
+
+ <footer id="footer-app" class="w-full bg-[#111B21] text-center p-3 border-t border-[#2A3942] text-xs text-gray-400"></footer>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateEmail, sendEmailVerification, deleteUser } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, set, get, push, onValue, remove, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+const firebaseConfig = {
+
+  apiKey: "AIzaSyD97-el91-ISWGkOhxWy4V_wXyOK6MJl0k",
+
+  authDomain: "chatbeat-71f80.firebaseapp.com",
+
+  databaseURL: "https://chatbeat-71f80-default-rtdb.firebaseio.com",
+
+  projectId: "chatbeat-71f80",
+
+  storageBucket: "chatbeat-71f80.firebasestorage.app",
+
+  messagingSenderId: "38692820606",
+
+  appId: "1:38692820606:web:edce5abf8d103e1f6e6a2f",
+
+  measurementId: "G-KZ5KN31YFL"
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+const storage = getStorage(app);
+lucide.createIcons();
+
+const colors = ["#00A884","#0277BD","#F44336","#FF9800","#9C27B0","#009688","#E91E63","#3F51B5"];
+let currentUserData = null;
+let mediaRecorder, audioChunks = [];
+
+// FOOTER WITH YEAR CHECK
+function setFooter() {
+ const year = new Date().getFullYear();
+ const text = year >= 2027
+? `Created with ❤️ by Kgothatso Swafo from Moroke, Burgersfort, Limpopo. He was 18 years old.`
+ : `Created with ❤️ by Kgothatso Swafo from Moroke, Burgersfort, Limpopo. He is 18 years old.`;
+ document.getElementById('footer-cover').innerText = text;
+ document.getElementById('footer-app').innerText = text;
+}
+setFooter();
+
+// PAGE SWITCHING
+function showPage(page) {
+ ['posts-page','chat-page','profile-page'].forEach(p => document.getElementById(p).classList.add('hidden'));
+ document.getElementById(page + '-page').classList.remove('hidden');
+}
+window.showPage = showPage;
+
+// REGISTER WITH UNIQUE NAME
+document.getElementById('register-btn').onclick = async () => {
+ const name = document.getElementById('name-input').value.trim();
+ const email = document.getElementById('email-input').value.trim();
+ const pass = document.getElementById('pass-input').value.trim();
+ const err = document.getElementById('cover-error');
+ err.innerText = '';
+
+ const nameSnap = await get(query(ref(db, 'users'), orderByChild('name'), equalTo(name)));
+ if(nameSnap.exists()) { err.innerText = "Name already taken!"; return; }
+
+ createUserWithEmailAndPassword(auth, email, pass)
+.then(cred => set(ref(db, 'users/' + cred.user.uid), { name, email, color: colors[Math.floor(Math.random()*colors.length)] }))
+.catch(e => err.innerText = e.message);
+}
+
+// LOGIN
+document.getElementById('login-btn').onclick = () => {
+ const email = document.getElementById('email-input').value.trim();
+ const pass = document.getElementById('pass-input').value.trim();
+ signInWithEmailAndPassword(auth, email, pass).catch(e => document.getElementById('cover-error').innerText = e.message);
+}
+
+document.getElementById('logout-btn').onclick = () => signOut(auth);
+
+// AUTH STATE
+onAuthStateChanged(auth, async user => {
+ if(user){
+  document.getElementById('cover-page').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  const snap = await get(ref(db, 'users/' + user.uid));
+  currentUserData = snap.val();
+  document.getElementById('profile-name').innerText = currentUserData.name;
+  document.getElementById('profile-email').innerText = user.email;
+  showPage('posts');
+  loadPosts();
+  loadChat();
+ } else {
+  document.getElementById('cover-page').classList.remove('hidden');
+  document.getElementById('app').classList.add('hidden');
+ }
+});
+
+// POSTS
+document.getElementById('post-btn').onclick = async () => {
+ const text = document.getElementById('post-text').value;
+ const file = document.getElementById('post-image').files[0];
+ let imgUrl = '';
+ if(file) {
+   const storageRef = sRef(storage, 'posts/' + Date.now() + file.name);
+   await uploadBytes(storageRef, file);
+   imgUrl = await getDownloadURL(storageRef);
+ }
+ push(ref(db, 'posts'), { uid: auth.currentUser.uid, name: currentUserData.name, color: currentUserData.color, text, imgUrl, time: Date.now() });
+ document.getElementById('post-text').value = '';
+}
+
+function loadPosts() {
+ onValue(ref(db, 'posts'), snap => {
+  const feed = document.getElementById('posts-feed');
+  feed.innerHTML = '';
+  snap.forEach(child => {
+   const p = child.val();
+   const div = document.createElement('div');
+   div.className = 'bg-[#202C33] p-4 rounded-lg';
+   div.innerHTML = `
+    <p style="color:${p.color}" class="font-semibold">${p.name}</p>
+    <p class="text-sm mt-1">${p.text}</p>
+    ${p.imgUrl? `<img src="${p.imgUrl}" class="rounded-lg mt-2">` : ''}
+    ${p.uid === auth.currentUser.uid? `<button onclick="deletePost('${child.key}')" class="text-red-400 text-xs mt-2">Delete</button>` : ''}
+   `;
+   feed.appendChild(div);
+  })
+ })
+}
+window.deletePost = (id) => remove(ref(db, 'posts/' + id));
+
+// CHAT
+document.getElementById('send-btn').onclick = () => {
+ const text = document.getElementById('chat-input').value.trim();
+ if(!text) return;
+ push(ref(db, 'globalChat'), { uid: auth.currentUser.uid, name: currentUserData.name, color: currentUserData.color, text, time: Date.now() });
+ document.getElementById('chat-input').value = '';
+}
+
+function loadChat() {
+ onValue(ref(db, 'globalChat'), snap => {
+  const chat = document.getElementById('chat-messages');
+  chat.innerHTML = '';
+  snap.forEach(child => {
+   const m = child.val();
+   const div = document.createElement('div');
+   div.innerHTML = `
+    <div class="flex justify-between items-start">
+     <div>
+      <p style="color:${m.color}" class="font-semibold text-sm">${m.name}</p>
+      <p class="bg-[#202C33] p-2 rounded-lg text-sm inline-block">${m.text}</p>
+     </div>
+     ${m.uid === auth.currentUser.uid? `<button onclick="deleteMsg('${child.key}')" class="text-red-400 text-xs">x</button>` : ''}
+    </div>
+   `;
+   chat.appendChild(div);
+  });
+  chat.scrollTop = chat.scrollHeight;
+ })
+}
+window.deleteMsg = (id) => remove(ref(db, 'globalChat/' + id));
+
+// VOICE NOTE - Basic recording
+document.getElementById('mic-btn').onclick = async () => {
+ if(!mediaRecorder) {
+   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+   mediaRecorder = new MediaRecorder(stream);
+   mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+   mediaRecorder.onstop = async () => {
+     const blob = new Blob(audioChunks);
+     const storageRef = sRef(storage, 'voice/' + Date.now() + '.webm');
+     await uploadBytes(storageRef, blob);
+     const url = await getDownloadURL(storageRef);
+     push(ref(db, 'globalChat'), { uid: auth.currentUser.uid, name: currentUserData.name, color: currentUserData.color, voiceUrl: url, time: Date.now() });
+     audioChunks = [];
+   }
+ }
+ if(mediaRecorder.state === "recording") { mediaRecorder.stop(); }
+ else { mediaRecorder.start(); }
+}
+
+// DELETE ACCOUNT
+document.getElementById('delete-account-btn').onclick = () => {
+ if(confirm("Are you sure?")) {
+   remove(ref(db, 'users/' + auth.currentUser.uid));
+   deleteUser(auth.currentUser);
+ }
+}
+</script>
+</body>
+</html>
