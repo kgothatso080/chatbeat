@@ -92,30 +92,28 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateEmail, sendEmailVerification, deleteUser } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getDatabase, ref, set, get, push, onValue, remove, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
+  apiKey: "AIzaSyD97-el91-ISWGkOhxWy4V_wXyOK6MJl0k",
+  authDomain: "chatbeat-71f80.firebaseapp.com",
+  databaseURL: "https://chatbeat-71f80-default-rtdb.firebaseio.com",
+  projectId: "chatbeat-71f80",
+  storageBucket: "chatbeat-71f80.firebasestorage.app",
+  messagingSenderId: "38692820606",
+  appId: "1:38692820606:web:edce5abf8d103e1f6e6a2f",
+  measurementId: "G-KZ5KN31YFL"
+};
 
-  apiKey: "AIzaSyD97-el91-ISWGkOhxWy4V_wXyOK6MJl0k",
-
-  authDomain: "chatbeat-71f80.firebaseapp.com",
-
-  databaseURL: "https://chatbeat-71f80-default-rtdb.firebaseio.com",
-
-  projectId: "chatbeat-71f80",
-
-  storageBucket: "chatbeat-71f80.firebasestorage.app",
-
-  messagingSenderId: "38692820606",
-
-  appId: "1:38692820606:web:edce5abf8d103e1f6e6a2f",
-
-  measurementId: "G-KZ5KN31YFL" }
-
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
-const storage = getStorage(app);
-lucide.createIcons();
+const analytics = getAnalytics(app);
 
 const colors = ["#00A884","#0277BD","#F44336","#FF9800","#9C27B0","#009688","#E91E63","#3F51B5"];
 let currentUserData = null;
