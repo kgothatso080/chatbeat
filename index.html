@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ChatBeat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body { 
+      margin:0; font-family: 'Roboto', sans-serif; 
+      background: #111b21; color: white;
+    }
+    .topbar {
+      background: linear-gradient(90deg, #00C896, #0077FF);
+      padding: 10px 15px; display: flex; justify-content: space-between;
+      align-items: center; position: sticky; top: 0; z-index: 10;
+      box-shadow: 0 2px 10px rgba(0,200,150,0.5);
+    }
+    .topbar h2 { margin: 0; font-size: 20px; text-shadow: 0 0 5px #fff; cursor: pointer; }
+    .topbar button { 
+      background: rgba(0,0,0,0.3); width: auto; padding: 8px 12px;
+      border-radius: 20px; font-weight: 500; border: none; color: white;
+    }
+    #cover { 
+      display:flex; flex-direction:column; align-items:center; justify-content:center; 
+      height:100vh; text-align:center; padding:20px; 
+      background: linear-gradient(135deg, #00C896 0%, #0077FF 50%, #000 100%);
+    }
+    #cover h1 { font-size: 3em; text-shadow: 0 0 20px #00C896; }
+    input, button, textarea { 
+      padding:12px; margin:8px; border-radius:25px; border:none; 
+      width:80%; max-width:300px; font-size:16px; font-family: 'Roboto', sans-serif;
+    }
+    button { 
+      background: linear-gradient(90deg, #00C896, #0077FF); 
+      color:white; font-weight:700; cursor:pointer; 
+      box-shadow: 0 0 10px rgba(0,200,150,0.4);
+    }
+    textarea { border-radius: 12px; height: 60px; background: #2a3942; color: white; }
+    #app { display:none; }
+    .post-box { padding: 10px; background: #202c33; }
+    #feed { padding: 10px; }
+    .card { 
+      background: #202c33; padding:12px; margin:10px 0; border-radius:12px; 
+      border-left: 4px solid #00C896;
+    }
+    .chat-header {
+      display: flex; align-items: center; padding: 10px;
+      background: #202c33; border-bottom: 1px solid #2a3942;
+    }
+    .chat-header h3 { margin: 0 auto; }
+    #back-to-feed { background: transparent; width: auto; }
+    #global-chat { 
+      height: calc(100vh - 220px); overflow-y:auto; 
+      background:#111b21; padding:10px; 
+    }
+    .chat-input-area {
+      display: flex; padding: 10px; background: #202c33; position: fixed; bottom: 0; width: 100%;
+    }
+    .chat-input-area input { flex: 1; border-radius: 25px; background: #2a3942; color: white; }
+    .chat-input-area button { width: 50px; border-radius: 50%; }
+    .record-btn { background: red !important; box-shadow: 0 0 10px red !important; }
+    .footer { 
+      text-align:center; padding:20px; font-size:12px; opacity:0.6; 
+      border-top:1px solid #2a3942; margin-bottom: 60px;
+    }
+    .footer a { color:#00C896; text-decoration:none; font-weight:700; }
+  </style>
+</head>
+<body>
+
+<div id="cover">
+  <h1>ChatBeat</h1>
+  <p><b>Connect in Color. Vibe in Sound.</b><br><br>
+  Welcome to ChatBeat - the most fun way to connect! 🎉<br>
+  Post, chat, and send voice notes. Messages delete after 7 days.</p>
+  <input id="name-input" placeholder="Choose your Name">
+  <input id="email-input" placeholder="Email">
+  <input id="pass-input" placeholder="Password" type="password">
+  <button id="register-btn">Register</button>
+  <button id="login-btn">Login</button>
+  <p id="cover-error" style="color:#FF6B6B;"></p>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <button id="logout-btn">Logout</button>
+    <h2 id="logo-btn">ChatBeat</h2>
+    <button id="chat-icon-btn">💬</button>
+  </div>
+
+  <div id="feed-section">
+    <div class="post-box">
+      <textarea id="post-text" placeholder="What's on your mind?"></textarea>
+      <button id="post-btn">Post</button>
+    </div>
+    <div id="feed"></div>
+  </div>
+
+  <div id="chat-section" style="display:none;">
+    <div class="chat-header">
+      <button id="back-to-feed">← Back</button>
+      <h3>Global Chat</h3>
+    </div>
+    <div id="global-chat"></div>
+    <div class="chat-input-area">
+      <input id="chat-input" placeholder="Type a message">
+      <button id="record-btn">🎤</button>
+      <button id="send-chat">➤</button>
+    </div>
+    <p id="mic-error" style="color:red; text-align:center;"></p>
+  </div>
+
+  <div class="footer">
+    Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+import { getDatabase, ref, set, get, query, orderByChild, equalTo, push, onChildAdded, remove, off } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD97-el91-ISWGkOhxWy4V_wXyOK6MJl0k",
+  authDomain: "chatbeat-71f80.firebaseapp.com",
+  databaseURL: "https://chatbeat-71f80-default-rtdb.firebaseio.com",
+  projectId: "chatbeat-71f80",
+  storageBucket: "chatbeat-71f80.firebasestorage.app",
+  messagingSenderId: "38692820606",
+  appId: "1:38692820606:web:edce5abf8d103e1f6e6a2f",
+  measurementId: "G-KZ5KN31YFL"
+};
+
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+const colors = ['#00C896', '#0077FF', '#00FFD1', '#FF6B6B', '#F7DC6F'];
+let currentUser = null;
+let mediaRecorder;
+let audioChunks = [];
+let isRecording = false;
+
+// AUTO DELETE AFTER 7 DAYS
+function deleteOld(path) {
+  const weekAgo = Date.now() - 604800000;
+  get(ref(db, path)).then(snap => {
+    snap.forEach(child => {
+      if(child.val().timestamp < weekAgo) remove(ref(db, path + '/' + child.key));
+    })
+  })
+}
+setInterval(() => { deleteOld('posts'); deleteOld('globalChat'); }, 3600000);
+
+// REGISTER
+document.getElementById('register-btn').onclick = async () => {
+ const name = document.getElementById('name-input').value.trim();
+ const email = document.getElementById('email-input').value.trim();
+ const pass = document.getElementById('pass-input').value.trim();
+ const err = document.getElementById('cover-error');
+ err.innerText = '';
+ if(name.length < 3) { err.innerText = "Name must be 3+ letters"; return; }
+ try {
+   const cred = await createUserWithEmailAndPassword(auth, email, pass);
+   const nameSnap = await get(query(ref(db, 'users'), orderByChild('name'), equalTo(name)));
+   if(nameSnap.exists()) { await deleteUser(cred.user); err.innerText = "Name already taken!"; return; }
+   await set(ref(db, 'users/' + cred.user.uid), { name, email, color: colors[Math.floor(Math.random()*colors.length)] });
+ } catch(e) { err.innerText = e.message; }
+}
+
+// LOGIN
+document.getElementById('login-btn').onclick = () => {
+ const email = document.getElementById('email-input').value.trim();
+ const pass = document.getElementById('pass-input').value.trim();
+ signInWithEmailAndPassword(auth, email, pass).catch(e => { document.getElementById('cover-error').innerText = e.message; });
+}
+
+// LOGOUT
+document.getElementById('logout-btn').onclick = () => signOut(auth);
+
+// LOGIN STATE
+onAuthStateChanged(auth, (user) => {
+ if(user) {
+   currentUser = user;
+   document.getElementById('cover').style.display = 'none';
+   document.getElementById('app').style.display = 'block';
+   document.getElementById('feed').innerHTML = '';
+   document.getElementById('global-chat').innerHTML = '';
+   loadPosts(); 
+   loadChat();
+ } else {
+   document.getElementById('cover').style.display = 'flex';
+   document.getElementById('app').style.display = 'none';
+ }
+});
+
+// POST
+document.getElementById('post-btn').onclick = async () => {
+  const text = document.getElementById('post-text').value.trim();
+  if(!text) return;
+  await push(ref(db, 'posts'), { uid: currentUser.uid, text, timestamp: Date.now() });
+  document.getElementById('post-text').value = '';
+}
+
+function loadPosts() {
+  off(ref(db, 'posts'));
+  onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp')), async (snap) => {
+    const post = snap.val();
+    const userSnap = await get(ref(db, 'users/' + post.uid));
+    if(!userSnap.exists()) return;
+    const user = userSnap.val();
+    const postDiv = document.createElement('div');
+    postDiv.className = 'card';
+    postDiv.innerHTML = `<b style="color:${user.color}">${user.name}</b><p>${post.text}</p>`;
+    document.getElementById('feed').prepend(postDiv);
+  });
+}
+
+// VOICENOTE + CHAT
+const recordBtn = document.getElementById('record-btn');
+recordBtn.onclick = async () => {
+  const micErr = document.getElementById('mic-error');
+  micErr.innerText = '';
+  if(!isRecording) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, {type: 'audio/webm'});
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+          await push(ref(db, 'globalChat'), { uid: currentUser.uid, audio: reader.result, timestamp: Date.now() });
+        }
+      }
+      mediaRecorder.start();
+      recordBtn.innerText = "⏹️";
+      recordBtn.classList.add('record-btn');
+      isRecording = true;
+    } catch(e) {
+      micErr.innerText = "Mic blocked. Allow microphone permission.";
+    }
+  } else {
+    mediaRecorder.stop();
+    recordBtn.innerText = "🎤";
+    recordBtn.classList.remove('record-btn');
+    isRecording = false;
+  }
+}
+
+document.getElementById('send-chat').onclick = async () => {
+  const text = document.getElementById('chat-input').value.trim();
+  if(!text) return;
+  await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, timestamp: Date.now() });
+  document.getElementById('chat-input').value = '';
+}
+
+function loadChat() {
+  off(ref(db, 'globalChat'));
+  onChildAdded(query(ref(db, 'globalChat'), orderByChild('timestamp')), async (snap) => {
+    const msg = snap.val();
+    const userSnap = await get(ref(db, 'users/' + msg.uid));
+    if(!userSnap.exists()) return;
+    const user = userSnap.val();
+    const msgDiv = document.createElement('div');
+    msgDiv.style.margin = '8px 0';
+    if(msg.audio) {
+      msgDiv.innerHTML = `<b style="color:${user.color}">${user.name}:</b> <audio controls src="${msg.audio}" style="width:200px;"></audio>`;
+    } else {
+      msgDiv.innerHTML = `<b style="color:${user.color}">${user.name}:</b> ${msg.text}`;
+    }
+    document.getElementById('global-chat').appendChild(msgDiv);
+    document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
+  });
+}
+
+// SWITCHING
+document.getElementById('chat-icon-btn').onclick = () => {
+  document.getElementById('feed-section').style.display = 'none';
+  document.getElementById('chat-section').style.display = 'block';
+}
+document.getElementById('back-to-feed').onclick = () => {
+  document.getElementById('feed-section').style.display = 'block';
+  document.getElementById('chat-section').style.display = 'none';
+}
+document.getElementById('logo-btn').onclick = () => {
+  document.getElementById('feed-section').style.display = 'block';
+  document.getElementById('chat-section').style.display = 'none';
+}
+</script>
+</body>
+</html>
