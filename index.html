@@ -5,49 +5,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
+    * { box-sizing: border-box; }
     body { margin:0; font-family: 'Roboto', sans-serif; background: #0b141a; color: white; }
-  .topbar { background: linear-gradient(90deg, #00C896, #0077FF); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
-  .topbar h2 { margin: 0; font-size: 20px; text-shadow: 0 0 5px #fff; cursor: pointer; }
-  .topbar button { background: rgba(0,0,0,0.3); width: auto; padding: 8px 12px; border-radius: 20px; font-weight: 500; border: none; color: white; }
-    #cover { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; text-align:center; padding:20px; background: linear-gradient(135deg, #00C896 0%, #0077FF 50%, #000 100%); }
+.topbar { background: linear-gradient(90deg, #00C896, #0077FF); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+.topbar h2 { margin: 0; font-size: 20px; text-shadow: 0 0 5px #fff; cursor: pointer; }
+.topbar button { background: rgba(0,0,0,0.3); width: auto; padding: 8px 12px; border-radius: 20px; font-weight: 500; border: none; color: white; }
+    #cover { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; text-align:center; padding:20px; background: linear-gradient(135deg, #00C896 0%, #0077FF 50%, #000 100%); }
     #cover h1 { font-size: 3em; text-shadow: 0 0 20px #00C896; }
     input, button, textarea { padding:12px; margin:8px; border-radius:25px; border:none; width:80%; max-width:300px; font-size:16px; font-family: 'Roboto', sans-serif; }
     button { background: linear-gradient(90deg, #00C896, #0077FF); color:white; font-weight:700; cursor:pointer; }
-  .link-btn { background: transparent; text-decoration: underline; font-size: 14px; width: auto; }
+.link-btn { background: transparent!important; text-decoration: underline; font-size: 14px; width: auto; background-image: none!important; }
     textarea { border-radius: 12px; height: 60px; background: #2a3942; color: white; width: 90%; }
     #app { display:none; }
-  .post-box { padding: 10px; background: #202c33; }
-    #feed { padding: 10px; padding-bottom: 70px; }
+.post-box { padding: 10px; background: #202c33; }
+    #feed { padding: 10px; padding-bottom: 20px; }
 
-    /* POST CARDS - FIXED */
-  .card { background: #202c33; padding:10px 12px; margin:10px 0; border-radius:12px; position: relative; max-width: 85%; }
-  .card.name { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
-  .card.del-btn { position: absolute; top: 8px; right: 8px; background: rgba(255,107,107,0.9); padding: 0; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; line-height: 20px; text-align: center; cursor: pointer; border: none; color: white; }
+    /* POST CARDS */
+.card { background: #202c33; padding:10px 12px 10px 12px; margin:10px 0; border-radius:12px; position: relative; max-width: 85%; }
+.card.name { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+.card.del-btn { position: absolute; top: 8px; right: 8px; background: #FF6B6B; padding: 0; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; line-height: 20px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
 
-  .chat-header { display: flex; align-items: center; padding: 10px; background: #202c33; border-bottom: 1px solid #2a3942; }
-  .chat-header h3 { margin: 0 auto; }
+.chat-header { display: flex; align-items: center; padding: 10px; background: #202c33; border-bottom: 1px solid #2a3942; }
+.chat-header h3 { margin: 0 auto; }
     #back-to-feed { background: transparent; width: auto; }
-    #global-chat { height: calc(100vh - 210px); overflow-y:auto; background:#0b141a; padding:10px; display: flex; flex-direction: column; }
+    #global-chat { height: calc(100vh - 250px); overflow-y:auto; background:#0b141a; padding:10px; display: flex; flex-direction: column; gap: 2px; }
 
-    /* WHATSAPP BUBBLES - FULL FIX */
-  .msg { display: flex; margin: 4px 0; }
-  .msg.me { justify-content: flex-end; }
-  .msg.other { justify-content: flex-start; }
-  .bubble { max-width: 75%; padding: 7px 12px 8px 12px; border-radius: 8px; position: relative; word-wrap: break-word; font-size: 15px; line-height: 1.4; }
-  .msg.me.bubble { background: #005c4b; border-bottom-right-radius: 2px; }
-  .msg.other.bubble { background: #202c33; border-bottom-left-radius: 2px; }
-  .bubble.name { display: block; font-size: 12px; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .bubble.msg-text { display: block; }
-  .bubble.del-msg { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.3); padding: 0; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; cursor: pointer; border: none; color: white; opacity: 0.8; }
-  .bubble.del-msg:hover { opacity: 1; background: rgba(255,107,107,0.9); }
-  .bubble audio { width: 220px; max-width: 100%; margin-top: 4px; border-radius: 8px; }
+    /* WHATSAPP BUBBLES */
+.msg { display: flex; margin: 1px 0; width: 100%; }
+.msg.me { justify-content: flex-end; }
+.msg.other { justify-content: flex-start; }
+.bubble { max-width: 75%; padding: 6px 10px 8px 10px; border-radius: 8px; position: relative; word-wrap: break-word; font-size: 15px; line-height: 1.4; }
+.msg.me.bubble { background: #005c4b; border-bottom-right-radius: 2px; margin-left: auto; }
+.msg.other.bubble { background: #202c33; border-bottom-left-radius: 2px; margin-right: auto; }
+.bubble-name { display: block; font-size: 12px; font-weight: 700; margin-bottom: 3px; }
+.bubble-text { display: block; }
+.bubble-del { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.4); padding: 0; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
+.bubble audio { width: 220px; max-width: 100%; margin-top: 4px; }
 
-  .chat-input-area { display: flex; padding: 10px; background: #202c33; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
-  .chat-input-area input { flex: 1; border-radius: 25px; background: #2a3942; color: white; }
-  .chat-input-area button { width: 50px; border-radius: 50%; }
-  .record-btn { background: red!important; }
-  .footer { text-align:center; padding:20px; font-size:12px; opacity:0.6; border-top:1px solid #2a3942; margin-bottom: 60px; }
-  .footer a { color:#00C896; text-decoration:none; font-weight:700; }
+.chat-input-area { display: flex; padding: 10px; background: #202c33; position: fixed; bottom: 0; left:0; width: 100%; z-index: 5; }
+.chat-input-area input { flex: 1; border-radius: 25px; background: #2a3942; color: white; }
+.chat-input-area button { width: 50px; border-radius: 50%; }
+.record-btn { background: red!important; }
+.footer { text-align:center; padding:20px; font-size:12px; opacity:0.8; border-top:1px solid #2a3942; background: #111b21; padding-bottom: 80px; }
+.footer a { color:#00C896; text-decoration:none; font-weight:700; }
   </style>
 </head>
 <body>
@@ -91,11 +91,11 @@
       <button id="record-btn">🎤</button>
       <button id="send-chat">➤</button>
     </div>
-    <p id="mic-error" style="color:red; text-align:center;"></p>
   </div>
 
   <div class="footer">
-    Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨
+    Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
+    Version 1.0 - ChatBeat
   </div>
 </div>
 
@@ -149,20 +149,14 @@ document.getElementById('login-btn').onclick = () => {
  signInWithEmailAndPassword(auth, email, pass).catch(e => { document.getElementById('cover-error').innerText = e.message; });
 }
 
-// FORGOT PASSWORD
 document.getElementById('forgot-btn').onclick = () => {
   const email = document.getElementById('email-input').value.trim();
   const err = document.getElementById('cover-error');
   err.innerText = '';
   if(!email) { err.innerText = "Type your email first"; return; }
-
   sendPasswordResetEmail(auth, email)
-.then(() => {
-    alert("Password reset email sent! Check inbox and spam folder");
-  })
-.catch((error) => {
-    err.innerText = error.message;
-  });
+.then(() => { alert("Password reset email sent! Check inbox and spam folder"); })
+.catch((error) => { err.innerText = error.message; });
 }
 
 document.getElementById('logout-btn').onclick = () => signOut(auth);
@@ -173,13 +167,11 @@ onAuthStateChanged(auth, async (user) => {
    currentUser = user;
    const userRef = ref(db, 'users/' + user.uid);
    const userSnap = await get(userRef);
-
    if(!userSnap.exists()){
      const nameFromEmail = user.email.split('@')[0];
      await set(userRef, { name: nameFromEmail, email: user.email, color: colors[Math.floor(Math.random()*colors.length)] });
      alert("Welcome to ChatBeat! Your name is: " + nameFromEmail)
    }
-
    document.getElementById('cover').style.display = 'none';
    document.getElementById('app').style.display = 'block';
    document.getElementById('feed').innerHTML = '';
@@ -206,23 +198,25 @@ function loadPosts() {
     const postKey = snap.key;
     const userSnap = await get(ref(db, 'users/' + post.uid));
     const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888"};
-
     const postDiv = document.createElement('div');
     postDiv.className = 'card';
     postDiv.id = 'post-' + postKey;
-
     let delBtn = '';
     if(post.uid === currentUser.uid) {
       delBtn = `<button class="del-btn" onclick="deletePost('${postKey}')">×</button>`;
     }
-
     postDiv.innerHTML = `${delBtn}<div class="name" style="color:${user.color}">${user.name}</div><div>${post.text}</div>`;
     document.getElementById('feed').prepend(postDiv);
   });
 }
-window.deletePost = (key) => {
-  if(confirm("Delete this post?")) remove(ref(db, 'posts/' + key));
-  document.getElementById('post-' + key).remove();
+
+// FIXED DELETE - NOW WAITS FOR FIREBASE
+window.deletePost = async (key) => {
+  if(confirm("Delete this post?")) {
+    await remove(ref(db, 'posts/' + key)); // Wait for Firebase first
+    const el = document.getElementById('post-' + key);
+    if(el) el.remove();
+  }
 }
 
 // CHAT SEND
@@ -236,7 +230,7 @@ document.getElementById('send-chat').onclick = async () => {
 const recordBtn = document.getElementById('record-btn');
 recordBtn.onclick = async () => {
   const micErr = document.getElementById('mic-error');
-  micErr.innerText = '';
+  if(micErr) micErr.innerText = '';
   if(!isRecording) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -256,7 +250,7 @@ recordBtn.onclick = async () => {
       recordBtn.classList.add('record-btn');
       isRecording = true;
     } catch(e) {
-      micErr.innerText = "Mic blocked. Allow microphone permission.";
+      if(micErr) micErr.innerText = "Mic blocked. Allow microphone permission.";
     }
   } else {
     mediaRecorder.stop();
@@ -273,32 +267,33 @@ function loadChat() {
     const msgKey = snap.key;
     const userSnap = await get(ref(db, 'users/' + msg.uid));
     const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888"};
-
     const isMe = msg.uid === currentUser.uid;
     const msgDiv = document.createElement('div');
     msgDiv.className = `msg ${isMe? 'me' : 'other'}`;
     msgDiv.id = 'msg-' + msgKey;
-
     let delBtn = '';
     if(isMe) {
-      delBtn = `<button class="del-msg" onclick="deleteMsg('${msgKey}')">×</button>`;
+      delBtn = `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>`;
     }
-
     let content = '';
     if(msg.audio) {
-      content = `<span class="name" style="color:${user.color}">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`;
+      content = `<span class="bubble-name" style="color:${user.color}">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`;
     } else {
-      content = `<span class="name" style="color:${user.color}">${user.name}</span>${delBtn}<span class="msg-text">${msg.text}</span>`;
+      content = `<span class="bubble-name" style="color:${user.color}">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`;
     }
-
     msgDiv.innerHTML = `<div class="bubble">${content}</div>`;
     document.getElementById('global-chat').appendChild(msgDiv);
     document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
   });
 }
-window.deleteMsg = (key) => {
-  if(confirm("Delete this message?")) remove(ref(db, 'globalChat/' + key));
-  document.getElementById('msg-' + key).remove();
+
+// FIXED DELETE - NOW WAITS FOR FIREBASE
+window.deleteMsg = async (key) => {
+  if(confirm("Delete this message?")) {
+    await remove(ref(db, 'globalChat/' + key)); // Wait for Firebase first
+    const el = document.getElementById('msg-' + key);
+    if(el) el.remove();
+  }
 }
 
 document.getElementById('chat-icon-btn').onclick = () => {
