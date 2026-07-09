@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ChatBeat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="cover">
+  <h1>ChatBeat</h1>
+  <p><b>Connect in Color. Vibe in Sound.</b><br><br>
+  Welcome to ChatBeat - the most fun, exciting, and addictive way to connect! 🎉<br>
+  Post, chat, and send voice notes with friends. Everything feels alive, fresh, and shiny. 
+  Your messages disappear after 7 days so every moment feels new. 
+  This is the social app you DON'T want to miss!</p>
+  
+  <input id="name-input" placeholder="Choose your Name">
+  <input id="email-input" placeholder="Email">
+  <input id="pass-input" placeholder="Password" type="password">
+  <button id="register-btn">Register</button>
+  <button id="login-btn">Login</button>
+  <p id="cover-error"></p>
+</div>
+
+<div id="app">
+  <button id="logout-btn">Logout</button>
+  <h2>Feed</h2>
+  <textarea id="post-text" placeholder="What's on your mind?"></textarea>
+  <button id="post-btn">Post</button>
+  <div id="feed"></div>
+
+  <h2>Global Chat</h2>
+  <div id="global-chat"></div>
+  <input id="chat-input" placeholder="Type message">
+  <button id="send-chat">Send</button>
+  <button id="record-btn">🎤 Tap to Record</button>
+
+  <div class="footer">
+    Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. 
+    A brilliant 18-year-old creator with big dreams, building the future one line of code at a time. ✨
+  </div>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

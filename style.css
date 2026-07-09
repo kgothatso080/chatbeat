@@ -1,0 +1,53 @@
+body { 
+  margin:0; 
+  font-family: 'Segoe UI', sans-serif; 
+  background: linear-gradient(135deg, #00C896 0%, #0077FF 50%, #000000 100%);
+  background-attachment: fixed; 
+  color: white;
+}
+
+#cover { 
+  display:flex; flex-direction:column; align-items:center; justify-content:center; 
+  height:100vh; text-align:center; padding:20px; 
+}
+#cover h1 { 
+  font-size: 3em; 
+  text-shadow: 0 0 20px #00C896; /* Glow */
+}
+#cover p { 
+  font-size: 1.2em; max-width: 400px; 
+}
+#cover-error { color: #FF6B6B; }
+
+input, button, textarea { 
+  padding:12px; margin:8px; border-radius:12px; border:none; 
+  width:80%; max-width:300px; font-size:16px; 
+}
+textarea { height: 60px; resize: none; }
+
+button { 
+  background: linear-gradient(90deg, #00C896, #0077FF); 
+  color:white; font-weight:bold; 
+  box-shadow: 0 0 15px #00C896; /* Shiny glow */
+  cursor:pointer; 
+}
+button:active { transform: scale(0.95); }
+
+#app { display:none; padding:10px; }
+.card { 
+  background: rgba(0,0,0,0.4); 
+  backdrop-filter: blur(10px); /* Glass effect */
+  padding:12px; margin:10px 0; border-radius:12px; 
+  border: 1px solid #00C896; 
+}
+#global-chat { 
+  height:200px; overflow-y:auto; 
+  background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; 
+}
+.record-btn { background: red !important; box-shadow: 0 0 15px red !important; }
+
+.footer { 
+  text-align:center; padding:20px; font-size:12px; opacity:0.8; 
+  margin-top:30px; border-top:1px solid #00C896; 
+}
+.footer a { color:#00C896; text-decoration:none; font-weight:bold; }
