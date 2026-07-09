@@ -5,64 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
-    body { 
-      margin:0; font-family: 'Roboto', sans-serif; 
-      background: #111b21; color: white;
-    }
-    .topbar {
-      background: linear-gradient(90deg, #00C896, #0077FF);
-      padding: 10px 15px; display: flex; justify-content: space-between;
-      align-items: center; position: sticky; top: 0; z-index: 10;
-      box-shadow: 0 2px 10px rgba(0,200,150,0.5);
-    }
+    body { margin:0; font-family: 'Roboto', sans-serif; background: #111b21; color: white; }
+    .topbar { background: linear-gradient(90deg, #00C896, #0077FF); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 10px rgba(0,200,150,0.5); }
     .topbar h2 { margin: 0; font-size: 20px; text-shadow: 0 0 5px #fff; cursor: pointer; }
-    .topbar button { 
-      background: rgba(0,0,0,0.3); width: auto; padding: 8px 12px;
-      border-radius: 20px; font-weight: 500; border: none; color: white;
-    }
-    #cover { 
-      display:flex; flex-direction:column; align-items:center; justify-content:center; 
-      height:100vh; text-align:center; padding:20px; 
-      background: linear-gradient(135deg, #00C896 0%, #0077FF 50%, #000 100%);
-    }
+    .topbar button { background: rgba(0,0,0,0.3); width: auto; padding: 8px 12px; border-radius: 20px; font-weight: 500; border: none; color: white; }
+    #cover { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; text-align:center; padding:20px; background: linear-gradient(135deg, #00C896 0%, #0077FF 50%, #000 100%); }
     #cover h1 { font-size: 3em; text-shadow: 0 0 20px #00C896; }
-    input, button, textarea { 
-      padding:12px; margin:8px; border-radius:25px; border:none; 
-      width:80%; max-width:300px; font-size:16px; font-family: 'Roboto', sans-serif;
-    }
-    button { 
-      background: linear-gradient(90deg, #00C896, #0077FF); 
-      color:white; font-weight:700; cursor:pointer; 
-      box-shadow: 0 0 10px rgba(0,200,150,0.4);
-    }
+    input, button, textarea { padding:12px; margin:8px; border-radius:25px; border:none; width:80%; max-width:300px; font-size:16px; font-family: 'Roboto', sans-serif; }
+    button { background: linear-gradient(90deg, #00C896, #0077FF); color:white; font-weight:700; cursor:pointer; box-shadow: 0 0 10px rgba(0,200,150,0.4); }
     textarea { border-radius: 12px; height: 60px; background: #2a3942; color: white; }
     #app { display:none; }
     .post-box { padding: 10px; background: #202c33; }
     #feed { padding: 10px; }
-    .card { 
-      background: #202c33; padding:12px; margin:10px 0; border-radius:12px; 
-      border-left: 4px solid #00C896;
-    }
-    .chat-header {
-      display: flex; align-items: center; padding: 10px;
-      background: #202c33; border-bottom: 1px solid #2a3942;
-    }
+    .card { background: #202c33; padding:12px; margin:10px 0; border-radius:12px; border-left: 4px solid #00C896; }
+    .chat-header { display: flex; align-items: center; padding: 10px; background: #202c33; border-bottom: 1px solid #2a3942; }
     .chat-header h3 { margin: 0 auto; }
     #back-to-feed { background: transparent; width: auto; }
-    #global-chat { 
-      height: calc(100vh - 220px); overflow-y:auto; 
-      background:#111b21; padding:10px; 
-    }
-    .chat-input-area {
-      display: flex; padding: 10px; background: #202c33; position: fixed; bottom: 0; width: 100%;
-    }
+    #global-chat { height: calc(100vh - 220px); overflow-y:auto; background:#111b21; padding:10px; }
+    .chat-input-area { display: flex; padding: 10px; background: #202c33; position: fixed; bottom: 0; width: 100%; }
     .chat-input-area input { flex: 1; border-radius: 25px; background: #2a3942; color: white; }
     .chat-input-area button { width: 50px; border-radius: 50%; }
     .record-btn { background: red !important; box-shadow: 0 0 10px red !important; }
-    .footer { 
-      text-align:center; padding:20px; font-size:12px; opacity:0.6; 
-      border-top:1px solid #2a3942; margin-bottom: 60px;
-    }
+    .footer { text-align:center; padding:20px; font-size:12px; opacity:0.6; border-top:1px solid #2a3942; margin-bottom: 60px; }
     .footer a { color:#00C896; text-decoration:none; font-weight:700; }
   </style>
 </head>
@@ -143,7 +107,6 @@ let mediaRecorder;
 let audioChunks = [];
 let isRecording = false;
 
-// AUTO DELETE AFTER 7 DAYS
 function deleteOld(path) {
   const weekAgo = Date.now() - 604800000;
   get(ref(db, path)).then(snap => {
@@ -177,10 +140,8 @@ document.getElementById('login-btn').onclick = () => {
  signInWithEmailAndPassword(auth, email, pass).catch(e => { document.getElementById('cover-error').innerText = e.message; });
 }
 
-// LOGOUT
 document.getElementById('logout-btn').onclick = () => signOut(auth);
 
-// LOGIN STATE
 onAuthStateChanged(auth, (user) => {
  if(user) {
    currentUser = user;
@@ -196,12 +157,14 @@ onAuthStateChanged(auth, (user) => {
  }
 });
 
-// POST
+// POST - ADDED ERROR ALERT
 document.getElementById('post-btn').onclick = async () => {
   const text = document.getElementById('post-text').value.trim();
   if(!text) return;
-  await push(ref(db, 'posts'), { uid: currentUser.uid, text, timestamp: Date.now() });
-  document.getElementById('post-text').value = '';
+  try {
+    await push(ref(db, 'posts'), { uid: currentUser.uid, text, timestamp: Date.now() });
+    document.getElementById('post-text').value = '';
+  } catch(e) { alert("POST ERROR: " + e.message) } // NEW
 }
 
 function loadPosts() {
@@ -218,7 +181,16 @@ function loadPosts() {
   });
 }
 
-// VOICENOTE + CHAT
+// CHAT SEND - ADDED ERROR ALERT
+document.getElementById('send-chat').onclick = async () => {
+  const text = document.getElementById('chat-input').value.trim();
+  if(!text) return;
+  try {
+    await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, timestamp: Date.now() });
+    document.getElementById('chat-input').value = '';
+  } catch(e) { alert("CHAT ERROR: " + e.message) } // NEW
+}
+
 const recordBtn = document.getElementById('record-btn');
 recordBtn.onclick = async () => {
   const micErr = document.getElementById('mic-error');
@@ -234,7 +206,9 @@ recordBtn.onclick = async () => {
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
-          await push(ref(db, 'globalChat'), { uid: currentUser.uid, audio: reader.result, timestamp: Date.now() });
+          try {
+            await push(ref(db, 'globalChat'), { uid: currentUser.uid, audio: reader.result, timestamp: Date.now() });
+          } catch(e) { alert("VOICE ERROR: " + e.message) } // NEW
         }
       }
       mediaRecorder.start();
@@ -250,13 +224,6 @@ recordBtn.onclick = async () => {
     recordBtn.classList.remove('record-btn');
     isRecording = false;
   }
-}
-
-document.getElementById('send-chat').onclick = async () => {
-  const text = document.getElementById('chat-input').value.trim();
-  if(!text) return;
-  await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, timestamp: Date.now() });
-  document.getElementById('chat-input').value = '';
 }
 
 function loadChat() {
@@ -278,7 +245,6 @@ function loadChat() {
   });
 }
 
-// SWITCHING
 document.getElementById('chat-icon-btn').onclick = () => {
   document.getElementById('feed-section').style.display = 'none';
   document.getElementById('chat-section').style.display = 'block';
