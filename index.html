@@ -28,6 +28,7 @@
     .record-btn { background: red !important; box-shadow: 0 0 10px red !important; }
     .footer { text-align:center; padding:20px; font-size:12px; opacity:0.6; border-top:1px solid #2a3942; margin-bottom: 60px; }
     .footer a { color:#00C896; text-decoration:none; font-weight:700; }
+    .debug { color: yellow; font-size: 10px; }
   </style>
 </head>
 <body>
@@ -107,15 +108,7 @@ let mediaRecorder;
 let audioChunks = [];
 let isRecording = false;
 
-function deleteOld(path) {
-  const weekAgo = Date.now() - 604800000;
-  get(ref(db, path)).then(snap => {
-    snap.forEach(child => {
-      if(child.val().timestamp < weekAgo) remove(ref(db, path + '/' + child.key));
-    })
-  })
-}
-setInterval(() => { deleteOld('posts'); deleteOld('globalChat'); }, 3600000);
+// REMOVED AUTO DELETE FOR NOW BECAUSE YOUR TIME IS WRONG
 
 // REGISTER
 document.getElementById('register-btn').onclick = async () => {
@@ -133,7 +126,6 @@ document.getElementById('register-btn').onclick = async () => {
  } catch(e) { err.innerText = e.message; }
 }
 
-// LOGIN
 document.getElementById('login-btn').onclick = () => {
  const email = document.getElementById('email-input').value.trim();
  const pass = document.getElementById('pass-input').value.trim();
@@ -157,14 +149,11 @@ onAuthStateChanged(auth, (user) => {
  }
 });
 
-// POST - ADDED ERROR ALERT
 document.getElementById('post-btn').onclick = async () => {
   const text = document.getElementById('post-text').value.trim();
   if(!text) return;
-  try {
-    await push(ref(db, 'posts'), { uid: currentUser.uid, text, timestamp: Date.now() });
-    document.getElementById('post-text').value = '';
-  } catch(e) { alert("POST ERROR: " + e.message) } // NEW
+  await push(ref(db, 'posts'), { uid: currentUser.uid, text, timestamp: Date.now() });
+  document.getElementById('post-text').value = '';
 }
 
 function loadPosts() {
@@ -172,23 +161,19 @@ function loadPosts() {
   onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp')), async (snap) => {
     const post = snap.val();
     const userSnap = await get(ref(db, 'users/' + post.uid));
-    if(!userSnap.exists()) return;
-    const user = userSnap.val();
+    const user = userSnap.exists() ? userSnap.val() : {name: "Unknown", color: "#888"}; // FIX: Show even if user missing
     const postDiv = document.createElement('div');
     postDiv.className = 'card';
-    postDiv.innerHTML = `<b style="color:${user.color}">${user.name}</b><p>${post.text}</p>`;
+    postDiv.innerHTML = `<b style="color:${user.color}">${user.name}</b><p>${post.text}</p><div class="debug">UID: ${post.uid}</div>`;
     document.getElementById('feed').prepend(postDiv);
   });
 }
 
-// CHAT SEND - ADDED ERROR ALERT
 document.getElementById('send-chat').onclick = async () => {
   const text = document.getElementById('chat-input').value.trim();
   if(!text) return;
-  try {
-    await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, timestamp: Date.now() });
-    document.getElementById('chat-input').value = '';
-  } catch(e) { alert("CHAT ERROR: " + e.message) } // NEW
+  await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, timestamp: Date.now() });
+  document.getElementById('chat-input').value = '';
 }
 
 const recordBtn = document.getElementById('record-btn');
@@ -206,9 +191,7 @@ recordBtn.onclick = async () => {
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
-          try {
-            await push(ref(db, 'globalChat'), { uid: currentUser.uid, audio: reader.result, timestamp: Date.now() });
-          } catch(e) { alert("VOICE ERROR: " + e.message) } // NEW
+          await push(ref(db, 'globalChat'), { uid: currentUser.uid, audio: reader.result, timestamp: Date.now() });
         }
       }
       mediaRecorder.start();
@@ -231,8 +214,7 @@ function loadChat() {
   onChildAdded(query(ref(db, 'globalChat'), orderByChild('timestamp')), async (snap) => {
     const msg = snap.val();
     const userSnap = await get(ref(db, 'users/' + msg.uid));
-    if(!userSnap.exists()) return;
-    const user = userSnap.val();
+    const user = userSnap.exists() ? userSnap.val() : {name: "Unknown", color: "#888"}; // FIX: Show even if user missing
     const msgDiv = document.createElement('div');
     msgDiv.style.margin = '8px 0';
     if(msg.audio) {
