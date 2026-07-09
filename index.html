@@ -13,34 +13,36 @@
     #cover h1 { font-size: 3em; text-shadow: 0 0 20px #00C896; }
     input, button, textarea { padding:12px; margin:8px; border-radius:25px; border:none; width:80%; max-width:300px; font-size:16px; font-family: 'Roboto', sans-serif; }
     button { background: linear-gradient(90deg, #00C896, #0077FF); color:white; font-weight:700; cursor:pointer; }
-   .link-btn { background: transparent; text-decoration: underline; font-size: 14px; width: auto; }
+  .link-btn { background: transparent; text-decoration: underline; font-size: 14px; width: auto; }
     textarea { border-radius: 12px; height: 60px; background: #2a3942; color: white; width: 90%; }
     #app { display:none; }
   .post-box { padding: 10px; background: #202c33; }
     #feed { padding: 10px; padding-bottom: 70px; }
 
-    /* POST CARDS */
+    /* POST CARDS - FIXED */
   .card { background: #202c33; padding:10px 12px; margin:10px 0; border-radius:12px; position: relative; max-width: 85%; }
   .card.name { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
-  .card.del-btn { position: absolute; top: 4px; right: 4px; background: rgba(255,107,107,0.9); padding: 0; width: 18px; height: 18px; border-radius: 50%; font-size: 11px; line-height: 18px; text-align: center; cursor: pointer; border: none; color: white; }
+  .card.del-btn { position: absolute; top: 8px; right: 8px; background: rgba(255,107,107,0.9); padding: 0; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; line-height: 20px; text-align: center; cursor: pointer; border: none; color: white; }
 
   .chat-header { display: flex; align-items: center; padding: 10px; background: #202c33; border-bottom: 1px solid #2a3942; }
   .chat-header h3 { margin: 0 auto; }
     #back-to-feed { background: transparent; width: auto; }
     #global-chat { height: calc(100vh - 210px); overflow-y:auto; background:#0b141a; padding:10px; display: flex; flex-direction: column; }
 
-    /* WHATSAPP BUBBLES */
-  .msg { display: flex; margin: 3px 0; }
+    /* WHATSAPP BUBBLES - FULL FIX */
+  .msg { display: flex; margin: 4px 0; }
   .msg.me { justify-content: flex-end; }
   .msg.other { justify-content: flex-start; }
-  .bubble { max-width: 65%; padding: 6px 10px 8px 10px; border-radius: 8px; position: relative; word-wrap: break-word; font-size: 15px; }
+  .bubble { max-width: 75%; padding: 7px 12px 8px 12px; border-radius: 8px; position: relative; word-wrap: break-word; font-size: 15px; line-height: 1.4; }
   .msg.me.bubble { background: #005c4b; border-bottom-right-radius: 2px; }
   .msg.other.bubble { background: #202c33; border-bottom-left-radius: 2px; }
-  .bubble.name { display: block; font-size: 12px; font-weight: 700; margin-bottom: 3px; }
-  .bubble.del-msg { position: absolute; top: 2px; right: 2px; background: rgba(255,107,107,0.9); padding: 0; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; cursor: pointer; border: none; color: white; }
-  .bubble audio { width: 200px; max-width: 100%; margin-top: 4px; }
+  .bubble.name { display: block; font-size: 12px; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bubble.msg-text { display: block; }
+  .bubble.del-msg { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.3); padding: 0; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; cursor: pointer; border: none; color: white; opacity: 0.8; }
+  .bubble.del-msg:hover { opacity: 1; background: rgba(255,107,107,0.9); }
+  .bubble audio { width: 220px; max-width: 100%; margin-top: 4px; border-radius: 8px; }
 
-  .chat-input-area { display: flex; padding: 10px; background: #202c33; position: fixed; bottom: 0; width: 100%; }
+  .chat-input-area { display: flex; padding: 10px; background: #202c33; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
   .chat-input-area input { flex: 1; border-radius: 25px; background: #2a3942; color: white; }
   .chat-input-area button { width: 50px; border-radius: 50%; }
   .record-btn { background: red!important; }
@@ -155,10 +157,10 @@ document.getElementById('forgot-btn').onclick = () => {
   if(!email) { err.innerText = "Type your email first"; return; }
 
   sendPasswordResetEmail(auth, email)
- .then(() => {
+.then(() => {
     alert("Password reset email sent! Check inbox and spam folder");
   })
- .catch((error) => {
+.catch((error) => {
     err.innerText = error.message;
   });
 }
@@ -286,7 +288,7 @@ function loadChat() {
     if(msg.audio) {
       content = `<span class="name" style="color:${user.color}">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`;
     } else {
-      content = `<span class="name" style="color:${user.color}">${user.name}</span>${delBtn}${msg.text}`;
+      content = `<span class="name" style="color:${user.color}">${user.name}</span>${delBtn}<span class="msg-text">${msg.text}</span>`;
     }
 
     msgDiv.innerHTML = `<div class="bubble">${content}</div>`;
@@ -313,4 +315,4 @@ document.getElementById('logo-btn').onclick = () => {
 }
 </script>
 </body>
-  </html>
+</html>
