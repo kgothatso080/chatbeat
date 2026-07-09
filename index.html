@@ -109,7 +109,7 @@ const firebaseConfig = {
 
   appId: "1:38692820606:web:edce5abf8d103e1f6e6a2f",
 
-  measurementId: "G-KZ5KN31YFL"
+  measurementId: "G-KZ5KN31YFL" }
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -140,19 +140,37 @@ function showPage(page) {
 window.showPage = showPage;
 
 // REGISTER WITH UNIQUE NAME
-document.getElementById('register-btn').onclick = async () => {
+ document.getElementById('register-btn').onclick = async () => {
  const name = document.getElementById('name-input').value.trim();
  const email = document.getElementById('email-input').value.trim();
  const pass = document.getElementById('pass-input').value.trim();
  const err = document.getElementById('cover-error');
  err.innerText = '';
 
- const nameSnap = await get(query(ref(db, 'users'), orderByChild('name'), equalTo(name)));
- if(nameSnap.exists()) { err.innerText = "Name already taken!"; return; }
+ if(name.length < 3) { err.innerText = "Name must be 3+ letters"; return; }
 
- createUserWithEmailAndPassword(auth, email, pass)
-.then(cred => set(ref(db, 'users/' + cred.user.uid), { name, email, color: colors[Math.floor(Math.random()*colors.length)] }))
-.catch(e => err.innerText = e.message);
+ try {
+   // 1. First create the auth account
+   const cred = await createUserWithEmailAndPassword(auth, email, pass);
+   
+   // 2. Then check if name is taken
+   const nameSnap = await get(query(ref(db, 'users'), orderByChild('name'), equalTo(name)));
+   if(nameSnap.exists()) { 
+     await deleteUser(cred.user); // delete the auth account we just made
+     err.innerText = "Name already taken!"; 
+     return; 
+   }
+
+   // 3. Save user data
+   await set(ref(db, 'users/' + cred.user.uid), { 
+     name, 
+     email, 
+     color: colors[Math.floor(Math.random()*colors.length)] 
+   });
+
+ } catch(e) {
+   err.innerText = e.message; // This will show the real Firebase error
+ }
 }
 
 // LOGIN
