@@ -1,0 +1,16 @@
+* { box-sizing: border-box; font-family: Arial, sans-serif; }
+body { margin: 0; background: #f0f2f5; }
+
+#cover { display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.cover-card { background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; }
+.cover-card input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; }
+.cover-card button { width: 100%; padding: 12px; margin: 5px 0; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; }
+.error { color: red; margin-top: 10px; }
+
+#app header { background: white; padding: 15px; display: flex; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+#feed { padding: 15px; }
+.post-box { background: white; padding: 15px; margin: 15px; border-radius: 8px; }
+.post-box textarea { width: 100%; padding: 10px; }
+#global-chat { background: white; margin: 15px; padding: 15px; height: 300px; overflow-y: auto; }
+.chat-input { display: flex; padding: 15px; background: white; }
+.chat-input input { flex: 1; padding: 10px; }
