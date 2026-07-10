@@ -30,13 +30,10 @@
     #back-to-feed { background: transparent; width: auto; }
     #global-chat { height: calc(100vh - 250px); overflow-y:auto; background:#0b141a; padding:10px; display: flex; flex-direction: column; gap: 2px; }
 
-    /* WHATSAPP BUBBLES */
-.msg { display: flex; margin: 1px 0; width: 100%; }
-.msg.me { justify-content: flex-end; }
-.msg.other { justify-content: flex-start; }
+/* WHATSAPP BUBBLES - FINAL */
 .bubble { max-width: 75%; padding: 6px 10px 8px 10px; border-radius: 8px; position: relative; word-wrap: break-word; font-size: 15px; line-height: 1.4; }
-.msg.me.bubble { background: #005c4b; border-bottom-right-radius: 2px; margin-left: auto; }
-.msg.other.bubble { background: #202c33; border-bottom-left-radius: 2px; margin-right: auto; }
+.me-bubble { background: #0077FF; border-bottom-right-radius: 2px; margin-left: auto; } /* YOU = BLUE */
+.other-bubble { background: #005c4b; border-bottom-left-radius: 2px; margin-right: auto; } /* OTHERS = GREEN */
 .bubble-name { display: block; font-size: 12px; font-weight: 700; margin-bottom: 3px; }
 .bubble-text { display: block; }
 .bubble-del { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.4); padding: 0; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
@@ -268,24 +265,37 @@ function loadChat() {
     const userSnap = await get(ref(db, 'users/' + msg.uid));
     const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888"};
     const isMe = msg.uid === currentUser.uid;
+    
     const msgDiv = document.createElement('div');
-    msgDiv.className = `msg ${isMe? 'me' : 'other'}`;
     msgDiv.id = 'msg-' + msgKey;
+    
     let delBtn = '';
     if(isMe) {
       delBtn = `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>`;
     }
+    
     let content = '';
     if(msg.audio) {
       content = `<span class="bubble-name" style="color:${user.color}">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`;
     } else {
       content = `<span class="bubble-name" style="color:${user.color}">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`;
     }
-    msgDiv.innerHTML = `<div class="bubble">${content}</div>`;
+    
+    // FIXED: Color is now directly on the bubble div
+    if(isMe){
+      msgDiv.innerHTML = `<div class="bubble me-bubble">${content}</div>`;
+      msgDiv.style.display = 'flex';
+      msgDiv.style.justifyContent = 'flex-end';
+    } else {
+      msgDiv.innerHTML = `<div class="bubble other-bubble">${content}</div>`;
+      msgDiv.style.display = 'flex';
+      msgDiv.style.justifyContent = 'flex-start';
+    }
+    
     document.getElementById('global-chat').appendChild(msgDiv);
     document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
   });
-}
+  }
 
 // FIXED DELETE - NOW WAITS FOR FIREBASE
 window.deleteMsg = async (key) => {
