@@ -51,7 +51,7 @@
   </style>
 </head>
 <body>
-
+  
 <div id="cover">
   <h1>ChatBeat</h1>
   <p><b>Connect in Color. Vibe in Sound.</b><br><br>Welcome to ChatBeat - the most fun way to connect! 🎉</p>
@@ -61,9 +61,11 @@
   <input id="name-input" placeholder="Choose your Name">
   <input id="email-input" placeholder="Email">
   <input id="pass-input" placeholder="Password" type="password">
-  <button id="register-btn">Register</button>
-  <button id="login-btn">Login</button>
-  <button id="forgot-btn" class="link-btn">Forgot Password?</button>
+  
+  <!-- Updated Touchable Event Handlers -->
+  <button onclick="window.submitRegistration()">Register</button>
+  <button onclick="window.submitLogin()">Login</button>
+  <button onclick="window.triggerForgotPassword()" class="link-btn">Forgot Password?</button>
   <p id="cover-error" style="color:#FF6B6B;"></p>
 </div>
 <div id="app">
@@ -162,7 +164,8 @@ window.showView = function(view) {
     chat.scrollTop = chat.scrollHeight;
   }
 }
-document.getElementById('register-btn').onclick = async () => {
+// --- BUG FIX: GLOBALIZED ACTIONS FOR EXPLICIT MOBILE RECOGNITION ---
+window.submitRegistration = async () => {
  const name = document.getElementById('name-input').value.trim();
  const email = document.getElementById('email-input').value.trim();
  const pass = document.getElementById('pass-input').value.trim();
@@ -177,33 +180,27 @@ document.getElementById('register-btn').onclick = async () => {
  } catch(e) { err.innerText = e.message; }
 }
 
-document.getElementById('login-btn').onclick = () => {
+window.submitLogin = () => {
  const email = document.getElementById('email-input').value.trim();
  const pass = document.getElementById('pass-input').value.trim();
  signInWithEmailAndPassword(auth, email, pass).catch(e => { document.getElementById('cover-error').innerText = e.message; });
 }
 
-document.getElementById('forgot-btn').onclick = () => {
+window.triggerForgotPassword = () => {
   const email = document.getElementById('email-input').value.trim();
   const err = document.getElementById('cover-error');
   err.innerText = '';
   
-  // Custom requested support alert block
   alert(
     "WhatsApp or call: 084 328 9812\n" +
     "Email: kgothatsoswafros@gmail.com\n" +
     "Text kgø thā tsø on Facebook for help. Goodbye, have a nice day!"
   );
   
-  if(!email) { 
-    err.innerText = "Type your email first if you want a reset link."; 
-    return; 
-  }
-  
-  sendPasswordResetEmail(auth, email)
-    .then(() => { alert("Password reset link also sent to your inbox!"); })
-    .catch((error) => { err.innerText = error.message; });
+  if(!email) { err.innerText = "Type your email first"; return; }
+  sendPasswordResetEmail(auth, email).then(() => { alert("Password reset email sent! Check inbox and spam folder"); }).catch((error) => { err.innerText = error.message; });
 }
+
 
 document.getElementById('logout-btn').onclick = () => signOut(auth);
 
