@@ -1,359 +1,307 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
-  <title>ChatBeat</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <style>
-    * { box-sizing: border-box; }
-    body { margin:0; font-family: 'Roboto', sans-serif; background: #0b141a; color: white; }
+<title>ChatBeat</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; }
+body { margin:0; font-family: 'Roboto', sans-serif; background: #0b141a; color: white; }
 .topbar { background: linear-gradient(90deg, #00C896, #0077FF); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
 .topbar h2 { margin: 0; font-size: 20px; text-shadow: 0 0 5px #fff; cursor: pointer; }
 .topbar div { display:flex; gap:8px }
 .topbar button { background: rgba(0,0,0,0.3); width: auto; padding: 8px 12px; border-radius: 20px; font-weight: 500; border: none; color: white; }
-    #cover { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; text-align:center; padding:20px; background: linear-gradient(135deg, #00C896 0%, #0077FF 50%, #000 100%); }
-    #cover h1 { font-size: 3em; text-shadow: 0 0 20px #00C896; }
-    input, button, textarea { padding:12px; margin:8px; border-radius:25px; border:none; width:80%; max-width:300px; font-size:16px; font-family: 'Roboto', sans-serif; }
-    button { background: linear-gradient(90deg, #00C896, #0077FF); color:white; font-weight:700; cursor:pointer; }
-.link-btn { background: transparent!important; text-decoration: underline; font-size: 14px; width: auto; background-image: none!important; }
-    textarea { border-radius: 12px; height: 60px; background: #2a3942; color: white; width: 90%; }
-    #app { display:none; }
+#cover { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; text-align:center; padding:20px; background: linear-gradient(135deg, #00C896 0%, #0077FF 50%, #000 100%); }
+#cover h1 { font-size: 3em; text-shadow: 0 0 20px #00C896; }
+input, button, textarea { padding:12px; margin:8px; border-radius:25px; border:none; width:80%; max-width:300px; font-size:16px; font-family: 'Roboto', sans-serif; }
+button { background: linear-gradient(90deg, #00C896, #0077FF); color:white; font-weight:700; cursor:pointer; }
+.link-btn { background: transparent!important; text-decoration: underline; font-size: 14px; width: auto; }
+textarea { border-radius: 12px; height: 60px; background: #2a3942; color: white; width: 90%; }
+#app { display:none; }
 .post-box { padding: 10px; background: #202c33; }
-    #feed { padding: 10px; padding-bottom: 20px; }
+#feed { padding: 10px; padding-bottom: 20px; }
 .profile-box {background:#202c33; padding:15px; border-radius:12px; margin:10px; text-align:center; display:none}
 .profile-box img{width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid #00C896}
-.card { background: #202c33; padding:10px 12px 10px 12px; margin:10px 0; border-radius:12px; position: relative; max-width: 85%; }
+.card { background: #202c33; padding:10px 12px; margin:10px 0; border-radius:12px; position: relative; max-width: 85%; }
 .card.name { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
-.card.del-btn { position: absolute; top: 8px; right: 8px; background: #FF6B6B; padding: 0; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; line-height: 20px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
+.card.del-btn { position: absolute; top: 8px; right: 8px; background: #FF6B6B; padding: 0; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; line-height: 20px; text-align: center; cursor: pointer; border: none; color: white; }
 .chat-header { display: flex; align-items: center; padding: 10px; background: #202c33; border-bottom: 1px solid #2a3942; }
 .chat-header h3 { margin: 0 auto; }
-    #back-to-feed { background: transparent; width: auto; }
-    #global-chat { height: calc(100vh - 250px); overflow-y:auto; background:#0b141a; padding:10px; display: flex; flex-direction: column; gap: 2px; }
-.bubble { max-width: 75%; padding: 6px 10px 8px 10px; border-radius: 8px; position: relative; word-wrap: break-word; font-size: 15px; line-height: 1.4; }
-.me-bubble { background: #0077FF; border-bottom-right-radius: 2px; margin-left: auto; }
-.other-bubble { background: #005c4b; border-bottom-left-radius: 2px; margin-right: auto; }
-.bubble-name { display: block; font-size: 12px; font-weight: 700; margin-bottom: 3px; color: #000; }
-.bubble-text { display: block; }
-.bubble-del { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.4); padding: 0; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
+#back-to-feed { background: transparent; width: auto; }
+#global-chat { height: calc(100vh - 250px); overflow-y:auto; background:#0b141a; padding:10px; display: flex; flex-direction: column; gap: 2px; }
+.bubble { max-width: 75%; padding: 6px 10px 8px 10px; border-radius: 8px; position: relative; word-wrap: break-word; font-size: 15px; line-height: 1.4; margin-bottom: 4px; }
+.me-bubble { background: #0077FF!important; border-bottom-right-radius: 2px; margin-left: auto; }
+.other-bubble { background: #005c4b!important; border-bottom-left-radius: 2px; margin-right: auto; }
+.bubble-name { display: block; font-size: 12px; font-weight: 700; margin-bottom: 3px; color: #FFF; }
+.bubble-del { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.4); padding: 0; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; cursor: pointer; border: none; color: white; }
 .bubble audio { width: 220px; max-width: 100%; margin-top: 4px; }
 .chat-input-area { display: flex; padding: 10px; background: #202c33; position: fixed; bottom: 0; left:0; width: 100%; z-index: 5; }
 .chat-input-area input { flex: 1; border-radius: 25px; background: #2a3942; color: white; }
 .chat-input-area button { width: 50px; border-radius: 50%; }
-.record-btn { background: red!important; animation: pulse 1s infinite } /* ADDED PULSE */
+.record-btn { background: red!important; animation: pulse 1s infinite }
 @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(255,0,0,0.7)} 70%{box-shadow:0 0 0 10px rgba(255,0,0,0)} 100%{box-shadow:0 0 0 0 rgba(255,0,0,0)} }
-.footer { text-align:center; padding:20px; font-size:12px; opacity:0.8; border-top:1px solid #2a3942; background: #111b21; padding-bottom: 80px; }
+.footer { text-align:center; padding:20px; font-size:12px; opacity:0.9; border-top:1px solid #2a3942; background: #111b21; padding-bottom: 80px; }
 .footer a { color:#00C896; text-decoration:none; font-weight:700; }
-  </style>
+</style>
 </head>
 <body>
-
 <div id="cover">
-  <h1>ChatBeat</h1>
-  <p><b>Connect in Color. Vibe in Sound.</b><br><br>
-  Welcome to ChatBeat - the most fun way to connect! 🎉</p>
-  <input id="name-input" placeholder="Choose your Name">
-  <input id="email-input" placeholder="Email">
-  <input id="pass-input" placeholder="Password" type="password">
-  <button id="register-btn">Register</button>
-  <button id="login-btn">Login</button>
-  <button id="forgot-btn" class="link-btn">Forgot Password?</button>
-  <p id="cover-error" style="color:#FF6B6B;"></p>
+<h1>ChatBeat</h1>
+<p><b>Connect in Color. Vibe in Sound.</b><br><br>Welcome to ChatBeat - the most fun way to connect! 🎉</p>
+<div style="font-size:12px; padding:10px; background:rgba(0,0,0,0.3); border-radius:10px; max-width:300px; line-height:1.4; margin-bottom:10px;">
+🚀 <b>Start Promoting!</b> Use your profile feed to promote your business, pages, and various accounts from other platforms for free!
+</div>
+<input id="name-input" placeholder="Choose your Name">
+<input id="email-input" placeholder="Email">
+<input id="pass-input" placeholder="Password" type="password">
+<button id="register-btn">Register</button>
+<button id="login-btn">Login</button>
+<button id="forgot-btn" class="link-btn">Forgot Password?</button>
+<p id="cover-error" style="color:#FF6B6B;"></p>
 </div>
 
 <div id="app">
-  <div class="topbar">
-    <button id="logout-btn">Logout</button>
-    <h2 id="logo-btn">ChatBeat</h2>
-    <div>
-      <button id="profile-icon-btn">👤</button>
-      <button id="chat-icon-btn">💬</button>
-    </div>
-  </div>
+<div class="topbar">
+<button id="logout-btn">Logout</button>
+<h2 id="logo-btn">ChatBeat</h2>
+<div>
+<button id="profile-icon-btn">👤</button>
+<button id="chat-icon-btn">💬</button>
+</div>
+</div>
 
-  <div id="profile-box" class="profile-box">
-    <img id="profile-pic" src="https://via.placeholder.com/80">
-    <h3 id="my-name"></h3>
-    <input id="profile-upload" type="file" accept="image/*" style="display:none">
-    <button onclick="document.getElementById('profile-upload').click()">Change Profile Photo</button>
-    <button onclick="document.getElementById('profile-box').style.display='none'">Close</button>
-  </div>
+<div id="profile-box" class="profile-box">
+<img id="profile-pic" src="https://i.imgur.com/8Km9tLL.png">
+<h3 id="my-name"></h3>
+<input id="profile-upload" type="file" accept="image/*" style="display:none">
+<button id="change-pic-btn" onclick="document.getElementById('profile-upload').click()">Change Profile Photo</button>
+<button onclick="document.getElementById('profile-box').style.display='none'">Close</button>
+</div>
 
-  <div id="feed-section">
-    <div class="post-box">
-      <textarea id="post-text" placeholder="What's on your mind?"></textarea>
-      <button id="post-btn">Post</button>
-    </div>
-    <div id="feed"></div>
-  </div>
+<div id="feed-section">
+<div class="post-box">
+<textarea id="post-text" placeholder="What's on your mind?"></textarea>
+<button id="post-btn">Post</button>
+</div>
+<div id="feed"></div>
+</div>
 
-  <div id="chat-section" style="display:none;">
-    <div class="chat-header">
-      <button id="back-to-feed">← Back</button>
-      <h3>Global Chat</h3>
-    </div>
-    <div id="global-chat"></div>
-    <div class="chat-input-area">
-      <input id="chat-input" placeholder="Type a message">
-      <button id="record-btn">🎤</button>
-      <button id="send-chat">➤</button>
-    </div>
-  </div>
+<div id="chat-section" style="display:none;">
+<div class="chat-header">
+<button id="back-to-feed">← Back</button>
+<h3>Global Chat</h3>
+</div>
+<div id="global-chat"></div>
+<div class="chat-input-area">
+<input id="chat-input" placeholder="Type a message">
+<button id="record-btn">🎤</button>
+<button id="send-chat">➤</button>
+</div>
+</div>
 
-  <div class="footer">
-    Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 1.0.2 - ChatBeat
-  </div>
+<div class="footer">
+WhatsApp or call 084 328 9812<br>
+Email kgothatsoswafros@gmail.com<br>
+Text Kgø Thā Tsø on Facebook for help.<br><br>
+good byeee, have a nice day.<br><br>
+Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
+<span id="dynamic-year-string"></span><br>Version 1.0.3 - ChatBeat
+</div>
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-import { getDatabase, ref, set, get, query, orderByChild, equalTo, push, onChildAdded, remove, off, limitToLast } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js"; // ADDED limitToLast
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, set, get, query, orderByChild, equalTo, push, onChildAdded, remove, off, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD97-el91-ISWGkOhxWy4V_wXyOK6MJl0k",
-  authDomain: "chatbeat-71f80.firebaseapp.com",
-  databaseURL: "https://chatbeat-71f80-default-rtdb.firebaseio.com",
-  projectId: "chatbeat-71f80",
-  storageBucket: "chatbeat-71f80.firebasestorage.app",
-  messagingSenderId: "38692820606",
-  appId: "1:38692820606:web:edce5abf8d103e1f6e6a2f",
-  measurementId: "G-KZ5KN31YFL"
+apiKey: "AIzaSyD97-el91-ISWGkOhxWy4V_wXyOK6MJl0k",
+authDomain: "chatbeat-71f80.firebaseapp.com",
+databaseURL: "https://chatbeat-71f80-default-rtdb.firebaseio.com",
+projectId: "chatbeat-71f80",
+storageBucket: "chatbeat-71f80.appspot.com",
+messagingSenderId: "38692820606",
+appId: "1:38692820606:web:edce5abf8d103e1f6e6a2f"
 };
 
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getDatabase(app);
-
+const storage = getStorage(app);
 const colors = ['#00C896', '#0077FF', '#00FFD1', '#FF6B6B', '#F7DC6F', '#9B59B6', '#E67E22', '#1ABC9C'];
+
 let currentUser = null;
 let mediaRecorder;
 let audioChunks = [];
 let isRecording = false;
-let micStream = null; // NEW
-let loadedMessages = new Set(); // NEW: STOP LOOPING
 
-// REGISTER
+function showView(view) {
+document.getElementById('cover').style.display = view === 'cover'? 'flex' : 'none';
+document.getElementById('app').style.display = view!== 'cover'? 'block' : 'none';
+document.getElementById('feed-section').style.display = view === 'feed'? 'block' : 'none';
+document.getElementById('chat-section').style.display = view === 'chat'? 'block' : 'none';
+}
+
 document.getElementById('register-btn').onclick = async () => {
- const name = document.getElementById('name-input').value.trim();
- const email = document.getElementById('email-input').value.trim();
- const pass = document.getElementById('pass-input').value.trim();
- const err = document.getElementById('cover-error');
- err.innerText = '';
- if(name.length < 3) { err.innerText = "Name must be 3+ letters"; return; }
- try {
-   const cred = await createUserWithEmailAndPassword(auth, email, pass);
-   const nameSnap = await get(query(ref(db, 'users'), orderByChild('name'), equalTo(name)));
-   if(nameSnap.exists()) { await deleteUser(cred.user); err.innerText = "Name already taken!"; return; }
-   await set(ref(db, 'users/' + cred.user.uid), { name, email, color: colors[Math.floor(Math.random()*colors.length)], profilePic: 'https://via.placeholder.com/80' });
- } catch(e) { err.innerText = e.message; }
+const name = document.getElementById('name-input').value.trim();
+const email = document.getElementById('email-input').value.trim();
+const pass = document.getElementById('pass-input').value.trim();
+const err = document.getElementById('cover-error');
+err.innerText = '';
+if(name.length < 3) { err.innerText = "Name must be 3+ letters"; return; }
+try {
+const cred = await createUserWithEmailAndPassword(auth, email, pass);
+const nameSnap = await get(query(ref(db, 'users'), orderByChild('name'), equalTo(name)));
+if(nameSnap.exists()) { await deleteUser(cred.user); err.innerText = "Name already taken!"; return; }
+await set(ref(db, 'users/' + cred.user.uid), { name, email, color: colors[Math.floor(Math.random()*colors.length)], profilePic: 'https://i.imgur.com/8Km9tLL.png' });
+} catch(e) { err.innerText = e.message; }
 }
 
 document.getElementById('login-btn').onclick = () => {
- const email = document.getElementById('email-input').value.trim();
- const pass = document.getElementById('pass-input').value.trim();
- signInWithEmailAndPassword(auth, email, pass).catch(e => { document.getElementById('cover-error').innerText = e.message; });
+const email = document.getElementById('email-input').value.trim();
+const pass = document.getElementById('pass-input').value.trim();
+signInWithEmailAndPassword(auth, email, pass).catch(e => { document.getElementById('cover-error').innerText = e.message; });
 }
 
 document.getElementById('forgot-btn').onclick = () => {
-  const email = document.getElementById('email-input').value.trim();
-  const err = document.getElementById('cover-error');
-  err.innerText = '';
-  if(!email) { err.innerText = "Type your email first"; return; }
-  sendPasswordResetEmail(auth, email).then(() => { alert("Password reset email sent! Check inbox and spam folder"); }).catch((error) => { err.innerText = error.message; });
+const email = document.getElementById('email-input').value.trim();
+alert("WhatsApp or call: 084 328 9812\nEmail: kgothatsoswafros@gmail.com\nText Kgø Thā Tsø on Facebook for help. Goodbye, have a nice day!");
+if(!email) return;
+sendPasswordResetEmail(auth, email).then(() => { alert("Password reset link sent to your inbox!"); });
 }
 
 document.getElementById('logout-btn').onclick = () => signOut(auth);
 
 onAuthStateChanged(auth, async (user) => {
- if(user) {
-   currentUser = user;
-   const userRef = ref(db, 'users/' + user.uid);
-   const userSnap = await get(userRef);
-   let userData = userSnap.val();
-   if(!userSnap.exists()){
-     const nameFromEmail = user.email.split('@')[0];
-     userData = { name: nameFromEmail, email: user.email, color: colors[Math.floor(Math.random()*colors.length)], profilePic:'https://via.placeholder.com/80' };
-     await set(userRef, userData);
-     alert("Welcome to ChatBeat! Your name is: " + nameFromEmail)
-   }
-   document.getElementById('cover').style.display = 'none';
-   document.getElementById('app').style.display = 'block';
-   document.getElementById('my-name').innerText = userData.name;
-   document.getElementById('profile-pic').src = userData.profilePic || 'https://via.placeholder.com/80';
-   loadedMessages.clear(); // RESET ON LOGIN
-   document.getElementById('feed').innerHTML = '';
-   document.getElementById('global-chat').innerHTML = '';
-   loadPosts();
-   loadChat();
- } else {
-   document.getElementById('cover').style.display = 'flex';
-   document.getElementById('app').style.display = 'none';
- }
+if(user) {
+currentUser = user;
+const userRef = ref(db, 'users/' + user.uid);
+const userSnap = await get(userRef);
+let userData = userSnap.val();
+if(!userSnap.exists()){
+const nameFromEmail = user.email.split('@')[0];
+userData = { name: nameFromEmail, email: user.email, color: colors[Math.floor(Math.random()*colors.length)], profilePic:'https://i.imgur.com/8Km9tLL.png' };
+await set(userRef, userData);
+}
+showView('feed');
+document.getElementById('my-name').innerText = userData.name;
+document.getElementById('profile-pic').src = userData.profilePic;
+document.getElementById('feed').innerHTML = '';
+document.getElementById('global-chat').innerHTML = '';
+loadPosts();
+loadChat();
+} else {
+showView('cover');
+}
+const currentYear = new Date().getFullYear();
+document.getElementById('dynamic-year-string').innerText = currentYear >= 2027? "He was 18 years old when he built this platform." : "He is 18 years old.";
 });
 
-document.getElementById('profile-upload').onchange = (e)=>{
-  const file = e.target.files[0];
-  if(file){
-    const reader = new FileReader();
-    reader.onload = ()=>{
-      set(ref(db,'users/'+currentUser.uid+'/profilePic'), reader.result);
-      document.getElementById('profile-pic').src = reader.result;
-      alert("Profile photo updated!")
-    }
-    reader.readAsDataURL(file);
-  }
+document.getElementById('profile-upload').onchange = async (e)=>{
+const file = e.target.files[0];
+if(file){
+const storageRef = sRef(storage, 'profiles/' + currentUser.uid);
+await uploadBytes(storageRef, file);
+const url = await getDownloadURL(storageRef);
+set(ref(db,'users/'+currentUser.uid+'/profilePic'), url);
+document.getElementById('profile-pic').src = url;
+alert("Profile photo updated!")
+}
 }
 
 document.getElementById('profile-icon-btn').onclick = () => {
-  document.getElementById('profile-box').style.display = 'block';
+const el = document.getElementById('profile-box');
+el.style.display = el.style.display === 'block'? 'none' : 'block';
 }
+document.getElementById('chat-icon-btn').onclick = () => showView('chat');
+document.getElementById('logo-btn').onclick = () => showView('feed');
+document.getElementById('back-to-feed').onclick = () => showView('feed');
 
 document.getElementById('post-btn').onclick = async () => {
-  const text = document.getElementById('post-text').value.trim();
-  if(!text) return;
-  await push(ref(db, 'posts'), { uid: currentUser.uid, text, timestamp: Date.now() });
-  document.getElementById('post-text').value = '';
+const text = document.getElementById('post-text').value.trim();
+if(!text) return;
+await push(ref(db, 'posts'), { uid: currentUser.uid, text, timestamp: Date.now() });
+document.getElementById('post-text').value = '';
 }
 
 function loadPosts() {
-  off(ref(db, 'posts'));
-  document.getElementById('feed').innerHTML = ''; // CLEAR FIRST
-  onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50)), async (snap) => { // ADDED limitToLast
-    const post = snap.val();
-    const postKey = snap.key;
-    const userSnap = await get(ref(db, 'users/' + post.uid));
-    const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888"};
-    const postDiv = document.createElement('div');
-    postDiv.className = 'card';
-    postDiv.id = 'post-' + postKey;
-    let delBtn = '';
-    if(post.uid === currentUser.uid) {
-      delBtn = `<button class="del-btn" onclick="deletePost('${postKey}')">×</button>`;
-    }
-    postDiv.innerHTML = `${delBtn}<div class="name" style="color:${user.color}">${user.name}</div><div>${post.text}</div>`;
-    document.getElementById('feed').prepend(postDiv);
-  });
+off(ref(db, 'posts'));
+onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50)), async (snap) => {
+const post = snap.val();
+const postKey = snap.key;
+if (Date.now() - post.timestamp > 10 * 24 * 60 * 60 * 1000) { remove(ref(db, 'posts/' + postKey)); return; }
+const userSnap = await get(ref(db, 'users/' + post.uid));
+const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888"};
+const postDiv = document.createElement('div');
+postDiv.className = 'card';
+postDiv.id = 'post-' + postKey;
+let delBtn = post.uid === currentUser.uid? `<button class="del-btn" onclick="deletePost('${postKey}')">×</button>` : '';
+postDiv.innerHTML = `${delBtn}<div class="name" style="color:${user.color}">${user.name}</div><div>${post.text}</div>`;
+document.getElementById('feed').prepend(postDiv);
+});
 }
-
 window.deletePost = async (key) => {
-  if(confirm("Delete this post?")) {
-    await remove(ref(db, 'posts/' + key));
-    const el = document.getElementById('post-' + key);
-    if(el) el.remove();
-  }
+if(confirm("Delete this post?")) { await remove(ref(db, 'posts/' + key)); document.getElementById('post-' + key).remove(); }
 }
 
 document.getElementById('send-chat').onclick = async () => {
-  const text = document.getElementById('chat-input').value.trim();
-  if(!text) return;
-  document.getElementById('chat-input').value = ''; // CLEAR FIRST
-  await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, timestamp: Date.now() });
+const text = document.getElementById('chat-input').value.trim();
+if(!text) return;
+document.getElementById('chat-input').value = '';
+await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, timestamp: Date.now() });
 }
 
-// FIXED RECORDING
 const recordBtn = document.getElementById('record-btn');
 recordBtn.onclick = async () => {
-  if(!isRecording) {
-    try {
-      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      let mimeType = MediaRecorder.isTypeSupported('audio/mp4')? 'audio/mp4' : 'audio/webm'; // FIX: iPhone support
-      mediaRecorder = new MediaRecorder(micStream, {mimeType});
-      audioChunks = [];
-      mediaRecorder.ondataavailable = e => { if(e.data.size > 0) audioChunks.push(e.data) };
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunks, {type: mimeType});
-        const reader = new FileReader();
-        reader.readAsDataURL(audioBlob);
-        reader.onloadend = async () => {
-          await push(ref(db, 'globalChat'), { uid: currentUser.uid, audio: reader.result, timestamp: Date.now() });
-        }
-        micStream.getTracks().forEach(track => track.stop()); // STOP MIC
-      }
-      mediaRecorder.start();
-      recordBtn.innerText = "⏹️";
-      recordBtn.classList.add('record-btn');
-      isRecording = true;
-    } catch(e) {
-      alert("Mic blocked. Allow microphone permission.");
-    }
-  } else {
-    if(mediaRecorder && mediaRecorder.state === 'recording'){ // CHECK STATE
-      mediaRecorder.stop();
-    }
-    recordBtn.innerText = "🎤";
-    recordBtn.classList.remove('record-btn');
-    isRecording = false;
-  }
+if(!isRecording) {
+const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+mediaRecorder = new MediaRecorder(stream);
+audioChunks = [];
+mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+mediaRecorder.onstop = async () => {
+const audioBlob = new Blob(audioChunks, {type: 'audio/webm'});
+const storageRef = sRef(storage, 'voice/' + Date.now() + '.webm');
+await uploadBytes(storageRef, audioBlob);
+const url = await getDownloadURL(storageRef);
+await push(ref(db, 'globalChat'), { uid: currentUser.uid, audio: url, timestamp: Date.now() });
+stream.getTracks().forEach(track => track.stop());
+}
+mediaRecorder.start();
+recordBtn.innerText = "⏹️";
+recordBtn.classList.add('record-btn');
+isRecording = true;
+} else {
+mediaRecorder.stop();
+recordBtn.innerText = "🎤";
+recordBtn.classList.remove('record-btn');
+isRecording = false;
+}
 }
 
 function loadChat() {
-  off(ref(db, 'globalChat'));
-  document.getElementById('global-chat').innerHTML = ''; // CLEAR FIRST
-  onChildAdded(query(ref(db, 'globalChat'), orderByChild('timestamp'), limitToLast(100)), async (snap) => { // ADDED limitToLast
-    const msg = snap.val();
-    const msgKey = snap.key;
-    if(loadedMessages.has(msgKey)) return; // STOP DUPLICATES
-    loadedMessages.add(msgKey);
-    const userSnap = await get(ref(db, 'users/' + msg.uid));
-    const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888"};
-    const isMe = msg.uid === currentUser.uid;
-
-    const msgDiv = document.createElement('div');
-    msgDiv.id = 'msg-' + msgKey;
-
-    let delBtn = '';
-    if(isMe) {
-      delBtn = `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>`;
-    }
-
-    let content = '';
-    if(msg.audio) {
-      content = `<span class="bubble-name">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`;
-    } else {
-      content = `<span class="bubble-name">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`;
-    }
-
-    if(isMe){
-      msgDiv.innerHTML = `<div class="bubble me-bubble">${content}</div>`;
-      msgDiv.style.display = 'flex';
-      msgDiv.style.justifyContent = 'flex-end';
-    } else {
-      msgDiv.innerHTML = `<div class="bubble other-bubble">${content}</div>`;
-      msgDiv.style.display = 'flex';
-      msgDiv.style.justifyContent = 'flex-start';
-    }
-
-    document.getElementById('global-chat').appendChild(msgDiv);
-    document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
-  });
+off(ref(db, 'globalChat'));
+const chatBox = document.getElementById('global-chat');
+onChildAdded(query(ref(db, 'globalChat'), orderByChild('timestamp'), limitToLast(100)), async (snap) => {
+const msg = snap.val();
+const msgKey = snap.key;
+if (Date.now() - msg.timestamp > 7 * 24 * 60 * 60 * 1000) { remove(ref(db, 'globalChat/' + msgKey)); return; }
+const userSnap = await get(ref(db, 'users/' + msg.uid));
+const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888"};
+const isMe = msg.uid === currentUser.uid;
+const msgDiv = document.createElement('div');
+msgDiv.id = 'msg-' + msgKey;
+msgDiv.style.display = 'flex';
+msgDiv.style.justifyContent = isMe? 'flex-end' : 'flex-start';
+let delBtn = isMe? `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>` : '';
+let content = msg.audio? `<audio controls src="${msg.audio}"></audio>` : `<span>${msg.text}</span>`;
+msgDiv.innerHTML = `<div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}"><span class="bubble-name" style="color:${isMe? '#FFF' : user.color}">${user.name}</span>${delBtn}${content}</div>`;
+chatBox.appendChild(msgDiv);
+chatBox.scrollTop = chatBox.scrollHeight;
+});
 }
-
 window.deleteMsg = async (key) => {
-  if(confirm("Delete this message?")) {
-    await remove(ref(db, 'globalChat/' + key));
-    const el = document.getElementById('msg-' + key);
-    if(el) el.remove();
-    loadedMessages.delete(key); // REMOVE FROM SET
-  }
-}
-
-document.getElementById('chat-icon-btn').onclick = () => {
-  document.getElementById('feed-section').style.display = 'none';
-  document.getElementById('chat-section').style.display = 'block';
-  document.getElementById('profile-box').style.display = 'none';
-}
-document.getElementById('back-to-feed').onclick = () => {
-  document.getElementById('feed-section').style.display = 'block';
-  document.getElementById('chat-section').style.display = 'none';
-  document.getElementById('profile-box').style.display = 'none';
-}
-document.getElementById('logo-btn').onclick = () => {
-  document.getElementById('feed-section').style.display = 'block';
-  document.getElementById('chat-section').style.display = 'none';
-  document.getElementById('profile-box').style.display = 'none';
+if(confirm("Delete this message?")) { await remove(ref(db, 'globalChat/' + key)); document.getElementById('msg-' + key).remove(); }
 }
 </script>
 </body>
