@@ -39,7 +39,8 @@
 .chat-input-area { display: flex; padding: 10px; background: #202c33; position: fixed; bottom: 0; left:0; width: 100%; z-index: 5; }
 .chat-input-area input { flex: 1; border-radius: 25px; background: #2a3942; color: white; }
 .chat-input-area button { width: 50px; border-radius: 50%; }
-.record-btn { background: red!important; }
+.record-btn { background: red!important; animation: pulse 1s infinite }
+@keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(255,0,0,0.7)} 70%{box-shadow:0 0 0 10px rgba(255,0,0,0)} 100%{box-shadow:0 0 0 0 rgba(255,0,0,0)} }
 .footer { text-align:center; padding:20px; font-size:12px; opacity:0.8; border-top:1px solid #2a3942; background: #111b21; padding-bottom: 80px; }
 .footer a { color:#00C896; text-decoration:none; font-weight:700; }
   </style>
@@ -100,7 +101,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 1.0.4 - ChatBeat
+    Version 1.0.5 - ChatBeat FAST
   </div>
 </div>
 
@@ -108,7 +109,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-import { getDatabase, ref, set, get, query, orderByChild, equalTo, push, onChildAdded, remove, off } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
+import { getDatabase, ref, set, get, query, orderByChild, equalTo, push, onChildAdded, remove, off, limitToLast } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD97-el91-ISWGkOhxWy4V_wXyOK6MJl0k",
@@ -131,15 +132,14 @@ let currentUser = null;
 let mediaRecorder;
 let audioChunks = [];
 let isRecording = false;
+let loadedMessages = new Set();
 
-// AUTO DELETE FUNCTION - NEW
+// AUTO DELETE: 7 DAYS CHAT, 10 DAYS POSTS
 function startAutoDelete() {
   setInterval(() => {
     const now = Date.now();
     const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
     const tenDaysAgo = now - (10 * 24 * 60 * 60 * 1000);
-
-    // DELETE MESSAGES OLDER THAN 7 DAYS
     get(ref(db, 'globalChat')).then(snapshot => {
       snapshot.forEach(msg => {
         if(msg.val().timestamp < sevenDaysAgo){
@@ -147,8 +147,6 @@ function startAutoDelete() {
         }
       })
     });
-
-    // DELETE POSTS OLDER THAN 10 DAYS
     get(ref(db, 'posts')).then(snapshot => {
       snapshot.forEach(post => {
         if(post.val().timestamp < tenDaysAgo){
@@ -156,7 +154,7 @@ function startAutoDelete() {
         }
       })
     });
-  }, 60 * 60 * 1000); // Run every 1 hour
+  }, 60 * 60 * 1000);
 }
 
 // REGISTER
@@ -193,7 +191,7 @@ document.getElementById('forgot-btn').onclick = () => {
 
 document.getElementById('logout-btn').onclick = () => signOut(auth);
 
-// AUTO CREATE USER IF MISSING
+// LOGIN
 onAuthStateChanged(auth, async (user) => {
  if(user) {
    currentUser = user;
@@ -210,9 +208,10 @@ onAuthStateChanged(auth, async (user) => {
    document.getElementById('app').style.display = 'block';
    document.getElementById('my-name').innerText = userData.name;
    document.getElementById('profile-pic').src = userData.profilePic || 'https://via.placeholder.com/80';
+   loadedMessages.clear();
    document.getElementById('feed').innerHTML = '';
    document.getElementById('global-chat').innerHTML = '';
-   startAutoDelete(); // START AUTO DELETE
+   startAutoDelete();
    loadPosts();
    loadChat();
  } else {
@@ -244,14 +243,15 @@ document.getElementById('profile-icon-btn').onclick = () => {
 document.getElementById('post-btn').onclick = async () => {
   const text = document.getElementById('post-text').value.trim();
   if(!text) return;
-  await push(ref(db, 'posts'), { uid: currentUser.uid, text, timestamp: Date.now() }); // timestamp needed for auto delete
+  await push(ref(db, 'posts'), { uid: currentUser.uid, text, timestamp: Date.now() });
   document.getElementById('post-text').value = '';
 }
 
+// FAST POSTS: LAST 50 ONLY
 function loadPosts() {
   off(ref(db, 'posts'));
-  document.getElementById('feed').innerHTML = ''; // CLEAR FIRST TO AVOID LOOP
-  onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp')), async (snap) => {
+  document.getElementById('feed').innerHTML = '';
+  onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50)), async (snap) => {
     const post = snap.val();
     const postKey = snap.key;
     const userSnap = await get(ref(db, 'users/' + post.uid));
@@ -280,10 +280,11 @@ window.deletePost = async (key) => {
 document.getElementById('send-chat').onclick = async () => {
   const text = document.getElementById('chat-input').value.trim();
   if(!text) return;
-  await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, timestamp: Date.now() }); // timestamp needed for auto delete
   document.getElementById('chat-input').value = '';
+  await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, timestamp: Date.now() });
 }
 
+// VOICE RECORD
 const recordBtn = document.getElementById('record-btn');
 recordBtn.onclick = async () => {
   if(!isRecording) {
@@ -315,12 +316,17 @@ recordBtn.onclick = async () => {
   }
 }
 
+// FAST CHAT: LAST 100 ONLY + NO LOOP
 function loadChat() {
   off(ref(db, 'globalChat'));
-  document.getElementById('global-chat').innerHTML = ''; // CLEAR FIRST TO AVOID LOOP
-  onChildAdded(query(ref(db, 'globalChat'), orderByChild('timestamp')), async (snap) => {
+  document.getElementById('global-chat').innerHTML = '<p style="text-align:center; opacity:0.6">Loading messages...</p>';
+  onChildAdded(query(ref(db, 'globalChat'), orderByChild('timestamp'), limitToLast(100)), async (snap) => {
     const msg = snap.val();
     const msgKey = snap.key;
+    if(loadedMessages.has(msgKey)) return;
+    loadedMessages.add(msgKey);
+    document.getElementById('global-chat').innerHTML = '';
+
     const userSnap = await get(ref(db, 'users/' + msg.uid));
     const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888"};
     const isMe = msg.uid === currentUser.uid;
@@ -335,10 +341,10 @@ function loadChat() {
 
     let content = '';
     if(msg.audio) {
-  content = `<span class="bubble-name">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`;
-} else {
-  content = `<span class="bubble-name">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`;
-  }
+      content = `<span class="bubble-name">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`;
+    } else {
+      content = `<span class="bubble-name">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`;
+    }
 
     if(isMe){
       msgDiv.innerHTML = `<div class="bubble me-bubble">${content}</div>`;
@@ -360,6 +366,7 @@ window.deleteMsg = async (key) => {
     await remove(ref(db, 'globalChat/' + key));
     const el = document.getElementById('msg-' + key);
     if(el) el.remove();
+    loadedMessages.delete(key);
   }
 }
 
