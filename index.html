@@ -23,7 +23,8 @@
 .profile-box {background:#202c33; padding:15px; border-radius:12px; margin:10px; text-align:center; display:none}
 .profile-box img{width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid #00C896}
 .card { background: #202c33; padding:10px 12px 10px 12px; margin:10px 0; border-radius:12px; position: relative; max-width: 85%; }
-.card.name { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+.card.name { font-weight: 700; font-size: 13px; margin-bottom: 4px; display:flex; align-items:center; gap:8px; cursor:pointer } /* ADDED */
+.card.name img{width:30px; height:30px; border-radius:50%; object-fit:cover} /* ADDED */
 .card.del-btn { position: absolute; top: 8px; right: 8px; background: #FF6B6B; padding: 0; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; line-height: 20px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
 .chat-header { display: flex; align-items: center; padding: 10px; background: #202c33; border-bottom: 1px solid #2a3942; }
 .chat-header h3 { margin: 0 auto; }
@@ -32,7 +33,8 @@
 .bubble { max-width: 75%; padding: 6px 10px 8px 10px; border-radius: 8px; position: relative; word-wrap: break-word; font-size: 15px; line-height: 1.4; }
 .me-bubble { background: #0077FF; border-bottom-right-radius: 2px; margin-left: auto; }
 .other-bubble { background: #005c4b; border-bottom-left-radius: 2px; margin-right: auto; }
-.bubble-name { display: block; font-size: 12px; font-weight: 700; margin-bottom: 3px; color: #000; }
+.bubble-name { display: flex; align-items:center; gap:6px; font-size: 12px; font-weight: 700; margin-bottom: 3px; cursor:pointer } /* ADDED */
+.bubble-name img{width:20px; height:20px; border-radius:50%; object-fit:cover} /* ADDED */
 .bubble-text { display: block; }
 .bubble-del { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.4); padding: 0; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
 .bubble audio { width: 220px; max-width: 100%; margin-top: 4px; }
@@ -43,6 +45,11 @@
 @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(255,0,0,0.7)} 70%{box-shadow:0 0 0 10px rgba(255,0,0,0)} 100%{box-shadow:0 0 0 0 rgba(255,0,0,0)} }
 .footer { text-align:center; padding:20px; font-size:12px; opacity:0.8; border-top:1px solid #2a3942; background: #111b21; padding-bottom: 80px; }
 .footer a { color:#00C896; text-decoration:none; font-weight:700; }
+
+    /* WHATSAPP PROFILE POPUP - NEW */
+.profile-popup { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); display:none; justify-content:center; align-items:center; z-index: 999; }
+.profile-popup img { width: 80%; max-width: 350px; border-radius: 15px; border: 3px solid #00C896; }
+.profile-popup-close { position:absolute; top:20px; right:20px; font-size:40px; color:white; cursor:pointer }
   </style>
 </head>
 <body>
@@ -101,8 +108,14 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 1.0.5 - ChatBeat FAST
+    Version 1.0.6 - ChatBeat
   </div>
+</div>
+
+<!-- PROFILE POPUP - NEW -->
+<div id="profile-popup" class="profile-popup" onclick="closeProfilePopup()">
+  <span class="profile-popup-close">×</span>
+  <img id="profile-popup-img" src="">
 </div>
 
 <script type="module">
@@ -134,7 +147,15 @@ let audioChunks = [];
 let isRecording = false;
 let loadedMessages = new Set();
 
-// AUTO DELETE: 7 DAYS CHAT, 10 DAYS POSTS
+// PROFILE POPUP FUNCTIONS - NEW
+window.openProfilePopup = (imgSrc) => {
+  document.getElementById('profile-popup-img').src = imgSrc;
+  document.getElementById('profile-popup').style.display = 'flex';
+}
+window.closeProfilePopup = () => {
+  document.getElementById('profile-popup').style.display = 'none';
+}
+
 function startAutoDelete() {
   setInterval(() => {
     const now = Date.now();
@@ -157,7 +178,6 @@ function startAutoDelete() {
   }, 60 * 60 * 1000);
 }
 
-// REGISTER
 document.getElementById('register-btn').onclick = async () => {
  const name = document.getElementById('name-input').value.trim();
  const email = document.getElementById('email-input').value.trim();
@@ -191,7 +211,6 @@ document.getElementById('forgot-btn').onclick = () => {
 
 document.getElementById('logout-btn').onclick = () => signOut(auth);
 
-// LOGIN
 onAuthStateChanged(auth, async (user) => {
  if(user) {
    currentUser = user;
@@ -220,7 +239,6 @@ onAuthStateChanged(auth, async (user) => {
  }
 });
 
-// PROFILE UPLOAD
 document.getElementById('profile-upload').onchange = (e)=>{
   const file = e.target.files[0];
   if(file){
@@ -247,7 +265,7 @@ document.getElementById('post-btn').onclick = async () => {
   document.getElementById('post-text').value = '';
 }
 
-// FAST POSTS: LAST 50 ONLY
+// POSTS WITH PROFILE PIC
 function loadPosts() {
   off(ref(db, 'posts'));
   document.getElementById('feed').innerHTML = '';
@@ -255,7 +273,7 @@ function loadPosts() {
     const post = snap.val();
     const postKey = snap.key;
     const userSnap = await get(ref(db, 'users/' + post.uid));
-    const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888"};
+    const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888", profilePic:'https://via.placeholder.com/30'};
     const postDiv = document.createElement('div');
     postDiv.className = 'card';
     postDiv.id = 'post-' + postKey;
@@ -263,7 +281,8 @@ function loadPosts() {
     if(post.uid === currentUser.uid) {
       delBtn = `<button class="del-btn" onclick="deletePost('${postKey}')">×</button>`;
     }
-    postDiv.innerHTML = `${delBtn}<div class="name" style="color:${user.color}">${user.name}</div><div>${post.text}</div>`;
+    // ADDED PROFILE PIC LEFT OF NAME + CLICK
+    postDiv.innerHTML = `${delBtn}<div class="name" style="color:${user.color}"><img src="${user.profilePic}" onclick="openProfilePopup('${user.profilePic}')">${user.name}</div><div>${post.text}</div>`;
     document.getElementById('feed').prepend(postDiv);
   });
 }
@@ -276,7 +295,6 @@ window.deletePost = async (key) => {
   }
 }
 
-// CHAT SEND
 document.getElementById('send-chat').onclick = async () => {
   const text = document.getElementById('chat-input').value.trim();
   if(!text) return;
@@ -284,7 +302,6 @@ document.getElementById('send-chat').onclick = async () => {
   await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, timestamp: Date.now() });
 }
 
-// VOICE RECORD
 const recordBtn = document.getElementById('record-btn');
 recordBtn.onclick = async () => {
   if(!isRecording) {
@@ -316,7 +333,7 @@ recordBtn.onclick = async () => {
   }
 }
 
-// FAST CHAT: LAST 100 ONLY + NO LOOP
+// CHAT WITH PROFILE PIC
 function loadChat() {
   off(ref(db, 'globalChat'));
   document.getElementById('global-chat').innerHTML = '<p style="text-align:center; opacity:0.6">Loading messages...</p>';
@@ -328,7 +345,7 @@ function loadChat() {
     document.getElementById('global-chat').innerHTML = '';
 
     const userSnap = await get(ref(db, 'users/' + msg.uid));
-    const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888"};
+    const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888", profilePic:'https://via.placeholder.com/20'};
     const isMe = msg.uid === currentUser.uid;
 
     const msgDiv = document.createElement('div');
@@ -341,9 +358,9 @@ function loadChat() {
 
     let content = '';
     if(msg.audio) {
-      content = `<span class="bubble-name">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`;
+      content = `<span class="bubble-name"><img src="${user.profilePic}" onclick="openProfilePopup('${user.profilePic}')">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`;
     } else {
-      content = `<span class="bubble-name">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`;
+      content = `<span class="bubble-name"><img src="${user.profilePic}" onclick="openProfilePopup('${user.profilePic}')">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`;
     }
 
     if(isMe){
