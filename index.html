@@ -9,7 +9,7 @@
     body { margin:0; font-family: 'Roboto', sans-serif; background: #0b141a; color: white; }
 .topbar { background: linear-gradient(90deg, #00C896, #0077FF); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
 .topbar h2 { margin: 0; font-size: 20px; text-shadow: 0 0 5px #fff; cursor: pointer; }
-.topbar div { display:flex; gap:8px } /* ADDED */
+.topbar div { display:flex; gap:8px }
 .topbar button { background: rgba(0,0,0,0.3); width: auto; padding: 8px 12px; border-radius: 20px; font-weight: 500; border: none; color: white; cursor:pointer }
     #cover { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; text-align:center; padding:20px; background: linear-gradient(135deg, #00C896 0%, #0077FF 50%, #000 100%); }
     #cover h1 { font-size: 3em; text-shadow: 0 0 20px #00C896; }
@@ -20,30 +20,22 @@
     #app { display:none; }
 .post-box { padding: 10px; background: #202c33; }
     #feed { padding: 10px; padding-bottom: 20px; }
-
-    /* PROFILE BOX - NEW */
 .profile-box {background:#202c33; padding:15px; border-radius:12px; margin:10px; text-align:center; display:none}
 .profile-box img{width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid #00C896}
-
-    /* POST CARDS */
 .card { background: #202c33; padding:10px 12px 10px 12px; margin:10px 0; border-radius:12px; position: relative; max-width: 85%; }
 .card.name { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
 .card.del-btn { position: absolute; top: 8px; right: 8px; background: #FF6B6B; padding: 0; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; line-height: 20px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
-
 .chat-header { display: flex; align-items: center; padding: 10px; background: #202c33; border-bottom: 1px solid #2a3942; }
 .chat-header h3 { margin: 0 auto; }
     #back-to-feed { background: transparent; width: auto; }
     #global-chat { height: calc(100vh - 250px); overflow-y:auto; background:#0b141a; padding:10px; display: flex; flex-direction: column; gap: 2px; }
-
-/* WHATSAPP BUBBLES - FINAL */
 .bubble { max-width: 75%; padding: 6px 10px 8px 10px; border-radius: 8px; position: relative; word-wrap: break-word; font-size: 15px; line-height: 1.4; }
-.me-bubble { background: #0077FF; border-bottom-right-radius: 2px; margin-left: auto; } /* YOU = BLUE */
-.other-bubble { background: #005c4b; border-bottom-left-radius: 2px; margin-right: auto; } /* OTHERS = GREEN */
+.me-bubble { background: #0077FF; border-bottom-right-radius: 2px; margin-left: auto; }
+.other-bubble { background: #005c4b; border-bottom-left-radius: 2px; margin-right: auto; }
 .bubble-name { display: block; font-size: 12px; font-weight: 700; margin-bottom: 3px; color: #000; }
 .bubble-text { display: block; }
 .bubble-del { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.4); padding: 0; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
 .bubble audio { width: 220px; max-width: 100%; margin-top: 4px; }
-
 .chat-input-area { display: flex; padding: 10px; background: #202c33; position: fixed; bottom: 0; left:0; width: 100%; z-index: 5; }
 .chat-input-area input { flex: 1; border-radius: 25px; background: #2a3942; color: white; }
 .chat-input-area button { width: 50px; border-radius: 50%; }
@@ -71,13 +63,12 @@
   <div class="topbar">
     <button id="logout-btn">Logout</button>
     <h2 id="logo-btn">ChatBeat</h2>
-    <div> <!-- WRAPPED ICONS -->
-      <button id="profile-icon-btn">👤</button> <!-- NEW -->
+    <div>
+      <button id="profile-icon-btn">👤</button>
       <button id="chat-icon-btn">💬</button>
     </div>
   </div>
 
-  <!-- PROFILE SECTION - NEW -->
   <div id="profile-box" class="profile-box">
     <img id="profile-pic" src="https://via.placeholder.com/80">
     <h3 id="my-name"></h3>
@@ -109,7 +100,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 1.0.3 - ChatBeat
+    Version 1.0.4 - ChatBeat
   </div>
 </div>
 
@@ -141,6 +132,33 @@ let mediaRecorder;
 let audioChunks = [];
 let isRecording = false;
 
+// AUTO DELETE FUNCTION - NEW
+function startAutoDelete() {
+  setInterval(() => {
+    const now = Date.now();
+    const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
+    const tenDaysAgo = now - (10 * 24 * 60 * 60 * 1000);
+
+    // DELETE MESSAGES OLDER THAN 7 DAYS
+    get(ref(db, 'globalChat')).then(snapshot => {
+      snapshot.forEach(msg => {
+        if(msg.val().timestamp < sevenDaysAgo){
+          remove(ref(db, 'globalChat/' + msg.key));
+        }
+      })
+    });
+
+    // DELETE POSTS OLDER THAN 10 DAYS
+    get(ref(db, 'posts')).then(snapshot => {
+      snapshot.forEach(post => {
+        if(post.val().timestamp < tenDaysAgo){
+          remove(ref(db, 'posts/' + post.key));
+        }
+      })
+    });
+  }, 60 * 60 * 1000); // Run every 1 hour
+}
+
 // REGISTER
 document.getElementById('register-btn').onclick = async () => {
  const name = document.getElementById('name-input').value.trim();
@@ -153,7 +171,7 @@ document.getElementById('register-btn').onclick = async () => {
    const cred = await createUserWithEmailAndPassword(auth, email, pass);
    const nameSnap = await get(query(ref(db, 'users'), orderByChild('name'), equalTo(name)));
    if(nameSnap.exists()) { await deleteUser(cred.user); err.innerText = "Name already taken!"; return; }
-   await set(ref(db, 'users/' + cred.user.uid), { name, email, color: colors[Math.floor(Math.random()*colors.length)], profilePic: 'https://via.placeholder.com/80' }); // ADDED profilePic
+   await set(ref(db, 'users/' + cred.user.uid), { name, email, color: colors[Math.floor(Math.random()*colors.length)], profilePic: 'https://via.placeholder.com/80' });
  } catch(e) { err.innerText = e.message; }
 }
 
@@ -181,19 +199,20 @@ onAuthStateChanged(auth, async (user) => {
    currentUser = user;
    const userRef = ref(db, 'users/' + user.uid);
    const userSnap = await get(userRef);
-   let userData = userSnap.val(); // ADDED
+   let userData = userSnap.val();
    if(!userSnap.exists()){
      const nameFromEmail = user.email.split('@')[0];
-     userData = { name: nameFromEmail, email: user.email, color: colors[Math.floor(Math.random()*colors.length)], profilePic:'https://via.placeholder.com/80' }; // ADDED profilePic
+     userData = { name: nameFromEmail, email: user.email, color: colors[Math.floor(Math.random()*colors.length)], profilePic:'https://via.placeholder.com/80' };
      await set(userRef, userData);
      alert("Welcome to ChatBeat! Your name is: " + nameFromEmail)
    }
    document.getElementById('cover').style.display = 'none';
    document.getElementById('app').style.display = 'block';
-   document.getElementById('my-name').innerText = userData.name; // NEW
-   document.getElementById('profile-pic').src = userData.profilePic || 'https://via.placeholder.com/80'; // NEW
+   document.getElementById('my-name').innerText = userData.name;
+   document.getElementById('profile-pic').src = userData.profilePic || 'https://via.placeholder.com/80';
    document.getElementById('feed').innerHTML = '';
    document.getElementById('global-chat').innerHTML = '';
+   startAutoDelete(); // START AUTO DELETE
    loadPosts();
    loadChat();
  } else {
@@ -202,7 +221,7 @@ onAuthStateChanged(auth, async (user) => {
  }
 });
 
-// PROFILE UPLOAD - NEW
+// PROFILE UPLOAD
 document.getElementById('profile-upload').onchange = (e)=>{
   const file = e.target.files[0];
   if(file){
@@ -216,7 +235,7 @@ document.getElementById('profile-upload').onchange = (e)=>{
   }
 }
 
-document.getElementById('profile-icon-btn').onclick = () => { // NEW
+document.getElementById('profile-icon-btn').onclick = () => {
   document.getElementById('profile-box').style.display = 'block';
   document.getElementById('feed-section').style.display = 'none';
   document.getElementById('chat-section').style.display = 'none';
@@ -225,12 +244,13 @@ document.getElementById('profile-icon-btn').onclick = () => { // NEW
 document.getElementById('post-btn').onclick = async () => {
   const text = document.getElementById('post-text').value.trim();
   if(!text) return;
-  await push(ref(db, 'posts'), { uid: currentUser.uid, text, timestamp: Date.now() });
+  await push(ref(db, 'posts'), { uid: currentUser.uid, text, timestamp: Date.now() }); // timestamp needed for auto delete
   document.getElementById('post-text').value = '';
 }
 
 function loadPosts() {
   off(ref(db, 'posts'));
+  document.getElementById('feed').innerHTML = ''; // CLEAR FIRST TO AVOID LOOP
   onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp')), async (snap) => {
     const post = snap.val();
     const postKey = snap.key;
@@ -248,10 +268,9 @@ function loadPosts() {
   });
 }
 
-// FIXED DELETE - NOW WAITS FOR FIREBASE
 window.deletePost = async (key) => {
   if(confirm("Delete this post?")) {
-    await remove(ref(db, 'posts/' + key)); // Wait for Firebase first
+    await remove(ref(db, 'posts/' + key));
     const el = document.getElementById('post-' + key);
     if(el) el.remove();
   }
@@ -261,14 +280,12 @@ window.deletePost = async (key) => {
 document.getElementById('send-chat').onclick = async () => {
   const text = document.getElementById('chat-input').value.trim();
   if(!text) return;
-  await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, timestamp: Date.now() });
+  await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, timestamp: Date.now() }); // timestamp needed for auto delete
   document.getElementById('chat-input').value = '';
 }
 
 const recordBtn = document.getElementById('record-btn');
 recordBtn.onclick = async () => {
-  const micErr = document.getElementById('mic-error');
-  if(micErr) micErr.innerText = '';
   if(!isRecording) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -288,7 +305,7 @@ recordBtn.onclick = async () => {
       recordBtn.classList.add('record-btn');
       isRecording = true;
     } catch(e) {
-      if(micErr) micErr.innerText = "Mic blocked. Allow microphone permission.";
+      alert("Mic blocked. Allow microphone permission.");
     }
   } else {
     mediaRecorder.stop();
@@ -300,6 +317,7 @@ recordBtn.onclick = async () => {
 
 function loadChat() {
   off(ref(db, 'globalChat'));
+  document.getElementById('global-chat').innerHTML = ''; // CLEAR FIRST TO AVOID LOOP
   onChildAdded(query(ref(db, 'globalChat'), orderByChild('timestamp')), async (snap) => {
     const msg = snap.val();
     const msgKey = snap.key;
@@ -322,7 +340,6 @@ function loadChat() {
   content = `<span class="bubble-name">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`;
   }
 
-    // FIXED: Color is now directly on the bubble div
     if(isMe){
       msgDiv.innerHTML = `<div class="bubble me-bubble">${content}</div>`;
       msgDiv.style.display = 'flex';
@@ -336,12 +353,11 @@ function loadChat() {
     document.getElementById('global-chat').appendChild(msgDiv);
     document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
   });
-  }
+}
 
-// FIXED DELETE - NOW WAITS FOR FIREBASE
 window.deleteMsg = async (key) => {
   if(confirm("Delete this message?")) {
-    await remove(ref(db, 'globalChat/' + key)); // Wait for Firebase first
+    await remove(ref(db, 'globalChat/' + key));
     const el = document.getElementById('msg-' + key);
     if(el) el.remove();
   }
@@ -350,18 +366,18 @@ window.deleteMsg = async (key) => {
 document.getElementById('chat-icon-btn').onclick = () => {
   document.getElementById('feed-section').style.display = 'none';
   document.getElementById('chat-section').style.display = 'block';
-  document.getElementById('profile-box').style.display = 'none'; // ADDED
+  document.getElementById('profile-box').style.display = 'none';
 }
 document.getElementById('back-to-feed').onclick = () => {
   document.getElementById('feed-section').style.display = 'block';
   document.getElementById('chat-section').style.display = 'none';
-  document.getElementById('profile-box').style.display = 'none'; // ADDED
+  document.getElementById('profile-box').style.display = 'none';
 }
 document.getElementById('logo-btn').onclick = () => {
   document.getElementById('feed-section').style.display = 'block';
   document.getElementById('chat-section').style.display = 'none';
-  document.getElementById('profile-box').style.display = 'none'; // ADDED
+  document.getElementById('profile-box').style.display = 'none';
 }
 </script>
 </body>
-  </html>
+</html>
