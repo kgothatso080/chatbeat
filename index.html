@@ -9,7 +9,8 @@
     body { margin:0; font-family: 'Roboto', sans-serif; background: #0b141a; color: white; }
 .topbar { background: linear-gradient(90deg, #00C896, #0077FF); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
 .topbar h2 { margin: 0; font-size: 20px; text-shadow: 0 0 5px #fff; cursor: pointer; }
-.topbar button { background: rgba(0,0,0,0.3); width: auto; padding: 8px 12px; border-radius: 20px; font-weight: 500; border: none; color: white; }
+.topbar div { display:flex; gap:8px } /* ADDED */
+.topbar button { background: rgba(0,0,0,0.3); width: auto; padding: 8px 12px; border-radius: 20px; font-weight: 500; border: none; color: white; cursor:pointer }
     #cover { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; text-align:center; padding:20px; background: linear-gradient(135deg, #00C896 0%, #0077FF 50%, #000 100%); }
     #cover h1 { font-size: 3em; text-shadow: 0 0 20px #00C896; }
     input, button, textarea { padding:12px; margin:8px; border-radius:25px; border:none; width:80%; max-width:300px; font-size:16px; font-family: 'Roboto', sans-serif; }
@@ -19,6 +20,10 @@
     #app { display:none; }
 .post-box { padding: 10px; background: #202c33; }
     #feed { padding: 10px; padding-bottom: 20px; }
+
+    /* PROFILE BOX - NEW */
+.profile-box {background:#202c33; padding:15px; border-radius:12px; margin:10px; text-align:center; display:none}
+.profile-box img{width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid #00C896}
 
     /* POST CARDS */
 .card { background: #202c33; padding:10px 12px 10px 12px; margin:10px 0; border-radius:12px; position: relative; max-width: 85%; }
@@ -66,7 +71,19 @@
   <div class="topbar">
     <button id="logout-btn">Logout</button>
     <h2 id="logo-btn">ChatBeat</h2>
-    <button id="chat-icon-btn">💬</button>
+    <div> <!-- WRAPPED ICONS -->
+      <button id="profile-icon-btn">👤</button> <!-- NEW -->
+      <button id="chat-icon-btn">💬</button>
+    </div>
+  </div>
+
+  <!-- PROFILE SECTION - NEW -->
+  <div id="profile-box" class="profile-box">
+    <img id="profile-pic" src="https://via.placeholder.com/80">
+    <h3 id="my-name"></h3>
+    <input id="profile-upload" type="file" accept="image/*" style="display:none">
+    <button onclick="document.getElementById('profile-upload').click()">Change Profile Photo</button>
+    <button onclick="document.getElementById('profile-box').style.display='none'">Close</button>
   </div>
 
   <div id="feed-section">
@@ -92,7 +109,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 1.0 - ChatBeat
+    Version 1.0.3 - ChatBeat
   </div>
 </div>
 
@@ -136,7 +153,7 @@ document.getElementById('register-btn').onclick = async () => {
    const cred = await createUserWithEmailAndPassword(auth, email, pass);
    const nameSnap = await get(query(ref(db, 'users'), orderByChild('name'), equalTo(name)));
    if(nameSnap.exists()) { await deleteUser(cred.user); err.innerText = "Name already taken!"; return; }
-   await set(ref(db, 'users/' + cred.user.uid), { name, email, color: colors[Math.floor(Math.random()*colors.length)] });
+   await set(ref(db, 'users/' + cred.user.uid), { name, email, color: colors[Math.floor(Math.random()*colors.length)], profilePic: 'https://via.placeholder.com/80' }); // ADDED profilePic
  } catch(e) { err.innerText = e.message; }
 }
 
@@ -164,13 +181,17 @@ onAuthStateChanged(auth, async (user) => {
    currentUser = user;
    const userRef = ref(db, 'users/' + user.uid);
    const userSnap = await get(userRef);
+   let userData = userSnap.val(); // ADDED
    if(!userSnap.exists()){
      const nameFromEmail = user.email.split('@')[0];
-     await set(userRef, { name: nameFromEmail, email: user.email, color: colors[Math.floor(Math.random()*colors.length)] });
+     userData = { name: nameFromEmail, email: user.email, color: colors[Math.floor(Math.random()*colors.length)], profilePic:'https://via.placeholder.com/80' }; // ADDED profilePic
+     await set(userRef, userData);
      alert("Welcome to ChatBeat! Your name is: " + nameFromEmail)
    }
    document.getElementById('cover').style.display = 'none';
    document.getElementById('app').style.display = 'block';
+   document.getElementById('my-name').innerText = userData.name; // NEW
+   document.getElementById('profile-pic').src = userData.profilePic || 'https://via.placeholder.com/80'; // NEW
    document.getElementById('feed').innerHTML = '';
    document.getElementById('global-chat').innerHTML = '';
    loadPosts();
@@ -180,6 +201,26 @@ onAuthStateChanged(auth, async (user) => {
    document.getElementById('app').style.display = 'none';
  }
 });
+
+// PROFILE UPLOAD - NEW
+document.getElementById('profile-upload').onchange = (e)=>{
+  const file = e.target.files[0];
+  if(file){
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      set(ref(db,'users/'+currentUser.uid+'/profilePic'), reader.result);
+      document.getElementById('profile-pic').src = reader.result;
+      alert("Profile photo updated!")
+    }
+    reader.readAsDataURL(file);
+  }
+}
+
+document.getElementById('profile-icon-btn').onclick = () => { // NEW
+  document.getElementById('profile-box').style.display = 'block';
+  document.getElementById('feed-section').style.display = 'none';
+  document.getElementById('chat-section').style.display = 'none';
+}
 
 document.getElementById('post-btn').onclick = async () => {
   const text = document.getElementById('post-text').value.trim();
@@ -265,22 +306,22 @@ function loadChat() {
     const userSnap = await get(ref(db, 'users/' + msg.uid));
     const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888"};
     const isMe = msg.uid === currentUser.uid;
-    
+
     const msgDiv = document.createElement('div');
     msgDiv.id = 'msg-' + msgKey;
-    
+
     let delBtn = '';
     if(isMe) {
       delBtn = `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>`;
     }
-    
+
     let content = '';
     if(msg.audio) {
   content = `<span class="bubble-name">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`;
 } else {
   content = `<span class="bubble-name">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`;
   }
-    
+
     // FIXED: Color is now directly on the bubble div
     if(isMe){
       msgDiv.innerHTML = `<div class="bubble me-bubble">${content}</div>`;
@@ -291,7 +332,7 @@ function loadChat() {
       msgDiv.style.display = 'flex';
       msgDiv.style.justifyContent = 'flex-start';
     }
-    
+
     document.getElementById('global-chat').appendChild(msgDiv);
     document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
   });
@@ -309,15 +350,18 @@ window.deleteMsg = async (key) => {
 document.getElementById('chat-icon-btn').onclick = () => {
   document.getElementById('feed-section').style.display = 'none';
   document.getElementById('chat-section').style.display = 'block';
+  document.getElementById('profile-box').style.display = 'none'; // ADDED
 }
 document.getElementById('back-to-feed').onclick = () => {
   document.getElementById('feed-section').style.display = 'block';
   document.getElementById('chat-section').style.display = 'none';
+  document.getElementById('profile-box').style.display = 'none'; // ADDED
 }
 document.getElementById('logo-btn').onclick = () => {
   document.getElementById('feed-section').style.display = 'block';
   document.getElementById('chat-section').style.display = 'none';
+  document.getElementById('profile-box').style.display = 'none'; // ADDED
 }
 </script>
 </body>
-</html>
+  </html>
