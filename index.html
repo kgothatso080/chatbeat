@@ -25,7 +25,7 @@
 .card { background: #202c33; padding:10px 12px 10px 12px; margin:10px 0; border-radius:12px; position: relative; max-width: 85%; }
 .card.name { font-weight: 700; font-size: 13px; margin-bottom: 4px; display:flex; align-items:center; gap:8px; cursor:pointer }
 .card-avatar {width:30px; height:30px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block}
-.card-post-img {width:100%; max-width:400px; border-radius:12px; margin-top:8px; cursor:pointer} /* NEW */
+.card-post-img {width:100%; max-width:400px; border-radius:12px; margin-top:8px; cursor:pointer}
 .card.del-btn { position: absolute; top: 8px; right: 8px; background: #FF6B6B; padding: 0; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; line-height: 20px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
 .chat-header { display: flex; align-items: center; padding: 10px; background: #202c33; border-bottom: 1px solid #2a3942; }
 .chat-header h3 { margin: 0 auto; }
@@ -37,7 +37,7 @@
 .bubble-name { display: flex; align-items:center; gap:6px; font-size: 12px; font-weight: 700; margin-bottom: 3px; cursor:pointer }
 .bubble-avatar {width:20px; height:20px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block}
 .bubble-text { display: block; }
-.bubble-img {max-width:200px; border-radius:8px; margin-top:4px; cursor:pointer} /* NEW */
+.bubble-img {max-width:200px; border-radius:8px; margin-top:4px; cursor:pointer}
 .bubble-del { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.4); padding: 0; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
 .bubble audio { width: 220px; max-width: 100%; margin-top: 4px; }
 .chat-input-area { display: flex; padding: 10px; background: #202c33; position: fixed; bottom: 0; left:0; width: 100%; z-index: 5; gap:5px }
@@ -48,7 +48,6 @@
 .footer { text-align:center; padding:20px; font-size:12px; opacity:0.8; border-top:1px solid #2a3942; background: #111b21; padding-bottom: 80px; }
 .footer a { color:#00C896; text-decoration:none; font-weight:700; }
 
-    /* IMAGE POPUP */
 .profile-popup { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); display:none; justify-content:center; align-items:center; z-index: 9999; }
 .profile-popup.show { display:flex!important; }
 .profile-popup img { max-width: 90%; max-height: 80%; border-radius: 15px; border: 3px solid #00C896; }
@@ -91,8 +90,8 @@
   <div id="feed-section">
     <div class="post-box">
       <textarea id="post-text" placeholder="What's on your mind?"></textarea>
-      <button id="post-img-btn">📷</button> <!-- NEW -->
-      <input id="post-file" type="file" accept="image/*" style="display:none"> <!-- NEW -->
+      <button id="post-img-btn">📷</button>
+      <input id="post-file" type="file" accept="image/*" style="display:none">
       <button id="post-btn">Post</button>
     </div>
     <div id="feed"></div>
@@ -105,8 +104,8 @@
     </div>
     <div id="global-chat"></div>
     <div class="chat-input-area">
-      <button id="chat-img-btn">📷</button> <!-- NEW -->
-      <input id="chat-file" type="file" accept="image/*" style="display:none"> <!-- NEW -->
+      <button id="chat-img-btn">📷</button>
+      <input id="chat-file" type="file" accept="image/*" style="display:none">
       <input id="chat-input" placeholder="Type a message">
       <button id="record-btn">🎤</button>
       <button id="send-chat">➤</button>
@@ -115,11 +114,10 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.0 - ChatBeat
+    Version 2.0.1 - ChatBeat FAST
   </div>
 </div>
 
-<!-- IMAGE POPUP -->
 <div id="profile-popup" class="profile-popup">
   <span class="profile-popup-close" onclick="closeProfilePopup()">×</span>
   <img id="profile-popup-img" src="" onclick="event.stopPropagation()">
@@ -128,7 +126,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+import { getAuth, setPersistence, browserLocalPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 import { getDatabase, ref, set, get, query, orderByChild, equalTo, push, onChildAdded, remove, off, limitToLast } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
 
 const firebaseConfig = {
@@ -147,6 +145,9 @@ const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
+// KEY 1: REMEMBER USER FOREVER - FAST LOGIN
+setPersistence(auth, browserLocalPersistence);
+
 const colors = ['#00C896', '#0077FF', '#00FFD1', '#FF6B6B', '#F7DC6F', '#9B59B6', '#E67E22', '#1ABC9C'];
 const DEFAULT_PIC = 'https://ui-avatars.com/api/?name=U&background=00C896&color=fff';
 let currentUser = null;
@@ -154,10 +155,10 @@ let mediaRecorder;
 let audioChunks = [];
 let isRecording = false;
 let loadedMessages = new Set();
-let postImageData = null; // NEW
-let chatImageData = null; // NEW
+let postImageData = null;
+let chatImageData = null;
+let userCache = {}; // KEY 2: CACHE USERS
 
-// IMAGE POPUP
 window.openProfilePopup = (imgSrc) => {
   if(!imgSrc) return;
   document.getElementById('profile-popup-img').src = imgSrc;
@@ -223,9 +224,19 @@ document.getElementById('forgot-btn').onclick = () => {
 
 document.getElementById('logout-btn').onclick = () => signOut(auth);
 
+// KEY 3: INSTANT UI + BACKGROUND LOAD
 onAuthStateChanged(auth, async (user) => {
  if(user) {
    currentUser = user;
+
+   // INSTANT: Show app immediately with cached data
+   const cached = localStorage.getItem('user_'+user.uid);
+   if(cached){
+     const userData = JSON.parse(cached);
+     showApp(userData);
+   }
+
+   // BACKGROUND: Update from Firebase
    const userRef = ref(db, 'users/' + user.uid);
    const userSnap = await get(userRef);
    let userData = userSnap.val();
@@ -233,23 +244,33 @@ onAuthStateChanged(auth, async (user) => {
      const nameFromEmail = user.email.split('@')[0];
      userData = { name: nameFromEmail, email: user.email, color: colors[Math.floor(Math.random()*colors.length)], profilePic:DEFAULT_PIC };
      await set(userRef, userData);
-     alert("Welcome to ChatBeat! Your name is: " + nameFromEmail)
    }
-   document.getElementById('cover').style.display = 'none';
-   document.getElementById('app').style.display = 'block';
-   document.getElementById('my-name').innerText = userData.name;
-   document.getElementById('profile-pic').src = userData.profilePic || DEFAULT_PIC;
-   loadedMessages.clear();
-   document.getElementById('feed').innerHTML = '';
-   document.getElementById('global-chat').innerHTML = '';
-   startAutoDelete();
-   loadPosts();
-   loadChat();
+   localStorage.setItem('user_'+user.uid, JSON.stringify(userData)); // SAVE CACHE
+   showApp(userData);
+
  } else {
    document.getElementById('cover').style.display = 'flex';
    document.getElementById('app').style.display = 'none';
  }
 });
+
+function showApp(userData){
+  document.getElementById('cover').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('my-name').innerText = userData.name;
+  document.getElementById('profile-pic').src = userData.profilePic || DEFAULT_PIC;
+
+  // Only load data once
+  if(!window.dataLoaded){
+    window.dataLoaded = true;
+    loadedMessages.clear();
+    document.getElementById('feed').innerHTML = '';
+    document.getElementById('global-chat').innerHTML = '';
+    startAutoDelete();
+    loadPosts();
+    loadChat();
+  }
+}
 
 document.getElementById('profile-upload').onchange = (e)=>{
   const file = e.target.files[0];
@@ -270,7 +291,6 @@ document.getElementById('profile-icon-btn').onclick = () => {
   document.getElementById('chat-section').style.display = 'none';
 }
 
-// POST IMAGE UPLOAD - NEW
 document.getElementById('post-img-btn').onclick = () => document.getElementById('post-file').click();
 document.getElementById('post-file').onchange = (e)=>{
   const file = e.target.files[0];
@@ -290,15 +310,13 @@ document.getElementById('post-btn').onclick = async () => {
   document.getElementById('post-file').value = '';
 }
 
-// POSTS WITH IMAGE
 function loadPosts() {
   off(ref(db, 'posts'));
   document.getElementById('feed').innerHTML = '';
   onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50)), async (snap) => {
     const post = snap.val();
     const postKey = snap.key;
-    const userSnap = await get(ref(db, 'users/' + post.uid));
-    const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888", profilePic:DEFAULT_PIC};
+    const user = await getUser(post.uid);
     const userPic = user.profilePic || DEFAULT_PIC;
     const postDiv = document.createElement('div');
     postDiv.className = 'card';
@@ -324,7 +342,6 @@ window.deletePost = async (key) => {
   }
 }
 
-// CHAT IMAGE UPLOAD - NEW
 document.getElementById('chat-img-btn').onclick = () => document.getElementById('chat-file').click();
 document.getElementById('chat-file').onchange = async (e)=>{
   const file = e.target.files[0];
@@ -377,7 +394,15 @@ recordBtn.onclick = async () => {
   }
 }
 
-// CHAT WITH IMAGE
+// KEY 4: USER CACHE - NO REPEAT DB CALLS
+async function getUser(uid){
+  if(userCache[uid]) return userCache[uid];
+  const userSnap = await get(ref(db, 'users/' + uid));
+  const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888", profilePic:DEFAULT_PIC};
+  userCache[uid] = user;
+  return user;
+}
+
 function loadChat() {
   off(ref(db, 'globalChat'));
   document.getElementById('global-chat').innerHTML = '<p style="text-align:center; opacity:0.6">Loading messages...</p>';
@@ -388,8 +413,7 @@ function loadChat() {
     loadedMessages.add(msgKey);
     document.getElementById('global-chat').innerHTML = '';
 
-    const userSnap = await get(ref(db, 'users/' + msg.uid));
-    const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888", profilePic:DEFAULT_PIC};
+    const user = await getUser(msg.uid);
     const userPic = user.profilePic || DEFAULT_PIC;
     const isMe = msg.uid === currentUser.uid;
 
@@ -451,4 +475,4 @@ document.getElementById('logo-btn').onclick = () => {
 }
 </script>
 </body>
-</html>
+  </html>
