@@ -8,8 +8,10 @@
     * { box-sizing: border-box; }
     body { margin:0; font-family: 'Roboto', sans-serif; background: #0b141a; color: white; }
 .topbar { background: linear-gradient(90deg, #00C896, #0077FF); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+.offline-badge { background: #FF6B6B; padding: 4px 10px; border-radius: 20px; font-size: 12px; display:none }
+.data-badge { background: #F7DC6F; color:#000; padding: 4px 10px; border-radius: 20px; font-size: 12px; display:none; cursor:pointer }
 .topbar h2 { margin: 0; font-size: 20px; text-shadow: 0 0 5px #fff; cursor: pointer; }
-.topbar div { display:flex; gap:8px }
+.topbar div { display:flex; gap:8px; align-items:center }
 .topbar button { background: rgba(0,0,0,0.3); width: auto; padding: 8px 12px; border-radius: 20px; font-weight: 500; border: none; color: white; cursor:pointer }
     #cover { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; text-align:center; padding:20px; background: linear-gradient(135deg, #00C896 0%, #0077FF 50%, #000 100%); }
     #cover h1 { font-size: 3em; text-shadow: 0 0 20px #00C896; }
@@ -34,6 +36,7 @@
 .bubble { max-width: 75%; padding: 6px 10px 8px 10px; border-radius: 8px; position: relative; word-wrap: break-word; font-size: 15px; line-height: 1.4; }
 .me-bubble { background: #0077FF; border-bottom-right-radius: 2px; margin-left: auto; }
 .other-bubble { background: #005c4b; border-bottom-left-radius: 2px; margin-right: auto; }
+.bubble-pending { opacity: 0.5; }
 .bubble-name { display: flex; align-items:center; gap:6px; font-size: 12px; font-weight: 700; margin-bottom: 3px; cursor:pointer }
 .bubble-avatar {width:20px; height:20px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block}
 .bubble-text { display: block; }
@@ -44,6 +47,7 @@
 .chat-input-area input { flex: 1; border-radius: 25px; background: #2a3942; color: white; }
 .chat-input-area button { width: 50px; border-radius: 50%; }
 .record-btn { background: red!important; animation: pulse 1s infinite }
+.btn-disabled { background: #555!important; cursor: not-allowed!important; opacity: 0.5; }
 @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(255,0,0,0.7)} 70%{box-shadow:0 0 0 10px rgba(255,0,0,0)} 100%{box-shadow:0 0 0 0 rgba(255,0,0,0)} }
 .footer { text-align:center; padding:20px; font-size:12px; opacity:0.8; border-top:1px solid #2a3942; background: #111b21; padding-bottom: 80px; }
 .footer a { color:#00C896; text-decoration:none; font-weight:700; }
@@ -74,6 +78,8 @@
     <button id="logout-btn">Logout</button>
     <h2 id="logo-btn">ChatBeat</h2>
     <div>
+      <span id="data-badge" class="data-badge" onclick="toggleDataSaver()">Data Saver ON</span> <!-- NEW -->
+      <span id="offline-badge" class="offline-badge">Offline - Queued</span>
       <button id="profile-icon-btn">👤</button>
       <button id="chat-icon-btn">💬</button>
     </div>
@@ -82,6 +88,7 @@
   <div id="profile-box" class="profile-box">
     <img id="profile-pic" src="https://ui-avatars.com/api/?name=U&background=00C896&color=fff">
     <h3 id="my-name"></h3>
+    <button id="data-toggle-btn" style="background:#F7DC6F; color:#000">Turn Data Saver ON</button> <!-- NEW -->
     <input id="profile-upload" type="file" accept="image/*" style="display:none">
     <button onclick="document.getElementById('profile-upload').click()">Change Profile Photo</button>
     <button onclick="document.getElementById('profile-box').style.display='none'">Close</button>
@@ -114,7 +121,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.4 - FAST
+    Version 2.0.6 - DATA SAVER MODE
   </div>
 </div>
 
@@ -133,11 +140,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyD97-el91-ISWGkOhxWy4V_wXyOK6MJl0k",
   authDomain: "chatbeat-71f80.firebaseapp.com",
   databaseURL: "https://chatbeat-71f80-default-rtdb.firebaseio.com",
-  projectId: "chatbeat-71f80",
-  storageBucket: "chatbeat-71f80.firebasestorage.app",
-  messagingSenderId: "38692820606",
-  appId: "1:38692820606:web:edce5abf8d103e1f6e6a2f",
-  measurementId: "G-KZ5KN31YFL"
+  projectId: "chatbeat-71f80"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -154,7 +157,60 @@ let isRecording = false;
 let loadedMessages = new Set();
 let postImageData = null;
 let chatImageData = null;
-let userCache = {}; // NEW: CACHE USERS
+let userCache = {};
+let isOnline = navigator.onLine;
+let messageQueue = JSON.parse(localStorage.getItem('chatbeat_queue') || '[]');
+let dataSaver = localStorage.getItem('chatbeat_dataSaver') === 'true'; // NEW
+
+// DATA SAVER TOGGLE
+function updateDataSaverUI(){
+  if(dataSaver){
+    document.getElementById('data-badge').style.display='block';
+    document.getElementById('data-toggle-btn').innerText = 'Turn Data Saver OFF';
+    document.getElementById('chat-img-btn').classList.add('btn-disabled');
+    document.getElementById('record-btn').classList.add('btn-disabled');
+    document.getElementById('post-img-btn').classList.add('btn-disabled');
+  } else {
+    document.getElementById('data-badge').style.display='none';
+    document.getElementById('data-toggle-btn').innerText = 'Turn Data Saver ON';
+    document.getElementById('chat-img-btn').classList.remove('btn-disabled');
+    document.getElementById('record-btn').classList.remove('btn-disabled');
+    document.getElementById('post-img-btn').classList.remove('btn-disabled');
+  }
+}
+window.toggleDataSaver = () => {
+  dataSaver = !dataSaver;
+  localStorage.setItem('chatbeat_dataSaver', dataSaver);
+  updateDataSaverUI();
+  alert(dataSaver ? "Data Saver ON: Only text will work. Good for Meta Free Basics" : "Data Saver OFF: Photos and Voice enabled");
+}
+document.getElementById('data-toggle-btn').onclick = toggleDataSaver;
+
+function checkDataLimit(action){
+  if(dataSaver){
+    alert(`Data Saver is ON.\n${action} is disabled.\nTurn it OFF in Profile to use data.`);
+    return false;
+  }
+  return true;
+}
+
+window.addEventListener('online', () => { isOnline = true; document.getElementById('offline-badge').style.display='none'; processQueue(); });
+window.addEventListener('offline', () => { isOnline = false; document.getElementById('offline-badge').style.display='block'; });
+
+function saveQueue(){ localStorage.setItem('chatbeat_queue', JSON.stringify(messageQueue)); }
+
+async function processQueue(){
+  if(messageQueue.length === 0) return;
+  while(messageQueue.length > 0){
+    const item = messageQueue[0];
+    try{
+      await push(ref(db, item.path), item.data);
+      messageQueue.shift();
+      saveQueue();
+      document.getElementById(item.data.id)?.classList.remove('bubble-pending');
+    }catch(e){ break; }
+  }
+}
 
 window.openProfilePopup = (imgSrc) => {
   if(!imgSrc) return;
@@ -171,20 +227,22 @@ function startAutoDelete() {
     const now = Date.now();
     const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
     const tenDaysAgo = now - (10 * 24 * 60 * 60 * 1000);
-    get(ref(db, 'globalChat')).then(snapshot => {
-      snapshot.forEach(msg => {
-        if(msg.val().timestamp < sevenDaysAgo){
-          remove(ref(db, 'globalChat/' + msg.key));
-        }
-      })
-    });
-    get(ref(db, 'posts')).then(snapshot => {
-      snapshot.forEach(post => {
-        if(post.val().timestamp < tenDaysAgo){
-          remove(ref(db, 'posts/' + post.key));
-        }
-      })
-    });
+    if(isOnline){
+      get(ref(db, 'globalChat')).then(snapshot => {
+        snapshot.forEach(msg => {
+          if(msg.val().timestamp < sevenDaysAgo){
+            remove(ref(db, 'globalChat/' + msg.key));
+          }
+        })
+      });
+      get(ref(db, 'posts')).then(snapshot => {
+        snapshot.forEach(post => {
+          if(post.val().timestamp < tenDaysAgo){
+            remove(ref(db, 'posts/' + post.key));
+          }
+        })
+      });
+    }
   }, 60 * 60 * 1000);
 }
 
@@ -220,7 +278,7 @@ document.getElementById('forgot-btn').onclick = () => {
 }
 
 document.getElementById('logout-btn').onclick = () => {
-  userCache = {}; // CLEAR CACHE ON LOGOUT
+  userCache = {};
   signOut(auth)
 }
 
@@ -234,18 +292,20 @@ onAuthStateChanged(auth, async (user) => {
      const nameFromEmail = user.email.split('@')[0];
      userData = { name: nameFromEmail, email: user.email, color: colors[Math.floor(Math.random()*colors.length)], profilePic:DEFAULT_PIC };
      await set(userRef, userData);
-     alert("Welcome to ChatBeat! Your name is: " + nameFromEmail)
    }
    document.getElementById('cover').style.display = 'none';
    document.getElementById('app').style.display = 'block';
    document.getElementById('my-name').innerText = userData.name;
    document.getElementById('profile-pic').src = userData.profilePic || DEFAULT_PIC;
+   if(!isOnline) document.getElementById('offline-badge').style.display='block';
+   updateDataSaverUI(); // NEW
    loadedMessages.clear();
    document.getElementById('feed').innerHTML = '';
    document.getElementById('global-chat').innerHTML = '';
    startAutoDelete();
    loadPosts();
    loadChat();
+   processQueue();
  } else {
    document.getElementById('cover').style.display = 'flex';
    document.getElementById('app').style.display = 'none';
@@ -253,13 +313,19 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 document.getElementById('profile-upload').onchange = (e)=>{
+  if(!checkDataLimit("Profile photo upload")) return; // BLOCK IF DATA SAVER
   const file = e.target.files[0];
   if(file){
     const reader = new FileReader();
     reader.onload = ()=>{
-      set(ref(db,'users/'+currentUser.uid+'/profilePic'), reader.result);
+      if(isOnline){
+        set(ref(db,'users/'+currentUser.uid+'/profilePic'), reader.result);
+      } else {
+        messageQueue.push({path: 'users/'+currentUser.uid+'/profilePic', data: reader.result});
+        saveQueue();
+        alert("No data. Photo will upload when you're online");
+      }
       document.getElementById('profile-pic').src = reader.result;
-      alert("Profile photo updated!")
     }
     reader.readAsDataURL(file);
   }
@@ -271,7 +337,10 @@ document.getElementById('profile-icon-btn').onclick = () => {
   document.getElementById('chat-section').style.display = 'none';
 }
 
-document.getElementById('post-img-btn').onclick = () => document.getElementById('post-file').click();
+document.getElementById('post-img-btn').onclick = () => {
+  if(!checkDataLimit("Posting images")) return; // BLOCK IF DATA SAVER
+  document.getElementById('post-file').click()
+};
 document.getElementById('post-file').onchange = (e)=>{
   const file = e.target.files[0];
   if(file){
@@ -284,18 +353,26 @@ document.getElementById('post-file').onchange = (e)=>{
 document.getElementById('post-btn').onclick = async () => {
   const text = document.getElementById('post-text').value.trim();
   if(!text &&!postImageData) return;
-  await push(ref(db, 'posts'), { uid: currentUser.uid, text, image: postImageData, timestamp: Date.now() });
+  if(postImageData && !checkDataLimit("Posting images")) return; // BLOCK IF DATA SAVER
+  const data = { uid: currentUser.uid, text, image: postImageData, timestamp: Date.now() };
+
+  if(isOnline){
+    await push(ref(db, 'posts'), data);
+  } else {
+    messageQueue.push({path: 'posts', data});
+    saveQueue();
+    alert("No data. Post will send when you're online");
+  }
   document.getElementById('post-text').value = '';
   postImageData = null;
   document.getElementById('post-file').value = '';
 }
 
-// FAST POSTS WITH CACHE
 async function getUser(uid){
-  if(userCache[uid]) return userCache[uid]; // RETURN FROM CACHE
+  if(userCache[uid]) return userCache[uid];
   const userSnap = await get(ref(db, 'users/' + uid));
   const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888", profilePic:DEFAULT_PIC};
-  userCache[uid] = user; // SAVE TO CACHE
+  userCache[uid] = user;
   return user;
 }
 
@@ -305,7 +382,7 @@ function loadPosts() {
   onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50)), async (snap) => {
     const post = snap.val();
     const postKey = snap.key;
-    const user = await getUser(post.uid); // USE CACHE
+    const user = await getUser(post.uid);
     const userPic = user.profilePic || DEFAULT_PIC;
     const postDiv = document.createElement('div');
     postDiv.className = 'card';
@@ -315,8 +392,10 @@ function loadPosts() {
       delBtn = `<button class="del-btn" onclick="deletePost('${postKey}')">×</button>`;
     }
     let imgHtml = '';
-    if(post.image) {
+    if(post.image && !dataSaver) { // HIDE IMAGES IN DATA SAVER
       imgHtml = `<img class="card-post-img" src="${post.image}" onclick="openProfilePopup('${post.image}')">`;
+    } else if(post.image && dataSaver){
+      imgHtml = `<div style="padding:10px; background:#333; border-radius:8px; margin-top:8px">📷 Image hidden - Turn off Data Saver to view</div>`;
     }
     postDiv.innerHTML = `${delBtn}<div class="name" style="color:${user.color}"><img class="card-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</div><div>${post.text||''}</div>${imgHtml}`;
     document.getElementById('feed').prepend(postDiv);
@@ -331,15 +410,24 @@ window.deletePost = async (key) => {
   }
 }
 
-document.getElementById('chat-img-btn').onclick = () => document.getElementById('chat-file').click();
+document.getElementById('chat-img-btn').onclick = () => {
+  if(!checkDataLimit("Sending photos")) return; // BLOCK IF DATA SAVER
+  document.getElementById('chat-file').click()
+};
 document.getElementById('chat-file').onchange = async (e)=>{
   const file = e.target.files[0];
   if(file){
     const reader = new FileReader();
     reader.onload = async ()=>{
-      chatImageData = reader.result;
-      await push(ref(db, 'globalChat'), { uid: currentUser.uid, image: chatImageData, timestamp: Date.now() });
-      chatImageData = null;
+      const data = { uid: currentUser.uid, image: reader.result, timestamp: Date.now(), id: 'temp_'+Date.now() };
+      if(isOnline){
+        await push(ref(db, 'globalChat'), data);
+      } else {
+        messageQueue.push({path: 'globalChat', data});
+        saveQueue();
+        renderMessage({key: data.id, val: ()=>data}, true, true);
+        alert("No data. Photo will send when you're online");
+      }
     }
     reader.readAsDataURL(file);
   }
@@ -349,11 +437,20 @@ document.getElementById('send-chat').onclick = async () => {
   const text = document.getElementById('chat-input').value.trim();
   if(!text) return;
   document.getElementById('chat-input').value = '';
-  await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, timestamp: Date.now() });
+  const data = { uid: currentUser.uid, text, timestamp: Date.now(), id: 'temp_'+Date.now() };
+
+  if(isOnline){
+    await push(ref(db, 'globalChat'), data);
+  } else {
+    messageQueue.push({path: 'globalChat', data});
+    saveQueue();
+    renderMessage({key: data.id, val: ()=>data}, true, true);
+  }
 }
 
 const recordBtn = document.getElementById('record-btn');
 recordBtn.onclick = async () => {
+  if(!checkDataLimit("Sending voice notes")) return; // BLOCK IF DATA SAVER
   if(!isRecording) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -365,7 +462,15 @@ recordBtn.onclick = async () => {
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
-          await push(ref(db, 'globalChat'), { uid: currentUser.uid, audio: reader.result, timestamp: Date.now() });
+          const data = { uid: currentUser.uid, audio: reader.result, timestamp: Date.now(), id: 'temp_'+Date.now() };
+          if(isOnline){
+            await push(ref(db, 'globalChat'), data);
+          } else {
+            messageQueue.push({path: 'globalChat', data});
+            saveQueue();
+            renderMessage({key: data.id, val: ()=>data}, true, true);
+            alert("No data. Voice note will send when you're online");
+          }
         }
       }
       mediaRecorder.start();
@@ -383,43 +488,41 @@ recordBtn.onclick = async () => {
   }
 }
 
-// FAST CHAT - BATCH LOAD FIRST
 function loadChat() {
   off(ref(db, 'globalChat'));
   document.getElementById('global-chat').innerHTML = '<p style="text-align:center; opacity:0.6">Loading messages...</p>';
   loadedMessages.clear();
 
-  // STEP 1: LOAD LAST 50 MESSAGES AT ONCE
   get(query(ref(db, 'globalChat'), orderByChild('timestamp'), limitToLast(50))).then(async (snapshot) => {
     document.getElementById('global-chat').innerHTML = '';
     const promises = [];
     snapshot.forEach((snap) => {
-      promises.push(renderMessage(snap, false));
+      promises.push(renderMessage(snap, false, false));
     })
-    await Promise.all(promises); // LOAD ALL TOGETHER
+    await Promise.all(promises);
     document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
 
-    // STEP 2: LISTEN FOR NEW MESSAGES ONLY
     onChildAdded(query(ref(db, 'globalChat'), orderByChild('timestamp'), limitToLast(1)), (snap) => {
       if(!loadedMessages.has(snap.key)){
-        renderMessage(snap, true);
+        renderMessage(snap, true, false);
       }
     });
   });
 }
 
-async function renderMessage(snap, scroll){
+async function renderMessage(snap, scroll, isPending){
   const msg = snap.val();
   const msgKey = snap.key;
   if(loadedMessages.has(msgKey)) return;
   loadedMessages.add(msgKey);
 
-  const user = await getUser(msg.uid); // USE CACHE
+  const user = await getUser(msg.uid);
   const userPic = user.profilePic || DEFAULT_PIC;
   const isMe = msg.uid === currentUser.uid;
 
   const msgDiv = document.createElement('div');
   msgDiv.id = 'msg-' + msgKey;
+  if(isPending) msgDiv.classList.add('bubble-pending');
 
   let delBtn = '';
   if(isMe) {
@@ -427,10 +530,14 @@ async function renderMessage(snap, scroll){
   }
 
   let content = '';
-  if(msg.image) {
+  if(msg.image && !dataSaver) {
     content = `<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<img class="bubble-img" src="${msg.image}" onclick="openProfilePopup('${msg.image}')">`;
-  } else if(msg.audio) {
+  } else if(msg.image && dataSaver){
+    content = `<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<div>📷 Photo - Turn off Data Saver to view</div>`;
+  } else if(msg.audio && !dataSaver) {
     content = `<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`;
+  } else if(msg.audio && dataSaver){
+    content = `<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<div>🎤 Voice - Turn off Data Saver to listen</div>`;
   } else {
     content = `<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`;
   }
