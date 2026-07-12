@@ -51,7 +51,7 @@ textarea { border-radius: 12px; height: 60px; background: #2a3942; color: white;
 .bubble audio { width: 220px; max-width: 100%; margin-top: 4px; }
 .bubble-time { font-size:10px; opacity:0.7; text-align:right; margin-top:3px; display:flex; justify-content:flex-end; gap:3px }
 .bubble-time.ticks { font-size:14px }
-.bubble-time.seen { color:#53bdeb } /* blue ticks */
+.bubble-time.seen { color:#53bdeb }
 .chat-input-area { display: flex; padding: 10px; background: #202c33; position: fixed; bottom: 0; left:0; width: 100%; z-index: 5; gap:5px }
 .chat-input-area input { flex: 1; border-radius: 25px; background: #2a3942; color: white; }
 .chat-input-area button { width: 45px; border-radius: 50%; padding:8px }
@@ -144,7 +144,7 @@ WhatsApp or Call 084 328 9812<br>
 Email kgothatsoswafros@gmail.com<br>
 Facebook Kgø Thā Tsø for help, have a nice day good byeee☺️<br><br>
 Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. He is 18 years old ✨<br>
-Version 2.1 - ChatBeat REAL
+Version 2.1.1 - ChatBeat REAL
 </div>
 </div>
 
@@ -176,6 +176,7 @@ let currentUser = null;
 let mediaRecorder, audioChunks = [], isRecording = false;
 let postsListener = null, chatListener = null, dmListListener = null;
 let currentChatRoom = 'globalChat', chatWithUser = null;
+let loadedChatKeys = new Set(); // STOP LOOPING
 
 function checkData() {
   const hasData = navigator.onLine;
@@ -188,9 +189,9 @@ function startAutoDelete() {
   setInterval(() => {
     const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
     const tenDaysAgo = Date.now() - (10 * 24 * 60 * 60 * 1000);
-    get(ref(db, 'globalChat')).then(s => s.forEach(m => { if(m.val().timestamp < sevenDaysAgo) remove(ref(db, 'globalChat/' + m.key)) }));
-    get(ref(db, 'posts')).then(s => s.forEach(p => { if(p.val().timestamp < tenDaysAgo) remove(ref(db, 'posts/' + p.key)) }));
-    get(ref(db, 'privateChats')).then(s => s.forEach(room => room.forEach(m => { if(m.val().timestamp < sevenDaysAgo) remove(ref(db, 'privateChats/' + room.key + '/' + m.key)) })));
+    get(ref(db, 'globalChat')).then(s => s.exists() && s.forEach(m => { if(m.val().timestamp < sevenDaysAgo) remove(ref(db, 'globalChat/' + m.key)) }));
+    get(ref(db, 'posts')).then(s => s.exists() && s.forEach(p => { if(p.val().timestamp < tenDaysAgo) remove(ref(db, 'posts/' + p.key)) }));
+    get(ref(db, 'privateChats')).then(s => s.exists() && s.forEach(room => room.forEach(m => { if(m.val().timestamp < sevenDaysAgo) remove(ref(db, 'privateChats/' + room.key + '/' + m.key)) })));
   }, 60 * 60 * 1000);
 }
 
@@ -209,10 +210,13 @@ if(nameSnap.exists()) { await deleteUser(cred.user); err.innerText = "Name alrea
 await set(ref(db, 'users/' + cred.user.uid), { name, email, color: colors[Math.floor(Math.random()*colors.length)], profilePic: 'https://via.placeholder.com/80', online: true, lastSeen: Date.now() });
 } catch(e) { err.innerText = e.message; }
 }
-document.getElementById('login-btn').onclick = () => {
+document.getElementById('login-btn').onclick = async () => {
 const email = document.getElementById('email-input').value.trim();
 const pass = document.getElementById('pass-input').value.trim();
-signInWithEmailAndPassword(auth, email, pass).catch(e => { document.getElementById('cover-error').innerText = e.message; });
+const err = document.getElementById('cover-error');
+err.innerText = '';
+try{ await signInWithEmailAndPassword(auth, email, pass); }
+catch(e){ err.innerText = e.message; }
 }
 document.getElementById('google-btn').onclick = async () => {
 try {
@@ -253,31 +257,30 @@ document.getElementById('app').style.display = 'none';
 });
 
 // DM LIST
-function loadDMList() {
+async function loadDMList() {
   if(dmListListener) off(dmListListener);
   dmListListener = onValue(ref(db, 'privateChats'), async (snap) => {
     const dmListDiv = document.getElementById('dm-list');
     dmListDiv.innerHTML = '';
     if(!snap.exists()) { dmListDiv.innerHTML = '<p>No DMs yet. Start one in Global Chat 👤</p>'; return; }
-    snap.forEach(roomSnap => {
+    for(const roomSnap of snap) { // FIXED: use for...of
       const roomId = roomSnap.key;
       if(roomId.includes(currentUser.uid)) {
         const otherUid = roomId.split('_').find(id => id!== currentUser.uid);
-        get(ref(db, 'users/' + otherUid)).then(userSnap => {
-          const user = userSnap.val();
-          if(user) {
-            let lastMsg = '', lastTime = 0;
-            roomSnap.forEach(m => { if(m.val().timestamp > lastTime) {lastTime = m.val().timestamp; lastMsg = m.val().text || '📷 Photo' || '🎤 Voice'} });
-            const div = document.createElement('div');
-            div.className = 'dm-person';
-            div.onclick = () => openPrivateChat(otherUid);
-            div.innerHTML = `<img src="${user.profilePic}">${user.online? '<div class="online-dot"></div>' : ''}
-            <div><b>${user.name}</b><br><div class="dm-last-msg">${lastMsg}</div></div>`;
-            dmListDiv.appendChild(div);
-          }
-        })
+        const userSnap = await get(ref(db, 'users/' + otherUid));
+        const user = userSnap.val();
+        if(user) {
+          let lastMsg = '', lastTime = 0;
+          roomSnap.forEach(m => { if(m.val().timestamp > lastTime) {lastTime = m.val().timestamp; lastMsg = m.val().text || (m.val().image? '📷 Photo' : '🎤 Voice')} });
+          const div = document.createElement('div');
+          div.className = 'dm-person';
+          div.onclick = () => openPrivateChat(otherUid);
+          div.innerHTML = `<img src="${user.profilePic}">${user.online? '<div class="online-dot"></div>' : ''}
+          <div><b>${user.name}</b><br><div class="dm-last-msg">${lastMsg}</div></div>`;
+          dmListDiv.appendChild(div);
+        }
       }
-    })
+    }
   })
 }
 
@@ -301,7 +304,7 @@ function hideAll(show) {
   document.getElementById(show).style.display = 'block';
 }
 
-// POSTS
+// POSTS - FIXED CLOSING BRACKET
 document.getElementById('post-btn').onclick = async () => {
 const text = document.getElementById('post-text').value.trim();
 if(!text) return;
@@ -324,6 +327,8 @@ postDiv.innerHTML = `${delBtn}<div class="name" style="color:${user.color}"><img
 <div class="card-actions"><button onclick="likePost('${postKey}')">${liked} ${post.likes || 0}</button></div>`;
 document.getElementById('feed').prepend(postDiv);
 })
+}) // FIXED: CLOSED THIS BRACKET
+})
 }
 window.deletePost = async (key) => { if(confirm("Delete this post?")) { await remove(ref(db, 'posts/' + key)); } }
 window.likePost = async (key) => {
@@ -337,17 +342,16 @@ else { likedBy[currentUser.uid] = true; update(postRef, {likes: (post.likes+1), 
 // CHAT WITH SEEN TICKS
 function getRoomId(uid1, uid2) { return uid1 < uid2? uid1 + '_' + uid2 : uid2 + '_' + uid1; }
 function openGlobalChat() {
-  currentChatRoom = 'globalChat'; chatWithUser = null;
+  currentChatRoom = 'globalChat'; chatWithUser = null; loadedChatKeys.clear();
   document.getElementById('chat-title').innerHTML = '🌍 Global Chat';
   hideAll('chat-section'); loadChat();
 }
 window.openPrivateChat = async (uid) => {
   const userSnap = await get(ref(db, 'users/' + uid)); const user = userSnap.val();
-  currentChatRoom = 'privateChats/' + getRoomId(currentUser.uid, uid); chatWithUser = uid;
+  currentChatRoom = 'privateChats/' + getRoomId(currentUser.uid, uid); chatWithUser = uid; loadedChatKeys.clear();
   document.getElementById('chat-title').innerHTML = '💬 DM: ' + user.name + ' <span class="private-tag">PRIVATE</span>';
   hideAll('chat-section'); loadChat();
-  // MARK AS SEEN WHEN YOU OPEN CHAT
-  get(ref(db, currentChatRoom)).then(s => s.forEach(m => { if(m.val().uid!== currentUser.uid) update(ref(db, currentChatRoom + '/' + m.key), {seen: true}) }))
+  get(ref(db, currentChatRoom)).then(s => s.exists() && s.forEach(m => { if(m.val().uid!== currentUser.uid) update(ref(db, currentChatRoom + '/' + m.key), {seen: true}) }))
 }
 document.getElementById('send-chat').onclick = async () => {
 const text = document.getElementById('chat-input').value.trim(); if(!text) return;
@@ -386,10 +390,12 @@ function getTicks(msg) {
 
 function loadChat() {
 if(chatListener) off(chatListener);
-chatListener = onValue(query(ref(db, currentChatRoom), orderByChild('timestamp'), limitToLast(200)), (snap) => {
 document.getElementById('global-chat').innerHTML = '';
+chatListener = onValue(query(ref(db, currentChatRoom), orderByChild('timestamp'), limitToLast(200)), (snap) => {
 snap.forEach(childSnap => {
 const msg = childSnap.val(); const msgKey = childSnap.key;
+if(loadedChatKeys.has(msgKey)) return; // NO DUPLICATES
+loadedChatKeys.add(msgKey);
 get(ref(db, 'users/' + msg.uid)).then(userSnap => {
 const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888", profilePic:'https://via.placeholder.com/20'};
 const isMe = msg.uid === currentUser.uid;
@@ -406,11 +412,10 @@ document.getElementById('global-chat').appendChild(msgDiv);
 document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
 })
 })
-})
 }
-window.deleteMsg = async (key) => { if(confirm("Delete this message?")) { await remove(ref(db, currentChatRoom + '/' + key)); } }
+window.deleteMsg = async (key) => { if(confirm("Delete this message?")) { await remove(ref(db, currentChatRoom + '/' + key)); loadedChatKeys.delete(key); } }
 document.getElementById('chat-icon-btn').onclick = openGlobalChat;
-document.getElementById('back-to-feed').onclick = () => { update(ref(db, 'users/' + currentUser.uid), {lastSeen: Date.now()}); currentChatRoom = 'globalChat'; hideAll('feed-section'); }
+document.getElementById('back-to-feed').onclick = () => { if(currentUser) update(ref(db, 'users/' + currentUser.uid), {lastSeen: Date.now()}); currentChatRoom = 'globalChat'; hideAll('feed-section'); }
 document.getElementById('logo-btn').onclick = () => hideAll('feed-section');
 </script>
 </body>
