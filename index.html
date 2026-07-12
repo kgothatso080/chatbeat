@@ -24,7 +24,7 @@
 .profile-box img{width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid #00C896}
 .card { background: #202c33; padding:10px 12px 10px 12px; margin:10px 0; border-radius:12px; position: relative; max-width: 85%; }
 .card.name { font-weight: 700; font-size: 13px; margin-bottom: 4px; display:flex; align-items:center; gap:8px; cursor:pointer }
-.card.name img{width:30px!important; height:30px!important; border-radius:50%; object-fit:cover; flex-shrink:0} /* FORCED SMALL */
+.card-avatar {width:30px; height:30px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block} /* NEW CLASS */
 .card.del-btn { position: absolute; top: 8px; right: 8px; background: #FF6B6B; padding: 0; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; line-height: 20px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
 .chat-header { display: flex; align-items: center; padding: 10px; background: #202c33; border-bottom: 1px solid #2a3942; }
 .chat-header h3 { margin: 0 auto; }
@@ -34,7 +34,7 @@
 .me-bubble { background: #0077FF; border-bottom-right-radius: 2px; margin-left: auto; }
 .other-bubble { background: #005c4b; border-bottom-left-radius: 2px; margin-right: auto; }
 .bubble-name { display: flex; align-items:center; gap:6px; font-size: 12px; font-weight: 700; margin-bottom: 3px; cursor:pointer }
-.bubble-name img{width:20px!important; height:20px!important; border-radius:50%; object-fit:cover; flex-shrink:0} /* FORCED SMALL */
+.bubble-avatar {width:20px; height:20px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block} /* NEW CLASS */
 .bubble-text { display: block; }
 .bubble-del { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.4); padding: 0; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
 .bubble audio { width: 220px; max-width: 100%; margin-top: 4px; }
@@ -46,9 +46,10 @@
 .footer { text-align:center; padding:20px; font-size:12px; opacity:0.8; border-top:1px solid #2a3942; background: #111b21; padding-bottom: 80px; }
 .footer a { color:#00C896; text-decoration:none; font-weight:700; }
 
-    /* WHATSAPP PROFILE POPUP - FIXED */
-.profile-popup { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); display:none; justify-content:center; align-items:center; z-index: 999; }
-.profile-popup img { width: auto; max-width: 90%; max-height: 80%; border-radius: 15px; border: 3px solid #00C896; }
+    /* WHATSAPP PROFILE POPUP - STARTS HIDDEN */
+.profile-popup { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); display:none; justify-content:center; align-items:center; z-index: 9999; }
+.profile-popup.show { display:flex!important; } /* ONLY SHOW WHEN WE ADD CLASS */
+.profile-popup img { max-width: 90%; max-height: 80%; border-radius: 15px; border: 3px solid #00C896; }
 .profile-popup-close { position:absolute; top:20px; right:20px; font-size:40px; color:white; cursor:pointer }
   </style>
 </head>
@@ -108,12 +109,12 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 1.0.8 - ChatBeat
+    Version 1.0.9 - ChatBeat
   </div>
 </div>
 
-<!-- PROFILE POPUP -->
-<div id="profile-popup" class="profile-popup" onclick="closeProfilePopup()">
+<!-- PROFILE POPUP - STARTS HIDDEN -->
+<div id="profile-popup" class="profile-popup">
   <span class="profile-popup-close" onclick="closeProfilePopup()">×</span>
   <img id="profile-popup-img" src="" onclick="event.stopPropagation()">
 </div>
@@ -141,7 +142,7 @@ const auth = getAuth(app);
 const db = getDatabase(app);
 
 const colors = ['#00C896', '#0077FF', '#00FFD1', '#FF6B6B', '#F7DC6F', '#9B59B6', '#E67E22', '#1ABC9C'];
-const DEFAULT_PIC = 'https://via.placeholder.com/80';
+const DEFAULT_PIC = 'https://ui-avatars.com/api/?name=U&background=00C896&color=fff';
 let currentUser = null;
 let mediaRecorder;
 let audioChunks = [];
@@ -150,13 +151,15 @@ let loadedMessages = new Set();
 
 // PROFILE POPUP - ONLY OPENS ON CLICK
 window.openProfilePopup = (imgSrc) => {
-  if(!imgSrc || imgSrc === DEFAULT_PIC) return; // Don't open if no pic
+  if(!imgSrc) return;
   document.getElementById('profile-popup-img').src = imgSrc;
-  document.getElementById('profile-popup').style.display = 'flex';
+  document.getElementById('profile-popup').classList.add('show'); // ADD CLASS
 }
 window.closeProfilePopup = () => {
-  document.getElementById('profile-popup').style.display = 'none';
+  document.getElementById('profile-popup').classList.remove('show'); // REMOVE CLASS
 }
+// CLOSE WHEN CLICKING BLACK BG
+document.getElementById('profile-popup').onclick = closeProfilePopup;
 
 function startAutoDelete() {
   setInterval(() => {
@@ -267,7 +270,7 @@ document.getElementById('post-btn').onclick = async () => {
   document.getElementById('post-text').value = '';
 }
 
-// POSTS WITH SMALL PROFILE PIC
+// POSTS WITH TINY PROFILE PIC
 function loadPosts() {
   off(ref(db, 'posts'));
   document.getElementById('feed').innerHTML = '';
@@ -284,8 +287,8 @@ function loadPosts() {
     if(post.uid === currentUser.uid) {
       delBtn = `<button class="del-btn" onclick="deletePost('${postKey}')">×</button>`;
     }
-    // ONLY OPENS ON TAP NOW
-    postDiv.innerHTML = `${delBtn}<div class="name" style="color:${user.color}"><img src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</div><div>${post.text}</div>`;
+    // KEY FIX: separate class for avatar
+    postDiv.innerHTML = `${delBtn}<div class="name" style="color:${user.color}"><img class="card-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</div><div>${post.text}</div>`;
     document.getElementById('feed').prepend(postDiv);
   });
 }
@@ -336,7 +339,7 @@ recordBtn.onclick = async () => {
   }
 }
 
-// CHAT WITH SMALL PROFILE PIC
+// CHAT WITH TINY PROFILE PIC
 function loadChat() {
   off(ref(db, 'globalChat'));
   document.getElementById('global-chat').innerHTML = '<p style="text-align:center; opacity:0.6">Loading messages...</p>';
@@ -362,9 +365,9 @@ function loadChat() {
 
     let content = '';
     if(msg.audio) {
-      content = `<span class="bubble-name"><img src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`;
+      content = `<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`;
     } else {
-      content = `<span class="bubble-name"><img src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`;
+      content = `<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`;
     }
 
     if(isMe){
@@ -408,4 +411,4 @@ document.getElementById('logo-btn').onclick = () => {
 }
 </script>
 </body>
-  </html>
+</html>
