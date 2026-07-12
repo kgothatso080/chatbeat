@@ -114,7 +114,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.1 - ChatBeat FAST
+    Version 2.0.2 - ChatBeat FAST FIX
   </div>
 </div>
 
@@ -145,8 +145,7 @@ const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-// KEY 1: REMEMBER USER FOREVER - FAST LOGIN
-setPersistence(auth, browserLocalPersistence);
+setPersistence(auth, browserLocalPersistence); // FAST LOGIN
 
 const colors = ['#00C896', '#0077FF', '#00FFD1', '#FF6B6B', '#F7DC6F', '#9B59B6', '#E67E22', '#1ABC9C'];
 const DEFAULT_PIC = 'https://ui-avatars.com/api/?name=U&background=00C896&color=fff';
@@ -157,7 +156,7 @@ let isRecording = false;
 let loadedMessages = new Set();
 let postImageData = null;
 let chatImageData = null;
-let userCache = {}; // KEY 2: CACHE USERS
+let userCache = {};
 
 window.openProfilePopup = (imgSrc) => {
   if(!imgSrc) return;
@@ -209,6 +208,7 @@ document.getElementById('register-btn').onclick = async () => {
 document.getElementById('login-btn').onclick = () => {
  const email = document.getElementById('email-input').value.trim();
  const pass = document.getElementById('pass-input').value.trim();
+ document.getElementById('cover-error').innerText = "Logging in..."; // FEEDBACK
  signInWithEmailAndPassword(auth, email, pass).catch(e => { document.getElementById('cover-error').innerText = e.message; });
 }
 
@@ -222,21 +222,25 @@ document.getElementById('forgot-btn').onclick = () => {
 .catch((error) => { err.innerText = error.message; });
 }
 
-document.getElementById('logout-btn').onclick = () => signOut(auth);
+document.getElementById('logout-btn').onclick = () => {
+  // RESET EVERYTHING ON LOGOUT
+  window.dataLoaded = false;
+  userCache = {};
+  loadedMessages.clear();
+  signOut(auth)
+}
 
-// KEY 3: INSTANT UI + BACKGROUND LOAD
 onAuthStateChanged(auth, async (user) => {
  if(user) {
    currentUser = user;
+   document.getElementById('cover-error').innerText = '';
 
-   // INSTANT: Show app immediately with cached data
    const cached = localStorage.getItem('user_'+user.uid);
    if(cached){
      const userData = JSON.parse(cached);
      showApp(userData);
    }
 
-   // BACKGROUND: Update from Firebase
    const userRef = ref(db, 'users/' + user.uid);
    const userSnap = await get(userRef);
    let userData = userSnap.val();
@@ -245,7 +249,7 @@ onAuthStateChanged(auth, async (user) => {
      userData = { name: nameFromEmail, email: user.email, color: colors[Math.floor(Math.random()*colors.length)], profilePic:DEFAULT_PIC };
      await set(userRef, userData);
    }
-   localStorage.setItem('user_'+user.uid, JSON.stringify(userData)); // SAVE CACHE
+   localStorage.setItem('user_'+user.uid, JSON.stringify(userData));
    showApp(userData);
 
  } else {
@@ -260,16 +264,15 @@ function showApp(userData){
   document.getElementById('my-name').innerText = userData.name;
   document.getElementById('profile-pic').src = userData.profilePic || DEFAULT_PIC;
 
-  // Only load data once
-  if(!window.dataLoaded){
-    window.dataLoaded = true;
-    loadedMessages.clear();
-    document.getElementById('feed').innerHTML = '';
-    document.getElementById('global-chat').innerHTML = '';
-    startAutoDelete();
-    loadPosts();
-    loadChat();
-  }
+  // FIX: Always reload data on login
+  off(ref(db, 'posts'));
+  off(ref(db, 'globalChat'));
+  loadedMessages.clear();
+  document.getElementById('feed').innerHTML = '';
+  document.getElementById('global-chat').innerHTML = '<p style="text-align:center; opacity:0.6">Loading messages...</p>';
+  startAutoDelete();
+  loadPosts();
+  loadChat();
 }
 
 document.getElementById('profile-upload').onchange = (e)=>{
@@ -394,7 +397,6 @@ recordBtn.onclick = async () => {
   }
 }
 
-// KEY 4: USER CACHE - NO REPEAT DB CALLS
 async function getUser(uid){
   if(userCache[uid]) return userCache[uid];
   const userSnap = await get(ref(db, 'users/' + uid));
