@@ -251,6 +251,9 @@ onAuthStateChanged(auth, async (user) => {
    document.getElementById('app').style.display = 'block';
    document.getElementById('my-name').innerText = userData.name;
    document.getElementById('profile-pic').src = userData.profilePic || DEFAULT_PIC;
+   if(!isOnline)
+document.getElementById('offline-badge').style.display='block';
+updateDataSaverUI();
    loadedMessages.clear();
    document.getElementById('feed').innerHTML = '';
    document.getElementById('global-chat').innerHTML = '';
@@ -266,6 +269,7 @@ onAuthStateChanged(auth, async (user) => {
 document.getElementById('profile-upload').onchange = (e)=>{
   const file = e.target.files[0];
   if(file){
+    if(!checkData("Profile photo upload")) return;
     const reader = new FileReader();
     reader.onload = ()=>{
       set(ref(db,'users/'+currentUser.uid+'/profilePic'), reader.result);
