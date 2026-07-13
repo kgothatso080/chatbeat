@@ -8,9 +8,8 @@
     * { box-sizing: border-box; }
     body { margin:0; font-family: 'Roboto', sans-serif; background: #0b141a; color: white; }
 .topbar { background: linear-gradient(90deg, #00C896, #0077FF); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
-.offline-badge { background: #FF6B6B; padding: 4px 10px; border-radius: 20px; font-size: 12px; display:none }
 .topbar h2 { margin: 0; font-size: 20px; text-shadow: 0 0 5px #fff; cursor: pointer; }
-.topbar div { display:flex; gap:8px; align-items:center }
+.topbar div { display:flex; gap:8px }
 .topbar button { background: rgba(0,0,0,0.3); width: auto; padding: 8px 12px; border-radius: 20px; font-weight: 500; border: none; color: white; cursor:pointer }
     #cover { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; text-align:center; padding:20px; background: linear-gradient(135deg, #00C896 0%, #0077FF 50%, #000 100%); }
     #cover h1 { font-size: 3em; text-shadow: 0 0 20px #00C896; }
@@ -35,7 +34,6 @@
 .bubble { max-width: 75%; padding: 6px 10px 8px 10px; border-radius: 8px; position: relative; word-wrap: break-word; font-size: 15px; line-height: 1.4; }
 .me-bubble { background: #0077FF; border-bottom-right-radius: 2px; margin-left: auto; }
 .other-bubble { background: #005c4b; border-bottom-left-radius: 2px; margin-right: auto; }
-.bubble-pending { opacity: 0.5; } /* GREY OUT PENDING */
 .bubble-name { display: flex; align-items:center; gap:6px; font-size: 12px; font-weight: 700; margin-bottom: 3px; cursor:pointer }
 .bubble-avatar {width:20px; height:20px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block}
 .bubble-text { display: block; }
@@ -76,7 +74,6 @@
     <button id="logout-btn">Logout</button>
     <h2 id="logo-btn">ChatBeat</h2>
     <div>
-      <span id="offline-badge" class="offline-badge">Offline - Queued</span> <!-- NEW -->
       <button id="profile-icon-btn">👤</button>
       <button id="chat-icon-btn">💬</button>
     </div>
@@ -117,7 +114,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.5 - OFFLINE MODE
+    Version 2.0.4 - FAST
   </div>
 </div>
 
@@ -136,7 +133,11 @@ const firebaseConfig = {
   apiKey: "AIzaSyD97-el91-ISWGkOhxWy4V_wXyOK6MJl0k",
   authDomain: "chatbeat-71f80.firebaseapp.com",
   databaseURL: "https://chatbeat-71f80-default-rtdb.firebaseio.com",
-  projectId: "chatbeat-71f80"
+  projectId: "chatbeat-71f80",
+  storageBucket: "chatbeat-71f80.firebasestorage.app",
+  messagingSenderId: "38692820606",
+  appId: "1:38692820606:web:edce5abf8d103e1f6e6a2f",
+  measurementId: "G-KZ5KN31YFL"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -153,29 +154,7 @@ let isRecording = false;
 let loadedMessages = new Set();
 let postImageData = null;
 let chatImageData = null;
-let userCache = {};
-let isOnline = navigator.onLine;
-let messageQueue = JSON.parse(localStorage.getItem('chatbeat_queue') || '[]'); // OFFLINE QUEUE
-
-// OFFLINE DETECTION
-window.addEventListener('online', () => { isOnline = true; document.getElementById('offline-badge').style.display='none'; processQueue(); });
-window.addEventListener('offline', () => { isOnline = false; document.getElementById('offline-badge').style.display='block'; });
-
-function saveQueue(){ localStorage.setItem('chatbeat_queue', JSON.stringify(messageQueue)); }
-
-async function processQueue(){
-  if(messageQueue.length === 0) return;
-  console.log("Sending", messageQueue.length, "queued messages");
-  while(messageQueue.length > 0){
-    const item = messageQueue[0];
-    try{
-      await push(ref(db, item.path), item.data);
-      messageQueue.shift();
-      saveQueue();
-      document.getElementById(msg.id)?.classList.remove('bubble-pending');
-    }catch(e){ break; } // Stop if still offline
-  }
-}
+let userCache = {}; // NEW: CACHE USERS
 
 window.openProfilePopup = (imgSrc) => {
   if(!imgSrc) return;
@@ -192,22 +171,20 @@ function startAutoDelete() {
     const now = Date.now();
     const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
     const tenDaysAgo = now - (10 * 24 * 60 * 60 * 1000);
-    if(isOnline){
-      get(ref(db, 'globalChat')).then(snapshot => {
-        snapshot.forEach(msg => {
-          if(msg.val().timestamp < sevenDaysAgo){
-            remove(ref(db, 'globalChat/' + msg.key));
-          }
-        })
-      });
-      get(ref(db, 'posts')).then(snapshot => {
-        snapshot.forEach(post => {
-          if(post.val().timestamp < tenDaysAgo){
-            remove(ref(db, 'posts/' + post.key));
-          }
-        })
-      });
-    }
+    get(ref(db, 'globalChat')).then(snapshot => {
+      snapshot.forEach(msg => {
+        if(msg.val().timestamp < sevenDaysAgo){
+          remove(ref(db, 'globalChat/' + msg.key));
+        }
+      })
+    });
+    get(ref(db, 'posts')).then(snapshot => {
+      snapshot.forEach(post => {
+        if(post.val().timestamp < tenDaysAgo){
+          remove(ref(db, 'posts/' + post.key));
+        }
+      })
+    });
   }, 60 * 60 * 1000);
 }
 
@@ -243,7 +220,7 @@ document.getElementById('forgot-btn').onclick = () => {
 }
 
 document.getElementById('logout-btn').onclick = () => {
-  userCache = {};
+  userCache = {}; // CLEAR CACHE ON LOGOUT
   signOut(auth)
 }
 
@@ -257,19 +234,18 @@ onAuthStateChanged(auth, async (user) => {
      const nameFromEmail = user.email.split('@')[0];
      userData = { name: nameFromEmail, email: user.email, color: colors[Math.floor(Math.random()*colors.length)], profilePic:DEFAULT_PIC };
      await set(userRef, userData);
+     alert("Welcome to ChatBeat! Your name is: " + nameFromEmail)
    }
    document.getElementById('cover').style.display = 'none';
    document.getElementById('app').style.display = 'block';
    document.getElementById('my-name').innerText = userData.name;
    document.getElementById('profile-pic').src = userData.profilePic || DEFAULT_PIC;
-   if(!isOnline) document.getElementById('offline-badge').style.display='block';
    loadedMessages.clear();
    document.getElementById('feed').innerHTML = '';
    document.getElementById('global-chat').innerHTML = '';
    startAutoDelete();
    loadPosts();
    loadChat();
-   processQueue(); // SEND ANY PENDING
  } else {
    document.getElementById('cover').style.display = 'flex';
    document.getElementById('app').style.display = 'none';
@@ -281,14 +257,9 @@ document.getElementById('profile-upload').onchange = (e)=>{
   if(file){
     const reader = new FileReader();
     reader.onload = ()=>{
-      if(isOnline){
-        set(ref(db,'users/'+currentUser.uid+'/profilePic'), reader.result);
-      } else {
-        messageQueue.push({path: 'users/'+currentUser.uid+'/profilePic', data: reader.result});
-        saveQueue();
-        alert("No data. Photo will upload when you're online");
-      }
+      set(ref(db,'users/'+currentUser.uid+'/profilePic'), reader.result);
       document.getElementById('profile-pic').src = reader.result;
+      alert("Profile photo updated!")
     }
     reader.readAsDataURL(file);
   }
@@ -313,25 +284,18 @@ document.getElementById('post-file').onchange = (e)=>{
 document.getElementById('post-btn').onclick = async () => {
   const text = document.getElementById('post-text').value.trim();
   if(!text &&!postImageData) return;
-  const data = { uid: currentUser.uid, text, image: postImageData, timestamp: Date.now() };
-
-  if(isOnline){
-    await push(ref(db, 'posts'), data);
-  } else {
-    messageQueue.push({path: 'posts', data});
-    saveQueue();
-    alert("No data. Post will send when you're online");
-  }
+  await push(ref(db, 'posts'), { uid: currentUser.uid, text, image: postImageData, timestamp: Date.now() });
   document.getElementById('post-text').value = '';
   postImageData = null;
   document.getElementById('post-file').value = '';
 }
 
+// FAST POSTS WITH CACHE
 async function getUser(uid){
-  if(userCache[uid]) return userCache[uid];
+  if(userCache[uid]) return userCache[uid]; // RETURN FROM CACHE
   const userSnap = await get(ref(db, 'users/' + uid));
   const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888", profilePic:DEFAULT_PIC};
-  userCache[uid] = user;
+  userCache[uid] = user; // SAVE TO CACHE
   return user;
 }
 
@@ -341,7 +305,7 @@ function loadPosts() {
   onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50)), async (snap) => {
     const post = snap.val();
     const postKey = snap.key;
-    const user = await getUser(post.uid);
+    const user = await getUser(post.uid); // USE CACHE
     const userPic = user.profilePic || DEFAULT_PIC;
     const postDiv = document.createElement('div');
     postDiv.className = 'card';
@@ -373,15 +337,9 @@ document.getElementById('chat-file').onchange = async (e)=>{
   if(file){
     const reader = new FileReader();
     reader.onload = async ()=>{
-      const data = { uid: currentUser.uid, image: reader.result, timestamp: Date.now(), id: 'temp_'+Date.now() };
-      if(isOnline){
-        await push(ref(db, 'globalChat'), data);
-      } else {
-        messageQueue.push({path: 'globalChat', data});
-        saveQueue();
-        renderMessage({key: data.id, val: ()=>data}, true, true); // Show as pending
-        alert("No data. Photo will send when you're online");
-      }
+      chatImageData = reader.result;
+      await push(ref(db, 'globalChat'), { uid: currentUser.uid, image: chatImageData, timestamp: Date.now() });
+      chatImageData = null;
     }
     reader.readAsDataURL(file);
   }
@@ -391,15 +349,7 @@ document.getElementById('send-chat').onclick = async () => {
   const text = document.getElementById('chat-input').value.trim();
   if(!text) return;
   document.getElementById('chat-input').value = '';
-  const data = { uid: currentUser.uid, text, timestamp: Date.now(), id: 'temp_'+Date.now() };
-
-  if(isOnline){
-    await push(ref(db, 'globalChat'), data);
-  } else {
-    messageQueue.push({path: 'globalChat', data});
-    saveQueue();
-    renderMessage({key: data.id, val: ()=>data}, true, true); // Show as pending
-  }
+  await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, timestamp: Date.now() });
 }
 
 const recordBtn = document.getElementById('record-btn');
@@ -415,15 +365,7 @@ recordBtn.onclick = async () => {
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
-          const data = { uid: currentUser.uid, audio: reader.result, timestamp: Date.now(), id: 'temp_'+Date.now() };
-          if(isOnline){
-            await push(ref(db, 'globalChat'), data);
-          } else {
-            messageQueue.push({path: 'globalChat', data});
-            saveQueue();
-            renderMessage({key: data.id, val: ()=>data}, true, true);
-            alert("No data. Voice note will send when you're online");
-          }
+          await push(ref(db, 'globalChat'), { uid: currentUser.uid, audio: reader.result, timestamp: Date.now() });
         }
       }
       mediaRecorder.start();
@@ -441,41 +383,43 @@ recordBtn.onclick = async () => {
   }
 }
 
+// FAST CHAT - BATCH LOAD FIRST
 function loadChat() {
   off(ref(db, 'globalChat'));
   document.getElementById('global-chat').innerHTML = '<p style="text-align:center; opacity:0.6">Loading messages...</p>';
   loadedMessages.clear();
 
+  // STEP 1: LOAD LAST 50 MESSAGES AT ONCE
   get(query(ref(db, 'globalChat'), orderByChild('timestamp'), limitToLast(50))).then(async (snapshot) => {
     document.getElementById('global-chat').innerHTML = '';
     const promises = [];
     snapshot.forEach((snap) => {
-      promises.push(renderMessage(snap, false, false));
+      promises.push(renderMessage(snap, false));
     })
-    await Promise.all(promises);
+    await Promise.all(promises); // LOAD ALL TOGETHER
     document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
 
+    // STEP 2: LISTEN FOR NEW MESSAGES ONLY
     onChildAdded(query(ref(db, 'globalChat'), orderByChild('timestamp'), limitToLast(1)), (snap) => {
       if(!loadedMessages.has(snap.key)){
-        renderMessage(snap, true, false);
+        renderMessage(snap, true);
       }
     });
   });
 }
 
-async function renderMessage(snap, scroll, isPending){
+async function renderMessage(snap, scroll){
   const msg = snap.val();
   const msgKey = snap.key;
   if(loadedMessages.has(msgKey)) return;
   loadedMessages.add(msgKey);
 
-  const user = await getUser(msg.uid);
+  const user = await getUser(msg.uid); // USE CACHE
   const userPic = user.profilePic || DEFAULT_PIC;
   const isMe = msg.uid === currentUser.uid;
 
   const msgDiv = document.createElement('div');
   msgDiv.id = 'msg-' + msgKey;
-  if(isPending) msgDiv.classList.add('bubble-pending');
 
   let delBtn = '';
   if(isMe) {
@@ -531,4 +475,4 @@ document.getElementById('logo-btn').onclick = () => {
 }
 </script>
 </body>
-  </html>
+</html>
