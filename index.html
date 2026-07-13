@@ -15,7 +15,6 @@
     #cover h1 { font-size: 3em; text-shadow: 0 0 20px #00C896; }
     input, button, textarea { padding:12px; margin:8px; border-radius:25px; border:none; width:80%; max-width:300px; font-size:16px; font-family: 'Roboto', sans-serif; }
     button { background: linear-gradient(90deg, #00C896, #0077FF); color:white; font-weight:700; cursor:pointer; }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
 .link-btn { background: transparent!important; text-decoration: underline; font-size: 14px; width: auto; background-image: none!important; }
     textarea { border-radius: 12px; height: 60px; background: #2a3942; color: white; width: 90%; }
     #app { display:none; }
@@ -31,8 +30,8 @@
 .chat-header { display: flex; align-items: center; padding: 10px; background: #202c33; border-bottom: 1px solid #2a3942; }
 .chat-header h3 { margin: 0 auto; }
     #back-to-feed { background: transparent; width: auto; }
-    #global-chat { height: calc(100vh - 280px); overflow-y:auto; background:#0b141a; padding:10px; display: flex; flex-direction: column; gap: 2px; padding-bottom: 70px; }
-.bubble { max-width: 75%; padding: 6px 10px 8px 10px; border-radius: 8px; position: relative; word-wrap: break-word; font-size: 15px; line-height: 1.4; transition: transform 0.2s ease-out; touch-action: pan-y; }
+    #global-chat { height: calc(100vh - 250px); overflow-y:auto; background:#0b141a; padding:10px; display: flex; flex-direction: column; gap: 2px; }
+.bubble { max-width: 75%; padding: 6px 10px 8px 10px; border-radius: 8px; position: relative; word-wrap: break-word; font-size: 15px; line-height: 1.4; }
 .me-bubble { background: #0077FF; border-bottom-right-radius: 2px; margin-left: auto; }
 .other-bubble { background: #005c4b; border-bottom-left-radius: 2px; margin-right: auto; }
 .bubble-name { display: flex; align-items:center; gap:6px; font-size: 12px; font-weight: 700; margin-bottom: 3px; cursor:pointer }
@@ -41,14 +40,11 @@
 .bubble-img {max-width:200px; border-radius:8px; margin-top:4px; cursor:pointer}
 .bubble-del { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.4); padding: 0; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
 .bubble audio { width: 220px; max-width: 100%; margin-top: 4px; }
-.swipe-arrow { position:absolute; left:-25px; top:50%; transform:translateY(-50%); opacity:0.3; font-size:18px; color:#00C896 }
-.chat-input-area { display: flex; flex-direction: column; padding: 10px; background: #202c33; position: fixed; bottom: 0; left:0; width: 100%; z-index: 5; gap:5px }
-.chat-input-row { display:flex; gap:5px; width:100% }
+.chat-input-area { display: flex; padding: 10px; background: #202c33; position: fixed; bottom: 0; left:0; width: 100%; z-index: 5; gap:5px }
 .chat-input-area input { flex: 1; border-radius: 25px; background: #2a3942; color: white; }
 .chat-input-area button { width: 50px; border-radius: 50%; }
 .record-btn { background: red!important; animation: pulse 1s infinite }
 @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(255,0,0,0.7)} 70%{box-shadow:0 0 0 10px rgba(255,0,0,0)} 100%{box-shadow:0 0 0 0 rgba(255,0,0,0)} }
-@keyframes slideDown { from{opacity:0; transform:translateY(-10px)} to{opacity:1; transform:translateY(0)} }
 .footer { text-align:center; padding:20px; font-size:12px; opacity:0.8; border-top:1px solid #2a3942; background: #111b21; padding-bottom: 80px; }
 .footer a { color:#00C896; text-decoration:none; font-weight:700; }
 
@@ -108,24 +104,17 @@
     </div>
     <div id="global-chat"></div>
     <div class="chat-input-area">
-      <div id="reply-box" style="display:none; width:100%; background:#2a3942; padding:8px 12px; border-left:3px solid #00C896; border-radius:8px; animation:slideDown 0.2s">
-        <span style="font-size:12px; color:#00C896; font-weight:700">Replying to <span id="reply-name"></span></span>
-        <span style="float:right; cursor:pointer; font-size:20px" onclick="cancelReply()">×</span>
-        <div id="reply-text" style="font-size:13px; opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis"></div>
-      </div>
-      <div class="chat-input-row">
-        <button id="chat-img-btn">📷</button>
-        <input id="chat-file" type="file" accept="image/*" style="display:none">
-        <input id="chat-input" placeholder="Type a message">
-        <button id="record-btn">🎤</button>
-        <button id="send-chat">➤</button>
-      </div>
+      <button id="chat-img-btn">📷</button>
+      <input id="chat-file" type="file" accept="image/*" style="display:none">
+      <input id="chat-input" placeholder="Type a message">
+      <button id="record-btn">🎤</button>
+      <button id="send-chat">➤</button>
     </div>
   </div>
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.6 - LOGIN FIXED
+    Version 2.0.4 - FAST
   </div>
 </div>
 
@@ -165,8 +154,7 @@ let isRecording = false;
 let loadedMessages = new Set();
 let postImageData = null;
 let chatImageData = null;
-let userCache = {};
-let replyingTo = null;
+let userCache = {}; // NEW: CACHE USERS
 
 window.openProfilePopup = (imgSrc) => {
   if(!imgSrc) return;
@@ -177,19 +165,6 @@ window.closeProfilePopup = () => {
   document.getElementById('profile-popup').classList.remove('show');
 }
 document.getElementById('profile-popup').onclick = closeProfilePopup;
-
-function setReply(msgId, name, text){
-  replyingTo = {id: msgId, name, text};
-  document.getElementById('reply-box').style.display = 'block';
-  document.getElementById('reply-name').innerText = name;
-  document.getElementById('reply-text').innerText = text;
-  document.getElementById('chat-input').focus();
-}
-
-window.cancelReply = () => {
-  replyingTo = null;
-  document.getElementById('reply-box').style.display = 'none';
-}
 
 function startAutoDelete() {
   setInterval(() => {
@@ -220,7 +195,6 @@ document.getElementById('register-btn').onclick = async () => {
  const err = document.getElementById('cover-error');
  err.innerText = '';
  if(name.length < 3) { err.innerText = "Name must be 3+ letters"; return; }
- if(!email ||!pass) { err.innerText = "Fill email and password"; return; }
  try {
    const cred = await createUserWithEmailAndPassword(auth, email, pass);
    const nameSnap = await get(query(ref(db, 'users'), orderByChild('name'), equalTo(name)));
@@ -229,31 +203,10 @@ document.getElementById('register-btn').onclick = async () => {
  } catch(e) { err.innerText = e.message; }
 }
 
-// FIXED LOGIN BUTTON
-document.getElementById('login-btn').onclick = async () => {
+document.getElementById('login-btn').onclick = () => {
  const email = document.getElementById('email-input').value.trim();
  const pass = document.getElementById('pass-input').value.trim();
- const err = document.getElementById('cover-error');
- const btn = document.getElementById('login-btn');
-
- err.innerText = '';
-
- if(!email ||!pass) {
-   err.innerText = "Please enter email and password";
-   return;
- }
-
- btn.innerText = "Logging in...";
- btn.disabled = true;
-
- try {
-   await signInWithEmailAndPassword(auth, email, pass);
- } catch(e) {
-   err.innerText = e.message;
- } finally {
-   btn.innerText = "Login";
-   btn.disabled = false;
- }
+ signInWithEmailAndPassword(auth, email, pass).catch(e => { document.getElementById('cover-error').innerText = e.message; });
 }
 
 document.getElementById('forgot-btn').onclick = () => {
@@ -267,7 +220,7 @@ document.getElementById('forgot-btn').onclick = () => {
 }
 
 document.getElementById('logout-btn').onclick = () => {
-  userCache = {};
+  userCache = {}; // CLEAR CACHE ON LOGOUT
   signOut(auth)
 }
 
@@ -337,11 +290,12 @@ document.getElementById('post-btn').onclick = async () => {
   document.getElementById('post-file').value = '';
 }
 
+// FAST POSTS WITH CACHE
 async function getUser(uid){
-  if(userCache[uid]) return userCache[uid];
+  if(userCache[uid]) return userCache[uid]; // RETURN FROM CACHE
   const userSnap = await get(ref(db, 'users/' + uid));
   const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888", profilePic:DEFAULT_PIC};
-  userCache[uid] = user;
+  userCache[uid] = user; // SAVE TO CACHE
   return user;
 }
 
@@ -351,7 +305,7 @@ function loadPosts() {
   onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50)), async (snap) => {
     const post = snap.val();
     const postKey = snap.key;
-    const user = await getUser(post.uid);
+    const user = await getUser(post.uid); // USE CACHE
     const userPic = user.profilePic || DEFAULT_PIC;
     const postDiv = document.createElement('div');
     postDiv.className = 'card';
@@ -384,9 +338,8 @@ document.getElementById('chat-file').onchange = async (e)=>{
     const reader = new FileReader();
     reader.onload = async ()=>{
       chatImageData = reader.result;
-      await push(ref(db, 'globalChat'), { uid: currentUser.uid, image: chatImageData, timestamp: Date.now(), replyTo: replyingTo? replyingTo.id : null });
+      await push(ref(db, 'globalChat'), { uid: currentUser.uid, image: chatImageData, timestamp: Date.now() });
       chatImageData = null;
-      cancelReply();
     }
     reader.readAsDataURL(file);
   }
@@ -396,13 +349,7 @@ document.getElementById('send-chat').onclick = async () => {
   const text = document.getElementById('chat-input').value.trim();
   if(!text) return;
   document.getElementById('chat-input').value = '';
-  await push(ref(db, 'globalChat'), {
-    uid: currentUser.uid,
-    text,
-    timestamp: Date.now(),
-    replyTo: replyingTo? replyingTo.id : null
-  });
-  cancelReply();
+  await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, timestamp: Date.now() });
 }
 
 const recordBtn = document.getElementById('record-btn');
@@ -418,8 +365,7 @@ recordBtn.onclick = async () => {
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
-          await push(ref(db, 'globalChat'), { uid: currentUser.uid, audio: reader.result, timestamp: Date.now(), replyTo: replyingTo? replyingTo.id : null });
-          cancelReply();
+          await push(ref(db, 'globalChat'), { uid: currentUser.uid, audio: reader.result, timestamp: Date.now() });
         }
       }
       mediaRecorder.start();
@@ -437,20 +383,23 @@ recordBtn.onclick = async () => {
   }
 }
 
+// FAST CHAT - BATCH LOAD FIRST
 function loadChat() {
   off(ref(db, 'globalChat'));
   document.getElementById('global-chat').innerHTML = '<p style="text-align:center; opacity:0.6">Loading messages...</p>';
   loadedMessages.clear();
 
+  // STEP 1: LOAD LAST 50 MESSAGES AT ONCE
   get(query(ref(db, 'globalChat'), orderByChild('timestamp'), limitToLast(50))).then(async (snapshot) => {
     document.getElementById('global-chat').innerHTML = '';
     const promises = [];
     snapshot.forEach((snap) => {
       promises.push(renderMessage(snap, false));
     })
-    await Promise.all(promises);
+    await Promise.all(promises); // LOAD ALL TOGETHER
     document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
 
+    // STEP 2: LISTEN FOR NEW MESSAGES ONLY
     onChildAdded(query(ref(db, 'globalChat'), orderByChild('timestamp'), limitToLast(1)), (snap) => {
       if(!loadedMessages.has(snap.key)){
         renderMessage(snap, true);
@@ -465,65 +414,36 @@ async function renderMessage(snap, scroll){
   if(loadedMessages.has(msgKey)) return;
   loadedMessages.add(msgKey);
 
-  const user = await getUser(msg.uid);
+  const user = await getUser(msg.uid); // USE CACHE
   const userPic = user.profilePic || DEFAULT_PIC;
   const isMe = msg.uid === currentUser.uid;
 
   const msgDiv = document.createElement('div');
   msgDiv.id = 'msg-' + msgKey;
-  msgDiv.style.position = 'relative';
 
   let delBtn = '';
   if(isMe) {
     delBtn = `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>`;
   }
 
-  let replyHtml = '';
-  if(msg.replyTo){
-    const replyMsgSnap = await get(ref(db, 'globalChat/' + msg.replyTo));
-    if(replyMsgSnap.exists()){
-      const replyMsg = replyMsgSnap.val();
-      const replyUser = await getUser(replyMsg.uid);
-      replyHtml = `<div style="background:rgba(0,0,0,0.2); border-left:2px solid ${replyUser.color}; padding:4px 6px; border-radius:4px; margin-bottom:4px; font-size:12px">
-        <b style="color:${replyUser.color}">${replyUser.name}</b><br>
-        ${(replyMsg.text||'📷 Photo').slice(0,30)}
-      </div>`;
-    }
-  }
-
   let content = '';
   if(msg.image) {
-    content = `${replyHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<img class="bubble-img" src="${msg.image}" onclick="openProfilePopup('${msg.image}')">`;
+    content = `<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<img class="bubble-img" src="${msg.image}" onclick="openProfilePopup('${msg.image}')">`;
   } else if(msg.audio) {
-    content = `${replyHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`;
+    content = `<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`;
   } else {
-    content = `${replyHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`;
+    content = `<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`;
   }
 
   if(isMe){
-    msgDiv.innerHTML = `<div class="bubble me-bubble"><span class="swipe-arrow">↩️</span>${content}</div>`;
+    msgDiv.innerHTML = `<div class="bubble me-bubble">${content}</div>`;
     msgDiv.style.display = 'flex';
     msgDiv.style.justifyContent = 'flex-end';
   } else {
-    msgDiv.innerHTML = `<div class="bubble other-bubble"><span class="swipe-arrow">↩️</span>${content}</div>`;
+    msgDiv.innerHTML = `<div class="bubble other-bubble">${content}</div>`;
     msgDiv.style.display = 'flex';
     msgDiv.style.justifyContent = 'flex-start';
   }
-
-  let startX = 0;
-  const bubble = msgDiv.querySelector('.bubble');
-
-  bubble.addEventListener('touchstart', e => startX = e.touches[0].clientX);
-  bubble.addEventListener('touchend', e => {
-    let endX = e.changedTouches[0].clientX;
-    if(endX - startX > 80) setReply(msgKey, user.name, msg.text||'Photo');
-  });
-
-  bubble.addEventListener('mousedown', e => startX = e.clientX);
-  bubble.addEventListener('mouseup', e => {
-    let endX = e.clientX;
-    if(endX - startX > 80) setReply(msgKey, user.name, msg.text||'Photo');
-  });
 
   document.getElementById('global-chat').appendChild(msgDiv);
   if(scroll) document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
@@ -555,4 +475,6 @@ document.getElementById('logo-btn').onclick = () => {
 }
 </script>
 </body>
-  </html>
+</html>
+
+Make this website to be able to be accepted by meta just tell me what to add or replace don't give the full code...when don't have data can only send messages and  post text but if have data can post photos or send photos or change profile pic but when don't have data can see the pictures send blurry.....u want it to take it to meta free data basics so it has to have data free and data
