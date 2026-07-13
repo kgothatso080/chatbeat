@@ -15,6 +15,7 @@
     #cover h1 { font-size: 3em; text-shadow: 0 0 20px #00C896; }
     input, button, textarea { padding:12px; margin:8px; border-radius:25px; border:none; width:80%; max-width:300px; font-size:16px; font-family: 'Roboto', sans-serif; }
     button { background: linear-gradient(90deg, #00C896, #0077FF); color:white; font-weight:700; cursor:pointer; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
 .link-btn { background: transparent!important; text-decoration: underline; font-size: 14px; width: auto; background-image: none!important; }
     textarea { border-radius: 12px; height: 60px; background: #2a3942; color: white; width: 90%; }
     #app { display:none; }
@@ -124,7 +125,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.5 - SWIPE TO REPLY
+    Version 2.0.6 - LOGIN FIXED
   </div>
 </div>
 
@@ -165,7 +166,7 @@ let loadedMessages = new Set();
 let postImageData = null;
 let chatImageData = null;
 let userCache = {};
-let replyingTo = null; // NEW: FOR REPLY
+let replyingTo = null;
 
 window.openProfilePopup = (imgSrc) => {
   if(!imgSrc) return;
@@ -219,6 +220,7 @@ document.getElementById('register-btn').onclick = async () => {
  const err = document.getElementById('cover-error');
  err.innerText = '';
  if(name.length < 3) { err.innerText = "Name must be 3+ letters"; return; }
+ if(!email ||!pass) { err.innerText = "Fill email and password"; return; }
  try {
    const cred = await createUserWithEmailAndPassword(auth, email, pass);
    const nameSnap = await get(query(ref(db, 'users'), orderByChild('name'), equalTo(name)));
@@ -227,10 +229,31 @@ document.getElementById('register-btn').onclick = async () => {
  } catch(e) { err.innerText = e.message; }
 }
 
-document.getElementById('login-btn').onclick = () => {
+// FIXED LOGIN BUTTON
+document.getElementById('login-btn').onclick = async () => {
  const email = document.getElementById('email-input').value.trim();
  const pass = document.getElementById('pass-input').value.trim();
- signInWithEmailAndPassword(auth, email, pass).catch(e => { document.getElementById('cover-error').innerText = e.message; });
+ const err = document.getElementById('cover-error');
+ const btn = document.getElementById('login-btn');
+
+ err.innerText = '';
+
+ if(!email ||!pass) {
+   err.innerText = "Please enter email and password";
+   return;
+ }
+
+ btn.innerText = "Logging in...";
+ btn.disabled = true;
+
+ try {
+   await signInWithEmailAndPassword(auth, email, pass);
+ } catch(e) {
+   err.innerText = e.message;
+ } finally {
+   btn.innerText = "Login";
+   btn.disabled = false;
+ }
 }
 
 document.getElementById('forgot-btn').onclick = () => {
@@ -455,7 +478,6 @@ async function renderMessage(snap, scroll){
     delBtn = `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>`;
   }
 
-  // REPLY PREVIEW
   let replyHtml = '';
   if(msg.replyTo){
     const replyMsgSnap = await get(ref(db, 'globalChat/' + msg.replyTo));
@@ -488,7 +510,6 @@ async function renderMessage(snap, scroll){
     msgDiv.style.justifyContent = 'flex-start';
   }
 
-  // SWIPE TO REPLY LOGIC
   let startX = 0;
   const bubble = msgDiv.querySelector('.bubble');
 
@@ -534,4 +555,4 @@ document.getElementById('logo-btn').onclick = () => {
 }
 </script>
 </body>
-</html>
+  </html>
