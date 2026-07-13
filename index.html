@@ -88,6 +88,7 @@
   <div id="profile-box" class="profile-box">
     <img id="profile-pic" src="https://ui-avatars.com/api/?name=U&background=00C896&color=fff">
     <h3 id="my-name"></h3>
+    <button id="data-toggle-btn" style="background:#F7DC6F; color:#000">Turn Data Saver ON</button>
     <input id="profile-upload" type="file" accept="image/*" style="display:none">
     <button onclick="document.getElementById('profile-upload').click()">Change Profile Photo</button>
     <button onclick="document.getElementById('profile-box').style.display='none'">Close</button>
@@ -467,7 +468,37 @@ window.deleteMsg = async (key) => {
     loadedMessages.delete(key);
   }
 }
-
+function updateDataSaverUI(){
+  if(dataSaver){
+    document.getElementById('data-badge').style.display='block';
+    document.getElementById('data-toggle-btn').innerText = 'Turn Data Saver OFF';
+    document.getElementById('chat-img-btn').classList.add('btn-disabled');
+    document.getElementById('record-btn').classList.add('btn-disabled');
+    document.getElementById('post-img-btn').classList.add('btn-disabled');
+    document.getElementById('profile-upload').disabled = true;
+  } else {
+    document.getElementById('data-badge').style.display='none';
+    document.getElementById('data-toggle-btn').innerText = 'Turn Data Saver ON';
+    document.getElementById('chat-img-btn').classList.remove('btn-disabled');
+    document.getElementById('record-btn').classList.remove('btn-disabled');
+    document.getElementById('post-img-btn').classList.remove('btn-disabled');
+    document.getElementById('profile-upload').disabled = false;
+  }
+}
+function toggleDataSaver(){
+  dataSaver = !dataSaver;
+  localStorage.setItem('chatbeat_dataSaver', dataSaver);
+  updateDataSaverUI();
+}
+function checkData(action){
+  if(dataSaver || !isOnline){
+    alert(`Data Saver is ON or No Data.\n${action} requires data/WiFi.`);
+    return false;
+  }
+  return true;
+}
+window.addEventListener('online', () => { isOnline = true; document.getElementById('offline-badge').style.display='none'; });
+window.addEventListener('offline', () => { isOnline = false; document.getElementById('offline-badge').style.display='block'; });
 document.getElementById('chat-icon-btn').onclick = () => {
   document.getElementById('feed-section').style.display = 'none';
   document.getElementById('chat-section').style.display = 'block';
