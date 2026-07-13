@@ -52,6 +52,10 @@
 .profile-popup.show { display:flex!important; }
 .profile-popup img { max-width: 90%; max-height: 80%; border-radius: 15px; border: 3px solid #00C896; }
 .profile-popup-close { position:absolute; top:20px; right:20px; font-size:40px; color:white; cursor:pointer }
+.offline-badge { background: #FF6B6B; padding: 4px 10px; border-radius: 20px; font-size: 12px; display:none }
+.data-badge { background: #F7DC6F; color:#000; padding: 4px 10px; border-radius: 20px; font-size: 12px; display:none; cursor:pointer }
+.btn-disabled { background: #555!important; cursor: not-allowed!important; opacity: 0.5; }
+.blur-img { filter: blur(15px); }
   </style>
 </head>
 <body>
@@ -70,14 +74,16 @@
 </div>
 
 <div id="app">
-  <div class="topbar">
-    <button id="logout-btn">Logout</button>
-    <h2 id="logo-btn">ChatBeat</h2>
-    <div>
-      <button id="profile-icon-btn">👤</button>
-      <button id="chat-icon-btn">💬</button>
-    </div>
+<div class="topbar">
+  <button id="logout-btn">Logout</button>
+  <h2 id="logo-btn">ChatBeat</h2>
+  <div>
+    <span id="data-badge" class="data-badge" onclick="toggleDataSaver()">Data Saver ON</span>
+    <span id="offline-badge" class="offline-badge">Offline - Text Only</span>
+    <button id="profile-icon-btn">👤</button>
+    <button id="chat-icon-btn">💬</button>
   </div>
+</div>
 
   <div id="profile-box" class="profile-box">
     <img id="profile-pic" src="https://ui-avatars.com/api/?name=U&background=00C896&color=fff">
@@ -154,7 +160,11 @@ let isRecording = false;
 let loadedMessages = new Set();
 let postImageData = null;
 let chatImageData = null;
-let userCache = {}; // NEW: CACHE USERS
+let userCache = {};
+let isOnline = navigator.onLine;
+let dataSaver = localStorage.getItem('chatbeat_dataSaver') === 'true';
+let messageQueue = JSON.parse(localStorage.getItem('chatbeat_queue') || '[]'); // NEW: CACHE USERS
+  
 
 window.openProfilePopup = (imgSrc) => {
   if(!imgSrc) return;
