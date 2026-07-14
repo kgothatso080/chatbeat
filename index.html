@@ -219,6 +219,8 @@ let allMessagesCache = {}; // NEW: CACHE ALL MESSAGES FOR REPLY
 let replyToMsg = null; // NEW: CURRENT REPLY
 let dragging = null; // NEW: DRAG STATE
 const DRAG_THRESHOLD = 70;
+const REACTIONS = ['👍','❤️','😂','😮','😢','😡']; // FB 6
+const LONG_PRESS = 500; // 0.5s = 2-3s feel
 
 window.openProfilePopup = (imgSrc) => {
   if(!imgSrc) return;
@@ -242,7 +244,32 @@ function cancelReply(){
   document.getElementById('reply-bar').classList.remove('show');
 }
 document.getElementById('cancel-reply').onclick = cancelReply;
+  
+  async function setReaction(path, emoji){
+  const userReactRef = ref(db, path + '/' + currentUser.uid);
+  const snap = await get(userReactRef);
+  if(snap.exists() && snap.val() === emoji){ await remove(userReactRef); } // toggle off
+  else { await set(userReactRef, emoji); }
+}
 
+async function renderReactions(container, reactions){
+  if(!container) return;
+  container.innerHTML = '';
+  const counts = {}; const usersByEmoji = {};
+  for(const [uid, emoji] of Object.entries(reactions||{})){
+    counts[emoji] = (counts[emoji]||0)+1;
+    const u = await getUser(uid);
+    if(!usersByEmoji[emoji]) usersByEmoji[emoji] = [];
+    usersByEmoji[emoji].push(u.name);
+  }
+  if(Object.keys(counts).length === 0) return;
+  let html = '<div class="react-bubble">';
+  Object.keys(counts).slice(0,3).forEach(e=> html += e);
+  html += `<span style="font-size:11px; margin-left:4px">${Object.values(counts).reduce((a,b)=>a+b,0)}</span></div>`;
+  html += `<div class="react-names-tooltip">${Object.entries(usersByEmoji).map(([e, names])=>`${e} ${names.join(', ')}`).join('<br>')}</div>`;
+  container.innerHTML = html;
+}
+  
 function startAutoDelete() {
   setInterval(() => {
     const now = Date.now();
@@ -378,29 +405,34 @@ async function getUser(uid){
 }
 
 function loadPosts() {
-  off(ref(db, 'posts'));
-  document.getElementById('feed').innerHTML = '';
+  off(ref(db, 'posts')); document.getElementById('feed').innerHTML = '';
   onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50)), async (snap) => {
-    const post = snap.val();
-    const postKey = snap.key;
-    const user = await getUser(post.uid);
-    const userPic = user.profilePic || DEFAULT_PIC;
-    const postDiv = document.createElement('div');
-    postDiv.className = 'card';
-    postDiv.id = 'post-' + postKey;
-    let delBtn = '';
-    if(post.uid === currentUser.uid) {
-      delBtn = `<button class="del-btn" onclick="deletePost('${postKey}')">×</button>`;
-    }
-    let imgHtml = '';
-    if(post.image) {
-      imgHtml = `<img class="card-post-img" src="${post.image}" onclick="openProfilePopup('${post.image}')">`;
-    }
-    postDiv.innerHTML = `${delBtn}<div class="name" style="color:${user.color}"><img class="card-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</div><div>${post.text||''}</div>${imgHtml}`;
+    const post = snap.val(); const postKey = snap.key; const user = await getUser(post.uid); const userPic = user.profilePic || DEFAULT_PIC;
+    const postDiv = document.createElement('div'); postDiv.className = 'card'; postDiv.id = 'post-' + postKey;
+    let delBtn = post.uid === currentUser.uid? `<button class="del-btn" onclick="deletePost('${postKey}')">×</button>` : '';
+    let imgHtml = post.image? `<img class="card-post-img" src="${post.image}" onclick="openProfilePopup('${post.image}')">` : '';
+
+    postDiv.innerHTML = `${delBtn}<div class="name" style="color:${user.color}"><img class="card-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</div><div>${post.text||''}</div>${imgHtml}
+    <div class="react-summary" id="react-sum-${postKey}"></div>
+    <div class="actions-row">
+      <button class="action-btn" id="react-btn-${postKey}">👍</button>
+      <button class="action-btn" onclick="toggleComments('${postKey}')">💬</button>
+      <button class="action-btn" onclick="sharePost('${postKey}')">↗️</button>
+    </div>
+    <div class="react-picker" id="picker-${postKey}">${REACTIONS.map(r=>`<span onclick="reactToPost('${postKey}','${r}')">${r}</span>`).join('')}</div>
+    <div class="comments-section" id="comments-${postKey}"><div id="comment-list-${postKey}"></div><div class="comment-input-row"><input id="comment-input-${postKey}" placeholder="Write a comment..."><button onclick="addComment('${postKey}')">Send</button></div></div>`;
     document.getElementById('feed').prepend(postDiv);
+
+    renderReactions(document.getElementById(`react-sum-${postKey}`), post.reactions);
+    loadComments(postKey);
+    onValue(ref(db, `posts/${postKey}/reactions`), (s)=>{ renderReactions(document.getElementById(`react-sum-${postKey}`), s.val()) });
+
+    const btn = document.getElementById(`react-btn-${postKey}`); const picker = document.getElementById(`picker-${postKey}`); let timer;
+    btn.onmousedown = btn.ontouchstart = () => { timer = setTimeout(()=>picker.classList.add('show'), LONG_PRESS); }
+    btn.onmouseup = btn.ontouchend = btn.onmouseleave = () => clearTimeout(timer);
+    btn.onclick = () => { if(!timer) setReaction(`posts/${postKey}/reactions`, '👍') }
   });
 }
-
 window.deletePost = async (key) => {
   if(confirm("Delete this post?")) {
     await remove(ref(db, 'posts/' + key));
@@ -408,7 +440,12 @@ window.deletePost = async (key) => {
     if(el) el.remove();
   }
 }
-
+window.reactToPost = async (key, emoji) => { await setReaction(`posts/${key}/reactions`, emoji); document.getElementById(`picker-${key}`).classList.remove('show'); }
+window.toggleComments = (key) => document.getElementById(`comments-${key}`).classList.toggle('show');
+window.addComment = async (key) => { const input = document.getElementById(`comment-input-${key}`); const text = input.value.trim(); if(!text) return; await push(ref(db, `posts/${key}/comments`), {uid: currentUser.uid, text, timestamp: Date.now()}); input.value = ''; }
+function loadComments(key){ onChildAdded(ref(db, `posts/${key}/comments`), async (snap)=>{ const c = snap.val(); const u = await getUser(c.uid); const div = document.createElement('div'); div.className='comment'; div.innerHTML = `<img class="comment-avatar" src="${u.profilePic}"><div class="comment-bubble"><b>${u.name}</b> ${c.text}</div>`; document.getElementById(`comment-list-${key}`).appendChild(div); }) }
+window.sharePost = (key) => { navigator.clipboard.writeText(`${window.location.origin}#post-${key}`); alert("Link copied!"); }
+  
 document.getElementById('chat-img-btn').onclick = () => document.getElementById('chat-file').click();
 document.getElementById('chat-file').onchange = async (e)=>{
   const file = e.target.files[0];
