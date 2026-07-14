@@ -28,13 +28,26 @@
 .card-post-img {width:100%; border-radius:12px; margin-top:8px; cursor:pointer}
 .card.del-btn { position: absolute; top: 8px; right: 8px; background: #FF6B6B; padding: 0; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; line-height: 20px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
 
-.post-actions { display: flex; justify-content: space-around; margin-top: 10px; padding-top: 8px; border-top: 1px solid #2a3942; flex-wrap: wrap; gap: 4px; }
-.post-action-btn { background: #2a3942; flex: 1; min-width: 60px; padding: 6px; font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; border:none; color:white }
-.post-action-btn:hover { background: #374650; }
+/* FACEBOOK STYLE REACTIONS */
+.post-actions { display: flex; justify-content: space-around; margin-top: 10px; padding-top: 8px; border-top: 1px solid #2a3942; }
+.action-btn { background: transparent; flex: 1; padding: 8px; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; border:none; color:#aebac1; position: relative; }
+.action-btn:hover { background: #2a3942; }
+.action-btn.active { color: #0077FF; }
 
-.reactions-bar { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-.reaction { background: #2a3942; padding: 3px 8px; border-radius: 15px; font-size: 12px; display: flex; align-items: center; gap: 4px; cursor: pointer; }
-.reaction.you { background: #005c4b; border: 1px solid #00C896; }
+.reaction-picker {
+  position: absolute; bottom: 45px; left: 0;
+  background: #2a3942; padding: 8px; border-radius: 30px;
+  display: none; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  z-index: 100;
+}
+.reaction-picker.show { display: flex; }
+.reaction-option { font-size: 24px; cursor: pointer; transition: transform 0.1s; }
+.reaction-option:hover { transform: scale(1.4); }
+
+.reactions-bar { display: flex; gap: 4px; margin-top: 8px; align-items: center; }
+.reaction-summary { display: flex; margin-right: 8px; }
+.reaction-icon { width: 18px; height: 18px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; font-size: 10px; margin-left: -4px; border: 2px solid #202c33; }
+.reaction-count { font-size: 12px; color: #aebac1; }
 
 .comments-section { margin-top: 10px; border-top: 1px solid #2a3942; padding-top: 10px; display: none; }
 .comments-section.show { display: block; }
@@ -70,6 +83,8 @@
 .bubble-img {max-width:200px; border-radius:8px; margin-top:4px; cursor:pointer}
 .bubble-del { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.4); padding: 0; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
 .bubble audio { width: 220px; max-width: 100%; margin-top: 4px; }
+.bubble-reactions { display: flex; gap: 2px; margin-top: 4px; }
+.bubble-reaction { background: #2a3942; border-radius: 10px; padding: 2px 4px; font-size: 12px; cursor: pointer; }
 
 .reply-quote { background: rgba(0,0,0,0.2); border-left: 3px solid #00C896; padding: 6px 8px; margin-bottom: 6px; border-radius: 4px; font-size: 13px; }
 .reply-quote-name { font-weight: 700; color: #00C896; font-size: 12px; }
@@ -158,7 +173,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.6 - REACTIONS + COMMENTS + SHARE
+    Version 2.0.7 - REAL FB REACTIONS
   </div>
 </div>
 
@@ -190,7 +205,7 @@ const auth = getAuth(app);
 const db = getDatabase(app);
 
 const colors = ['#00C896', '#0077FF', '#00FFD1', '#FF6B6B', '#F7DC6F', '#9B59B6', '#E67E22', '#1ABC9C'];
-const REACTIONS = ['❤️', '😂', '😮', '😢', '🙏', '🔥'];
+const REACTIONS = { '👍':'Like', '❤️':'Love', '😂':'Haha', '😮':'Wow', '😢':'Sad', '🙏':'Pray', '🔥':'Fire' };
 const DEFAULT_PIC = 'https://ui-avatars.com/api/?name=U&background=00C896&color=fff';
 let currentUser = null;
 let mediaRecorder;
@@ -346,7 +361,7 @@ document.getElementById('post-file').onchange = (e)=>{
 
 document.getElementById('post-btn').onclick = async () => {
   const text = document.getElementById('post-text').value.trim();
-  if(!text &&!postImageData) return;
+  if(!text &&!postImageData) return alert("Write something or add image");
   await push(ref(db, 'posts'), {
     uid: currentUser.uid,
     text,
@@ -368,15 +383,24 @@ async function getUser(uid){
   return user;
 }
 
-// POST FUNCTIONS
-window.toggleReaction = async (postKey, emoji) => {
-  const reactionRef = ref(db, `posts/${postKey}/reactions/${emoji}/${currentUser.uid}`);
-  const snap = await get(reactionRef);
-  if(snap.exists()){
-    await remove(reactionRef);
+// REAL REACTION SYSTEM
+window.handleReaction = async (type, id, emoji = '👍') => {
+  const path = type === 'post'? `posts/${id}/reactions` : `globalChat/${id}/reactions`;
+  const userReactionRef = ref(db, `${path}/${currentUser.uid}`);
+  const snap = await get(userReactionRef);
+
+  if(snap.exists() && snap.val() === emoji){
+    await remove(userReactionRef); // remove if same reaction
   } else {
-    await set(reactionRef, true);
+    await set(userReactionRef, emoji); // set new reaction
   }
+}
+
+window.showReactionPicker = (type, id, btn) => {
+  document.querySelectorAll('.reaction-picker').forEach(p => p.classList.remove('show'));
+  const picker = btn.querySelector('.reaction-picker');
+  picker.classList.add('show');
+  setTimeout(() => picker.classList.remove('show'), 3000);
 }
 
 window.toggleComments = (postKey) => {
@@ -401,6 +425,18 @@ window.sharePost = (postKey) => {
   alert("Post link copied! 📤");
 }
 
+function getReactionSummary(reactions){
+  if(!reactions) return '';
+  const counts = {};
+  Object.values(reactions).forEach(e => counts[e] = (counts[e]||0)+1);
+  const total = Object.keys(reactions).length;
+  const top3 = Object.keys(counts).sort((a,b)=>counts[b]-counts[a]).slice(0,3);
+  return `<div class="reactions-bar">
+    <div class="reaction-summary">${top3.map(e=>`<div class="reaction-icon">${e}</div>`).join('')}</div>
+    <div class="reaction-count">${total}</div>
+  </div>`;
+}
+
 function loadPosts() {
   off(ref(db, 'posts'));
   document.getElementById('feed').innerHTML = '';
@@ -422,34 +458,7 @@ function loadPosts() {
       imgHtml = `<img class="card-post-img" src="${post.image}" onclick="openProfilePopup('${post.image}')">`;
     }
 
-    let reactionsHtml = '<div class="reactions-bar">';
-    if(post.reactions){
-      for(let emoji in post.reactions){
-        let count = Object.keys(post.reactions[emoji] || {}).length;
-        let youReacted = post.reactions[emoji][currentUser.uid];
-        if(count > 0) reactionsHtml += `<div class="reaction ${youReacted? 'you':''}" onclick="toggleReaction('${postKey}','${emoji}')">${emoji} ${count}</div>`;
-      }
-    }
-    reactionsHtml += '</div>';
-
-    let commentsHtml = `<div class="comments-section" id="comments-${postKey}">`;
-    if(post.comments){
-      for(let cKey in post.comments){
-        let c = post.comments[cKey];
-        let cUser = await getUser(c.uid);
-        commentsHtml += `<div class="comment">
-          <img class="comment-avatar" src="${cUser.profilePic}">
-          <div class="comment-bubble">
-            <div class="comment-name">${cUser.name}</div>
-            <div>${c.text}</div>
-          </div>
-        </div>`;
-      }
-    }
-    commentsHtml += `<div class="comment-input">
-      <input id="comment-input-${postKey}" placeholder="Write a comment...">
-      <button onclick="addComment('${postKey}')">Post</button>
-    </div></div>`;
+    let myReaction = post.reactions?.[currentUser.uid] || null;
 
     postDiv.innerHTML = `
       ${delBtn}
@@ -458,13 +467,26 @@ function loadPosts() {
       </div>
       <div>${post.text||''}</div>
       ${imgHtml}
-      ${reactionsHtml}
+      ${getReactionSummary(post.reactions)}
       <div class="post-actions">
-        ${REACTIONS.map(e => `<button class="post-action-btn" onclick="toggleReaction('${postKey}','${e}')">${e}</button>`).join('')}
-        <button class="post-action-btn" onclick="toggleComments('${postKey}')">💬</button>
-        <button class="post-action-btn" onclick="sharePost('${postKey}')">📤</button>
+        <button class="action-btn ${myReaction? 'active':''}"
+          onmousedown="showReactionPicker('post','${postKey}', this)"
+          ontouchstart="showReactionPicker('post','${postKey}', this)"
+          onclick="handleReaction('post','${postKey}','👍')">
+          <div class="reaction-picker">
+            ${Object.keys(REACTIONS).map(e=>`<div class="reaction-option" onclick="handleReaction('post','${postKey}','${e}')">${e}</div>`).join('')}
+          </div>
+          ${myReaction || '👍'} Like
+        </button>
+        <button class="action-btn" onclick="toggleComments('${postKey}')">💬 Comment</button>
+        <button class="action-btn" onclick="sharePost('${postKey}')">📤 Share</button>
       </div>
-      ${commentsHtml}
+      <div class="comments-section" id="comments-${postKey}">
+        <div class="comment-input">
+          <input id="comment-input-${postKey}" placeholder="Write a comment...">
+          <button onclick="addComment('${postKey}')">Post</button>
+        </div>
+      </div>
     `;
     document.getElementById('feed').prepend(postDiv);
   });
@@ -485,7 +507,7 @@ document.getElementById('chat-file').onchange = async (e)=>{
     const reader = new FileReader();
     reader.onload = async ()=>{
       chatImageData = reader.result;
-      await push(ref(db, 'globalChat'), { uid: currentUser.uid, image: chatImageData, replyTo: replyToMsg?.key || null, timestamp: Date.now() });
+      await push(ref(db, 'globalChat'), { uid: currentUser.uid, image: chatImageData, replyTo: replyToMsg?.key || null, timestamp: Date.now(), reactions: {} });
       chatImageData = null;
       cancelReply();
     }
@@ -497,7 +519,7 @@ document.getElementById('send-chat').onclick = async () => {
   const text = document.getElementById('chat-input').value.trim();
   if(!text) return;
   document.getElementById('chat-input').value = '';
-  await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, replyTo: replyToMsg?.key || null, timestamp: Date.now() });
+  await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, replyTo: replyToMsg?.key || null, timestamp: Date.now(), reactions: {} });
   cancelReply();
 }
 
@@ -514,7 +536,7 @@ recordBtn.onclick = async () => {
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
-          await push(ref(db, 'globalChat'), { uid: currentUser.uid, audio: reader.result, replyTo: replyToMsg?.key || null, timestamp: Date.now() });
+          await push(ref(db, 'globalChat'), { uid: currentUser.uid, audio: reader.result, replyTo: replyToMsg?.key || null, timestamp: Date.now(), reactions: {} });
           cancelReply();
         }
       }
@@ -595,7 +617,7 @@ async function renderMessage(snap, scroll){
   wrapper.className = `bubble-wrapper ${isMe? 'me-wrapper' : 'other-wrapper'}`;
   wrapper.id = 'wrapper-' + msgKey;
 
-  let delBtn = '';
+    let delBtn = '';
   if(isMe) {
     delBtn = `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>`;
   }
@@ -610,16 +632,24 @@ async function renderMessage(snap, scroll){
     </div>`;
   }
 
+  let myReaction = msg.reactions?.[currentUser.uid] || null;
+  let reactionsHtml = getReactionSummary(msg.reactions);
+
   let content = '';
   if(msg.image) {
-    content = `${replyHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<img class="bubble-img" src="${msg.image}" onclick="openProfilePopup('${msg.image}')">`;
+    content = `${replyHtml}${reactionsHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<img class="bubble-img" src="${msg.image}" onclick="openProfilePopup('${msg.image}')">`;
   } else if(msg.audio) {
-    content = `${replyHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`;
+    content = `${replyHtml}${reactionsHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`;
   } else {
-    content = `${replyHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`;
+    content = `${replyHtml}${reactionsHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`;
   }
 
-  wrapper.innerHTML = `<div class="reply-hint">↩️</div><div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}">${content}</div>`;
+  wrapper.innerHTML = `<div class="reply-hint">↩️</div><div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}">
+    ${content}
+    <div class="bubble-reactions">
+      ${Object.keys(REACTIONS).map(e=>`<div onclick="handleReaction('chat','${msgKey}','${e}')">${e}</div>`).join('')}
+    </div>
+  </div>`;
 
   wrapper.addEventListener('touchstart', e => startDrag(e, msgKey), {passive: true});
   wrapper.addEventListener('touchmove', e => moveDrag(e), {passive: false});
