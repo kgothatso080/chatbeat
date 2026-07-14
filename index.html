@@ -390,7 +390,7 @@ document.getElementById('post-file').onchange = (e)=>{
 document.getElementById('post-btn').onclick = async () => {
   const text = document.getElementById('post-text').value.trim();
   if(!text &&!postImageData) return;
-  await push(ref(db, 'posts'), { uid: currentUser.uid, text, image: postImageData, timestamp: Date.now() });
+  await push(ref(db, 'posts'), { uid: currentUser.uid, text, image: postImageData, timestamp: Date.now(), reactions:{}, comments:{} }
   document.getElementById('post-text').value = '';
   postImageData = null;
   document.getElementById('post-file').value = '';
@@ -465,7 +465,7 @@ document.getElementById('send-chat').onclick = async () => {
   const text = document.getElementById('chat-input').value.trim();
   if(!text) return;
   document.getElementById('chat-input').value = '';
-  await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, replyTo: replyToMsg?.key || null, timestamp: Date.now() });
+  await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, replyTo: replyToMsg?.key || null, timestamp: Date.now(), reactions:{} }
   cancelReply();
 }
 
@@ -601,8 +601,16 @@ async function renderMessage(snap, scroll){
   wrapper.addEventListener('mouseup', e => endDrag(e, msg, msgKey));
   wrapper.addEventListener('mouseleave', e => endDrag(e, msg, msgKey));
 
-  document.getElementById('global-chat').appendChild(wrapper);
-  if(scroll) document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
+      wrapper.innerHTML = `<div class="reply-hint">↩️</div><div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}" id="bubble-${msgKey}">${content}<div class="bubble-reactions" id="msg-react-${msgKey}"></div></div><div class="react-picker" id="msg-picker-${msgKey}">${REACTIONS.map(r=>`<span onclick="reactToMsg('${msgKey}','${r}')">${r}</span>`).join('')}</div>`;
+
+    const bubble = wrapper.querySelector(`#bubble-${msgKey}`); const picker = wrapper.querySelector(`#msg-picker-${msgKey}`); let timer;
+    bubble.onmousedown = bubble.ontouchstart = () => { timer = setTimeout(()=>picker.classList.add('show'), LONG_PRESS); }
+    bubble.onmouseup = bubble.ontouchend = bubble.onmouseleave = () => clearTimeout(timer);
+
+    document.getElementById('global-chat').appendChild(wrapper);
+    renderReactions(document.getElementById(`msg-react-${msgKey}`), msg.reactions);
+    onValue(ref(db, `globalChat/${msgKey}/reactions`), (s)=>{ renderReactions(document.getElementById(`msg-react-${msgKey}`), s.val()) });
+    if(scroll) document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
 }
 
 window.deleteMsg = async (key) => {
@@ -630,6 +638,7 @@ document.getElementById('logo-btn').onclick = () => {
   document.getElementById('chat-section').style.display = 'none';
   document.getElementById('profile-box').style.display = 'none';
 }
+window.reactToMsg = async (key, emoji) => { await setReaction(`globalChat/${key}/reactions`, emoji); document.getElementById(`msg-picker-${key}`).classList.remove('show'); }
 </script>
 </body>
 </html>
