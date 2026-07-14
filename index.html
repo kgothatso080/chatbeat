@@ -22,24 +22,35 @@
     #feed { padding: 10px; padding-bottom: 20px; }
 .profile-box {background:#202c33; padding:15px; border-radius:12px; margin:10px; text-align:center; display:none}
 .profile-box img{width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid #00C896}
-.card { background: #202c33; padding:10px 12px 10px 12px; margin:10px 0; border-radius:12px; position: relative; max-width: 85%; }
+.card { background: #202c33; padding:12px; margin:10px 0; border-radius:12px; position: relative; }
 .card.name { font-weight: 700; font-size: 13px; margin-bottom: 4px; display:flex; align-items:center; gap:8px; cursor:pointer }
 .card-avatar {width:30px; height:30px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block}
-.card-post-img {width:100%; max-width:400px; border-radius:12px; margin-top:8px; cursor:pointer}
+.card-post-img {width:100%; border-radius:12px; margin-top:8px; cursor:pointer}
 .card.del-btn { position: absolute; top: 8px; right: 8px; background: #FF6B6B; padding: 0; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; line-height: 20px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
+
+.post-actions { display: flex; justify-content: space-around; margin-top: 10px; padding-top: 8px; border-top: 1px solid #2a3942; flex-wrap: wrap; gap: 4px; }
+.post-action-btn { background: #2a3942; flex: 1; min-width: 60px; padding: 6px; font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; border:none; color:white }
+.post-action-btn:hover { background: #374650; }
+
+.reactions-bar { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.reaction { background: #2a3942; padding: 3px 8px; border-radius: 15px; font-size: 12px; display: flex; align-items: center; gap: 4px; cursor: pointer; }
+.reaction.you { background: #005c4b; border: 1px solid #00C896; }
+
+.comments-section { margin-top: 10px; border-top: 1px solid #2a3942; padding-top: 10px; display: none; }
+.comments-section.show { display: block; }
+.comment { display: flex; gap: 8px; margin-bottom: 8px; }
+.comment-avatar { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; }
+.comment-bubble { background: #2a3942; padding: 6px 10px; border-radius: 12px; flex: 1; font-size: 14px; }
+.comment-name { font-weight: 700; font-size: 12px; color: #00C896; }
+.comment-input { display: flex; gap: 6px; margin-top: 8px; }
+.comment-input input { flex: 1; background: #2a3942; color: white; padding: 8px 12px; border-radius: 20px; width: auto; margin: 0; }
+.comment-input button { width: auto; padding: 8px 16px; margin: 0; }
+
 .chat-header { display: flex; align-items: center; padding: 10px; background: #202c33; border-bottom: 1px solid #2a3942; }
 .chat-header h3 { margin: 0 auto; }
     #back-to-feed { background: transparent; width: auto; }
 
-    /* REPLY BAR */
-    #reply-bar {
-      display: none;
-      padding: 8px 12px;
-      background: #1f2c33;
-      border-left: 4px solid #00C896;
-      align-items: center;
-      gap: 10px;
-    }
+    #reply-bar { display: none; padding: 8px 12px; background: #1f2c33; border-left: 4px solid #00C896; align-items: center; gap: 10px; }
     #reply-bar.show { display: flex; }
     #reply-content { flex: 1; overflow: hidden; }
     #reply-label { font-size: 12px; color: #00C896; font-weight: 700; }
@@ -47,7 +58,7 @@
     #cancel-reply { background: transparent; width: auto; font-size: 22px; padding: 0 8px; }
 
     #global-chat { height: calc(100vh - 280px); overflow-y:auto; background:#0b141a; padding:10px; display: flex; flex-direction: column; gap: 2px; }
-.bubble-wrapper { display: flex; transition: transform 0.15s ease-out; user-select: none; }
+.bubble-wrapper { display: flex; transition: transform 0.15s ease-out; user-select: none; position: relative; }
 .me-wrapper { justify-content: flex-end; }
 .other-wrapper { justify-content: flex-start; }
 .bubble { max-width: 75%; padding: 6px 10px 8px 10px; border-radius: 8px; position: relative; word-wrap: break-word; font-size: 15px; line-height: 1.4; }
@@ -60,14 +71,11 @@
 .bubble-del { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.4); padding: 0; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
 .bubble audio { width: 220px; max-width: 100%; margin-top: 4px; }
 
-/* REPLY QUOTE INSIDE BUBBLE */
 .reply-quote { background: rgba(0,0,0,0.2); border-left: 3px solid #00C896; padding: 6px 8px; margin-bottom: 6px; border-radius: 4px; font-size: 13px; }
 .reply-quote-name { font-weight: 700; color: #00C896; font-size: 12px; }
 .reply-quote-text { color: #d1d7db; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .reply-hint { position: absolute; top: 50%; transform: translateY(-50%); font-size: 18px; opacity: 0; transition: opacity 0.1s; z-index: 1; }
-.other-wrapper.reply-hint { left: -30px; }
-.me-wrapper.reply-hint { right: -30px; }
 
 .chat-input-area { display: flex; padding: 10px; background: #202c33; position: fixed; bottom: 0; left:0; width: 100%; z-index: 5; gap:5px }
 .chat-input-area input { flex: 1; border-radius: 25px; background: #2a3942; color: white; }
@@ -131,8 +139,6 @@
       <button id="back-to-feed">← Back</button>
       <h3>Global Chat</h3>
     </div>
-
-    <!-- REPLY BAR -->
     <div id="reply-bar">
       <div id="reply-content">
         <div id="reply-label">Replying to</div>
@@ -140,7 +146,6 @@
       </div>
       <button id="cancel-reply">×</button>
     </div>
-
     <div id="global-chat"></div>
     <div class="chat-input-area">
       <button id="chat-img-btn">📷</button>
@@ -153,7 +158,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.5 - DRAG TO REPLY
+    Version 2.0.6 - REACTIONS + COMMENTS + SHARE
   </div>
 </div>
 
@@ -185,6 +190,7 @@ const auth = getAuth(app);
 const db = getDatabase(app);
 
 const colors = ['#00C896', '#0077FF', '#00FFD1', '#FF6B6B', '#F7DC6F', '#9B59B6', '#E67E22', '#1ABC9C'];
+const REACTIONS = ['❤️', '😂', '😮', '😢', '🙏', '🔥'];
 const DEFAULT_PIC = 'https://ui-avatars.com/api/?name=U&background=00C896&color=fff';
 let currentUser = null;
 let mediaRecorder;
@@ -194,9 +200,9 @@ let loadedMessages = new Set();
 let postImageData = null;
 let chatImageData = null;
 let userCache = {};
-let allMessagesCache = {}; // NEW: CACHE ALL MESSAGES FOR REPLY
-let replyToMsg = null; // NEW: CURRENT REPLY
-let dragging = null; // NEW: DRAG STATE
+let allMessagesCache = {};
+let replyToMsg = null;
+let dragging = null;
 const DRAG_THRESHOLD = 70;
 
 window.openProfilePopup = (imgSrc) => {
@@ -209,7 +215,6 @@ window.closeProfilePopup = () => {
 }
 document.getElementById('profile-popup').onclick = closeProfilePopup;
 
-// REPLY FUNCTIONS
 function setReply(msgData, msgKey){
   replyToMsg = {...msgData, key: msgKey };
   document.getElementById('reply-label').innerText = `Replying to ${msgData.name || 'User'}`;
@@ -342,7 +347,14 @@ document.getElementById('post-file').onchange = (e)=>{
 document.getElementById('post-btn').onclick = async () => {
   const text = document.getElementById('post-text').value.trim();
   if(!text &&!postImageData) return;
-  await push(ref(db, 'posts'), { uid: currentUser.uid, text, image: postImageData, timestamp: Date.now() });
+  await push(ref(db, 'posts'), {
+    uid: currentUser.uid,
+    text,
+    image: postImageData,
+    timestamp: Date.now(),
+    reactions: {},
+    comments: {}
+  });
   document.getElementById('post-text').value = '';
   postImageData = null;
   document.getElementById('post-file').value = '';
@@ -356,6 +368,39 @@ async function getUser(uid){
   return user;
 }
 
+// POST FUNCTIONS
+window.toggleReaction = async (postKey, emoji) => {
+  const reactionRef = ref(db, `posts/${postKey}/reactions/${emoji}/${currentUser.uid}`);
+  const snap = await get(reactionRef);
+  if(snap.exists()){
+    await remove(reactionRef);
+  } else {
+    await set(reactionRef, true);
+  }
+}
+
+window.toggleComments = (postKey) => {
+  document.getElementById(`comments-${postKey}`).classList.toggle('show');
+}
+
+window.addComment = async (postKey) => {
+  const input = document.getElementById(`comment-input-${postKey}`);
+  const text = input.value.trim();
+  if(!text) return;
+  await push(ref(db, `posts/${postKey}/comments`), {
+    uid: currentUser.uid,
+    text,
+    timestamp: Date.now()
+  });
+  input.value = '';
+}
+
+window.sharePost = (postKey) => {
+  const url = window.location.href.split('#')[0] + "#post-" + postKey;
+  navigator.clipboard.writeText(url);
+  alert("Post link copied! 📤");
+}
+
 function loadPosts() {
   off(ref(db, 'posts'));
   document.getElementById('feed').innerHTML = '';
@@ -367,6 +412,7 @@ function loadPosts() {
     const postDiv = document.createElement('div');
     postDiv.className = 'card';
     postDiv.id = 'post-' + postKey;
+
     let delBtn = '';
     if(post.uid === currentUser.uid) {
       delBtn = `<button class="del-btn" onclick="deletePost('${postKey}')">×</button>`;
@@ -375,7 +421,51 @@ function loadPosts() {
     if(post.image) {
       imgHtml = `<img class="card-post-img" src="${post.image}" onclick="openProfilePopup('${post.image}')">`;
     }
-    postDiv.innerHTML = `${delBtn}<div class="name" style="color:${user.color}"><img class="card-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</div><div>${post.text||''}</div>${imgHtml}`;
+
+    let reactionsHtml = '<div class="reactions-bar">';
+    if(post.reactions){
+      for(let emoji in post.reactions){
+        let count = Object.keys(post.reactions[emoji] || {}).length;
+        let youReacted = post.reactions[emoji][currentUser.uid];
+        if(count > 0) reactionsHtml += `<div class="reaction ${youReacted? 'you':''}" onclick="toggleReaction('${postKey}','${emoji}')">${emoji} ${count}</div>`;
+      }
+    }
+    reactionsHtml += '</div>';
+
+    let commentsHtml = `<div class="comments-section" id="comments-${postKey}">`;
+    if(post.comments){
+      for(let cKey in post.comments){
+        let c = post.comments[cKey];
+        let cUser = await getUser(c.uid);
+        commentsHtml += `<div class="comment">
+          <img class="comment-avatar" src="${cUser.profilePic}">
+          <div class="comment-bubble">
+            <div class="comment-name">${cUser.name}</div>
+            <div>${c.text}</div>
+          </div>
+        </div>`;
+      }
+    }
+    commentsHtml += `<div class="comment-input">
+      <input id="comment-input-${postKey}" placeholder="Write a comment...">
+      <button onclick="addComment('${postKey}')">Post</button>
+    </div></div>`;
+
+    postDiv.innerHTML = `
+      ${delBtn}
+      <div class="name" style="color:${user.color}">
+        <img class="card-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}
+      </div>
+      <div>${post.text||''}</div>
+      ${imgHtml}
+      ${reactionsHtml}
+      <div class="post-actions">
+        ${REACTIONS.map(e => `<button class="post-action-btn" onclick="toggleReaction('${postKey}','${e}')">${e}</button>`).join('')}
+        <button class="post-action-btn" onclick="toggleComments('${postKey}')">💬</button>
+        <button class="post-action-btn" onclick="sharePost('${postKey}')">📤</button>
+      </div>
+      ${commentsHtml}
+    `;
     document.getElementById('feed').prepend(postDiv);
   });
 }
@@ -443,7 +533,6 @@ recordBtn.onclick = async () => {
   }
 }
 
-// DRAG HANDLERS
 function getX(e){ return e.touches? e.touches[0].clientX : e.clientX; }
 function startDrag(e, msgKey){
   dragging = { id: msgKey, startX: getX(e), x: 0 };
@@ -495,12 +584,12 @@ async function renderMessage(snap, scroll){
   const msgKey = snap.key;
   if(loadedMessages.has(msgKey)) return;
   loadedMessages.add(msgKey);
-  allMessagesCache[msgKey] = msg; // SAVE FOR REPLY
+  allMessagesCache[msgKey] = msg;
 
   const user = await getUser(msg.uid);
   const userPic = user.profilePic || DEFAULT_PIC;
   const isMe = msg.uid === currentUser.uid;
-  msg.name = user.name; // add name for reply
+  msg.name = user.name;
 
   const wrapper = document.createElement('div');
   wrapper.className = `bubble-wrapper ${isMe? 'me-wrapper' : 'other-wrapper'}`;
@@ -511,7 +600,6 @@ async function renderMessage(snap, scroll){
     delBtn = `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>`;
   }
 
-  // REPLY QUOTE
   let replyHtml = '';
   if(msg.replyTo && allMessagesCache[msg.replyTo]){
     const repliedMsg = allMessagesCache[msg.replyTo];
@@ -533,7 +621,6 @@ async function renderMessage(snap, scroll){
 
   wrapper.innerHTML = `<div class="reply-hint">↩️</div><div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}">${content}</div>`;
 
-  // ADD DRAG EVENTS
   wrapper.addEventListener('touchstart', e => startDrag(e, msgKey), {passive: true});
   wrapper.addEventListener('touchmove', e => moveDrag(e), {passive: false});
   wrapper.addEventListener('touchend', e => endDrag(e, msg, msgKey));
