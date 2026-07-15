@@ -18,11 +18,11 @@
 .link-btn { background: transparent!important; text-decoration: underline; font-size: 14px; width: auto; background-image: none!important; }
     textarea { border-radius: 12px; height: 60px; background: #2a3942; color: white; width: 90%; }
     #app { display:none; }
-.post-box { padding: 10px; background: #202c33; display:flex; gap:8px; align-items:center }
+.post-box { padding: 10px; background: #202c33; display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:center }
     #feed { padding: 10px; padding-bottom: 20px; }
 .profile-box {background:#202c33; padding:15px; border-radius:12px; margin:10px; text-align:center; display:none}
 .profile-box img{width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid #00C896}
-.card { background: #202c33; padding:10px 12px 10px 12px; margin:10px 0; border-radius:12px; position: relative; max-width: 85%; }
+.card { background: #202c33; padding:10px 12px 10px 12px; margin:10px auto; border-radius:12px; position: relative; max-width: 600px; width: 95%; }
 .card.name { font-weight: 700; font-size: 13px; margin-bottom: 4px; display:flex; align-items:center; gap:8px; cursor:pointer }
 .card-avatar {width:30px; height:30px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block}
 .card-post-img {width:100%; max-width:400px; border-radius:12px; margin-top:8px; cursor:pointer}
@@ -57,8 +57,6 @@
 .reply-quote-text { color: #d1d7db; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .reply-hint { position: absolute; top: 50%; transform: translateY(-50%); font-size: 18px; opacity: 0; transition: opacity 0.1s; z-index: 1; }
-.other-wrapper.reply-hint { left: -30px; }
-.me-wrapper.reply-hint { right: -30px; }
 
 .chat-input-area { display: flex; padding: 10px; background: #202c33; position: fixed; bottom: 0; left:0; width: 100%; z-index: 5; gap:5px }
 .chat-input-area input { flex: 1; border-radius: 25px; background: #2a3942; color: white; }
@@ -73,12 +71,12 @@
 .profile-popup img { max-width: 90%; max-height: 80%; border-radius: 15px; border: 3px solid #00C896; }
 .profile-popup-close { position:absolute; top:20px; right:20px; font-size:40px; color:white; cursor:pointer }
 
-.react-summary { display:flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px; color:#aebac1; cursor:pointer; position:relative; width: fit-content; margin-top:4px }
+.react-summary { display:flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px; color:#aebac1; cursor:pointer; position:relative; width: fit-content; margin-top:4px; min-height:24px }
 .react-bubble { background:#3a3b3c; border-radius:20px; padding:2px 6px; display:flex; gap:2px; }
-.react-names-tooltip { display:none; position:absolute; bottom:45px; left:10px; background:#111b21; padding:8px 10px; border-radius:8px; font-size:12px; z-index:999; border:1px solid #00C896; white-space:nowrap; max-height:200px; overflow-y:auto; box-shadow: 0 4px 12px rgba(0,0,0,0.8) }
+.react-names-tooltip { display:none; position:absolute; bottom:45px; left:0; background:#111b21; padding:8px 10px; border-radius:8px; font-size:12px; z-index:999; border:1px solid #00C896; white-space:nowrap; max-height:200px; overflow-y:auto; box-shadow: 0 4px 12px rgba(0,0,0,0.8) }
 .react-names-tooltip div { margin:4px 0; color:#d1d7db }
 .react-names-tooltip b { color:#00C896 }
-.react-picker { display:none; position:absolute; bottom:45px; left:10px; background:#3a3b3c; padding:6px; border-radius:50px; box-shadow:0 4px 12px rgba(0,0,0,0.8); gap:6px; z-index:999; }
+.react-picker { display:none; position:absolute; bottom:45px; left:0; background:#3a3b3c; padding:6px; border-radius:50px; box-shadow:0 4px 12px rgba(0,0,0,0.8); gap:6px; z-index:999; }
 .react-picker.show { display:flex }
 .react-picker span { font-size:28px; cursor:pointer; transition:transform 0.15s; }
 .react-picker span:hover { transform:translateY(-10px) scale(1.4) }
@@ -90,7 +88,7 @@
 .comment-input-row { display:flex; gap:6px; margin-top:6px; align-items:center }
 .comment-input-row input { flex:1; background:#2a3942; color:white; border-radius:20px; padding:8px 12px }
 .comment-input-row button { width:40px; height:40px; border-radius:50%; padding:0; font-size:16px; min-width:40px }
-.bubble-reactions { display:flex; gap:2px; margin-top:3px; font-size:11px; position:absolute; bottom:-10px; left:10px; background:#3a3b3c; border-radius:12px; padding:2px 4px; cursor:pointer; z-index:2 }
+.bubble-reactions { display:flex; gap:2px; margin-top:3px; font-size:11px; position:absolute; bottom:-10px; left:10px; background:#3a3b3c; border-radius:12px; padding:2px 4px; cursor:pointer; z-index:2; min-height:18px }
   </style>
 </head>
 <body>
@@ -162,7 +160,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.11 - EMOJI ONLY REACTIONS
+    Version 2.0.12 - FIXED REACTIONS
   </div>
 </div>
 
@@ -207,7 +205,7 @@ let allMessagesCache = {};
 let replyToMsg = null;
 let dragging = null;
 const DRAG_THRESHOLD = 70;
-const REACTIONS = ['❤️','😂','😮','😢','😡','👎']; // REMOVED 👍 FROM PICKER
+const REACTIONS = ['❤️','😂','😮','😢','😡','👎'];
 const LONG_PRESS = 500;
 
 window.openProfilePopup = (imgSrc) => {
@@ -421,24 +419,19 @@ function loadPosts() {
     loadComments(postKey);
     onValue(ref(db, `posts/${postKey}/reactions`), (s)=>{ renderReactions(document.getElementById(`react-sum-${postKey}`), s.val()) });
 
-    // TAP = TOGGLE LIKE. HOLD = OPEN PICKER
-    const reactSum = document.getElementById(`react-sum-${postKey}`); 
-    const picker = document.getElementById(`picker-${postKey}`); 
+    const reactSum = document.getElementById(`react-sum-${postKey}`);
+    const picker = document.getElementById(`picker-${postKey}`);
     let timer;
     let longPressTriggered = false;
 
-    reactSum.onmousedown = reactSum.ontouchstart = () => { 
+    reactSum.onmousedown = reactSum.ontouchstart = (e) => {
+      e.stopPropagation();
       longPressTriggered = false;
-      timer = setTimeout(()=>{
-        picker.classList.add('show');
-        longPressTriggered = true;
-      }, LONG_PRESS); 
+      timer = setTimeout(()=>{ picker.classList.add('show'); longPressTriggered = true; }, LONG_PRESS);
     }
     reactSum.onmouseup = reactSum.ontouchend = reactSum.onmouseleave = () => {
       clearTimeout(timer);
-      if(!longPressTriggered){
-        setReaction(`posts/${postKey}/reactions`, '👍')
-      }
+      if(!longPressTriggered){ setReaction(`posts/${postKey}/reactions`, '👍') }
     }
   });
 }
@@ -518,6 +511,7 @@ recordBtn.onclick = async () => {
   }
 }
 
+function getX(e){ return e.touches? e.touches[0].clientX : e.clientX; }
 function startDrag(e, msgKey){
   dragging = { id: msgKey, startX: getX(e), x: 0 };
 }
@@ -610,7 +604,8 @@ async function renderMessage(snap, scroll){
   let timer;
   let longPressTriggered = false;
 
-  reactSum.onmousedown = reactSum.ontouchstart = () => {
+  reactSum.onmousedown = reactSum.ontouchstart = (e) => {
+    e.stopPropagation();
     longPressTriggered = false;
     timer = setTimeout(()=>{ picker.classList.add('show'); longPressTriggered = true; }, LONG_PRESS);
   }
