@@ -74,7 +74,7 @@
 .profile-popup-close { position:absolute; top:20px; right:20px; font-size:40px; color:white; cursor:pointer }
 
 .actions-row { display:flex; gap:4px; padding:6px 0; border-top:1px solid #2a3942; margin-top:8px; justify-content:space-around; position:relative }
-.action-btn { background:transparent; border:none; border-radius:8px; padding:6px; color:#00C896; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:1; font-weight:500 }
+.action-btn { background:transparent; border:none; border-radius:8px; padding:6px; color:#00C896; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:1; gap:6px; font-weight:500 }
 .action-btn:hover { background:#2a3942 }
 .react-summary { display:flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px; color:#aebac1; cursor:pointer; position:relative }
 .react-bubble { background:#3a3b3c; border-radius:20px; padding:2px 6px; display:flex; gap:2px; }
@@ -90,8 +90,9 @@
 .comment { display:flex; gap:8px; margin:6px 0; font-size:14px; }
 .comment-avatar {width:28px; height:28px; border-radius:50%;}
 .comment-bubble { background:#2a3942; padding:6px 10px; border-radius:18px; flex:1 }
-.comment-input-row { display:flex; gap:6px; margin-top:6px }
+.comment-input-row { display:flex; gap:6px; margin-top:6px; align-items:center }
 .comment-input-row input { flex:1; background:#2a3942; color:white; border-radius:20px; padding:8px 12px }
+.comment-input-row button { width:40px; height:40px; border-radius:50%; padding:0; font-size:16px; min-width:40px }
 .bubble-reactions { display:flex; gap:2px; margin-top:3px; font-size:11px; position:absolute; bottom:-10px; left:10px; background:#3a3b3c; border-radius:12px; padding:2px 4px; cursor:pointer; z-index:2 }
   </style>
 </head>
@@ -164,7 +165,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.7 - FB STYLE REACTIONS
+    Version 2.0.8 - GREEN FB ICONS
   </div>
 </div>
 
@@ -258,7 +259,6 @@ async function renderReactions(container, reactions){
   html += `<div class="react-names-tooltip">${Object.entries(usersByEmoji).map(([e, names])=>`${e} ${names.join(', ')}`).join('<br>')}</div>`;
   container.innerHTML = html;
 
-  // MOBILE TAP TO SHOW NAMES
   container.onclick = () => {
     container.classList.toggle('show-tooltip');
     setTimeout(()=>container.classList.remove('show-tooltip'), 2000);
@@ -410,12 +410,12 @@ function loadPosts() {
     postDiv.innerHTML = `${delBtn}<div class="name" style="color:${user.color}"><img class="card-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</div><div>${post.text||''}</div>${imgHtml}
     <div class="react-summary" id="react-sum-${postKey}"></div>
     <div class="actions-row">
-      <button class="action-btn" id="react-btn-${postKey}">Like</button>
-      <button class="action-btn" onclick="toggleComments('${postKey}')">Comment</button>
-      <button class="action-btn" onclick="sharePost('${postKey}')">Share</button>
+      <button class="action-btn" id="react-btn-${postKey}">👍 Like</button>
+      <button class="action-btn" onclick="toggleComments('${postKey}')">💬 Comment</button>
+      <button class="action-btn" onclick="sharePost('${postKey}')">↗️ Share</button>
     </div>
     <div class="react-picker" id="picker-${postKey}">${REACTIONS.map(r=>`<span onclick="reactToPost('${postKey}','${r}')">${r}</span>`).join('')}</div>
-    <div class="comments-section" id="comments-${postKey}"><div id="comment-list-${postKey}"></div><div class="comment-input-row"><input id="comment-input-${postKey}" placeholder="Write a comment..."><button onclick="addComment('${postKey}')">Send</button></div></div>`;
+    <div class="comments-section" id="comments-${postKey}"><div id="comment-list-${postKey}"></div><div class="comment-input-row"><input id="comment-input-${postKey}" placeholder="Write a comment..."><button onclick="addComment('${postKey}')">➤</button></div></div>`;
     document.getElementById('feed').prepend(postDiv);
 
     renderReactions(document.getElementById(`react-sum-${postKey}`), post.reactions);
