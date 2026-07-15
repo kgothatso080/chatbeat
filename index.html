@@ -73,7 +73,7 @@
 .profile-popup-close { position:absolute; top:20px; right:20px; font-size:40px; color:white; cursor:pointer }
 
 .actions-row { display:flex; gap:4px; padding:4px 0; border-top:1px solid #2a3942; margin-top:6px; justify-content:space-around; position:relative }
-.action-btn { background:transparent; border:none; border-radius:8px; padding:6px; color:#aebac1; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:1 } /* SMALLER LIKE FB */
+.action-btn { background:transparent; border:none; border-radius:8px; padding:6px; color:#aebac1; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:1 } /* SMALL FB ICONS */
 .action-btn.active { color: #00FFD1; }
 .action-btn:hover { background:#2a3942 }
 
@@ -112,7 +112,7 @@
 .react-who-item img { width:32px; height:32px; border-radius:50% }
 .react-who-info { flex:1 }
 .react-who-name { font-weight:700; font-size:14px }
-.react-who-sub { font-size:12px; color:#aebac1 }
+.react-who-sub { font-size:12px; color:#00FFD1 }
 .react-who-emoji { font-size:20px }
   </style>
 </head>
@@ -185,7 +185,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.21 - SMALL ICONS + WHATSAPP REACTIONS
+    Version 2.0.22 - SMALL ICONS + WHATSAPP REACTIONS
   </div>
 </div>
 
@@ -342,79 +342,6 @@ document.getElementById('login-btn').onclick = () => {
  signInWithEmailAndPassword(auth, email, pass).catch(e => { err.innerText = e.message; });
 }
 
-document.getElementById('logout-btn').onclick = () => {
-  userCache = {};
-  allMessagesCache = {};
-  signOut(auth)
-}
-
-onAuthStateChanged(auth, async (user) => {
- if(user) {
-   currentUser = user;
-   const userRef = ref(db, 'users/' + user.uid);
-   const userSnap = await get(userRef);
-   let userData = userSnap.val();
-   if(!userSnap.exists()){
-     const nameFromEmail = user.email.split('@')[0];
-     userData = { name: nameFromEmail, email: user.email, color: colors[Math.floor(Math.random()*colors.length)], profilePic:DEFAULT_PIC };
-     await set(userRef, userData);
-     alert("Welcome to ChatBeat! Your name is: " + nameFromEmail)
-   }
-   document.getElementById('cover').style.display = 'none';
-   document.getElementById('app').style.display = 'block';
-   document.getElementById('my-name').innerText = userData.name;
-   document.getElementById('profile-pic').src = userData.profilePic || DEFAULT_PIC;
-   loadedMessages.clear();
-   allMessagesCache = {};
-   document.getElementById('feed').innerHTML = '';
-   document.getElementById('global-chat').innerHTML = '';
-   startAutoDelete();
-   loadPosts();
-   loadChat();
- } else {
-   document.getElementById('cover').style.display = 'flex';
-   document.getElementById('app').style.display = 'none';
- }
-});
-
-document.getElementById('profile-upload').onchange = (e)=>{
-  const file = e.target.files[0];
-  if(file){
-    const reader = new FileReader();
-    reader.onload = ()=>{
-      set(ref(db,'users/'+currentUser.uid+'/profilePic'), reader.result);
-      document.getElementById('profile-pic').src = reader.result;
-      alert("Profile photo updated!")
-    }
-    reader.readAsDataURL(file);
-  }
-}
-
-document.getElementById('profile-icon-btn').onclick = () => {
-  document.getElementById('profile-box').style.display = 'block';
-  document.getElementById('feed-section').style.display = 'none';
-  document.getElementById('chat-section').style.display = 'none';
-}
-
-document.getElementById('post-img-btn').onclick = () => document.getElementById('post-file').click();
-document.getElementById('post-file').onchange = (e)=>{
-  const file = e.target.files[0];
-  if(file){
-    const reader = new FileReader();
-    reader.onload = ()=>{ postImageData = reader.result; alert("Image ready to post!") }
-    reader.readAsDataURL(file);
-  }
-}
-
-document.getElementById('post-btn').onclick = async () => {
-  const text = document.getElementById('post-text').value.trim();
-  if(!text &&!postImageData) return;
-  await push(ref(db, 'posts'), { uid: currentUser.uid, text, image: postImageData, timestamp: Date.now(), reactions:{}, comments:{} });
-  document.getElementById('post-text').value = '';
-  postImageData = null;
-  document.getElementById('post-file').value = '';
-}
-
 async function getUser(uid){
   if(userCache[uid]) return userCache[uid];
   const userSnap = await get(ref(db, 'users/' + uid));
@@ -454,19 +381,13 @@ function loadPosts() {
     <div class="comments-section" id="comments-${postKey}"><div id="comment-list-${postKey}"></div><div class="comment-input-row"><input id="comment-input-${postKey}" placeholder="Write a comment..."><button onclick="addComment('${postKey}')">➤</button></div></div>`;
     document.getElementById('feed').prepend(postDiv);
 
-    renderReactions(document.getElementById(`react-sum-${postKey}`), post.reactions, userReact);
-    loadComments(postKey);
     onValue(ref(db, `posts/${postKey}/reactions`), (s)=>{
       const reacts = s.val() || {};
-      renderReactions(document.getElementById(`react-sum-${postKey}`), reacts, reacts[currentUser.uid]);
       document.getElementById(`react-count-${postKey}`).innerText = `${Object.keys(reacts).length} Reactions`;
       const btn = document.getElementById(`like-btn-${postKey}`);
       if(reacts[currentUser.uid]){ btn.classList.add('active'); btn.innerHTML = reacts[currentUser.uid]; }
       else { btn.classList.remove('active'); btn.innerHTML = '👍'; }
     });
-    onValue(ref(db, `posts/${postKey}/comments`), (s)=>{
-      document.getElementById(`comment-count-${postKey}`).innerText = `${s.size} Comments`;
-    })
 
     const likeBtn = document.getElementById(`like-btn-${postKey}`);
     const picker = document.getElementById(`picker-${postKey}`);
@@ -489,115 +410,26 @@ function loadPosts() {
 window.deletePost = async (key) => {
   if(confirm("Delete this post?")) {
     await remove(ref(db, 'posts/' + key));
-    const el = document.getElementById('post-' + key);
-    if(el) el.remove();
+    document.getElementById('post-' + key).remove();
   }
 }
 window.reactToPost = async (key, emoji) => { await setReaction(`posts/${key}/reactions`, emoji); document.getElementById(`picker-${key}`).classList.remove('show'); }
 window.toggleComments = (key) => document.getElementById(`comments-${key}`).classList.toggle('show');
 window.addComment = async (key) => { const input = document.getElementById(`comment-input-${key}`); const text = input.value.trim(); if(!text) return; await push(ref(db, `posts/${key}/comments`), {uid: currentUser.uid, text, timestamp: Date.now()}); input.value = ''; }
-function loadComments(key){
-  onChildAdded(ref(db, `posts/${key}/comments`), async (snap)=>{
-    const c = snap.val();
-    const u = await getUser(c.uid);
-    const div = document.createElement('div');
-    div.className='comment';
-    div.innerHTML = `<img class="comment-avatar" src="${u.profilePic}"><div class="comment-bubble"><div style="font-weight:700; font-size:12px; color:${u.color}">${u.name}</div><div style="font-size:14px">${c.text}</div></div>`;
-    document.getElementById(`comment-list-${key}`).appendChild(div);
-  })
-}
 window.openShare = (link) => { shareLink = link; document.getElementById('share-popup').classList.add('show'); }
 window.closeShare = () => document.getElementById('share-popup').classList.remove('show');
 window.shareTo = (type) => {
-  if(type==='whatsapp') window.open(`https://wa.me/?text=${encodeURIComponentshareLink)}`,'_blank');
+  if(type==='whatsapp') window.open(`https://wa.me/?text=${encodeURIComponent(shareLink)}`,'_blank');
   if(type==='facebook') window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`,'_blank');
   if(type==='copy'){ navigator.clipboard.writeText(shareLink); alert("Link copied!") }
   closeShare();
 }
 
-document.getElementById('chat-img-btn').onclick = () => document.getElementById('chat-file').click();
-document.getElementById('chat-file').onchange = async (e)=>{
-  const file = e.target.files[0];
-  if(file){
-    const reader = new FileReader();
-    reader.onload = async ()=>{
-      chatImageData = reader.result;
-      await push(ref(db, 'globalChat'), { uid: currentUser.uid, image: chatImageData, replyTo: replyToMsg?.key || null, timestamp: Date.now(), reactions:{} });
-      chatImageData = null;
-      cancelReply();
-    }
-    reader.readAsDataURL(file);
-  }
-}
-
-document.getElementById('send-chat').onclick = async () => {
-  const text = document.getElementById('chat-input').value.trim();
-  if(!text) return;
-  document.getElementById('chat-input').value = '';
-  await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, replyTo: replyToMsg?.key || null, timestamp: Date.now(), reactions:{} });
-  cancelReply();
-}
-
-const recordBtn = document.getElementById('record-btn');
-recordBtn.onclick = async () => {
-  if(!isRecording) {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorder = new MediaRecorder(stream);
-      audioChunks = [];
-      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunks, {type: 'audio/webm'});
-        const reader = new FileReader();
-        reader.readAsDataURL(audioBlob);
-        reader.onloadend = async () => {
-          await push(ref(db, 'globalChat'), { uid: currentUser.uid, audio: reader.result, replyTo: replyToMsg?.key || null, timestamp: Date.now(), reactions:{} });
-          cancelReply();
-        }
-      }
-      mediaRecorder.start();
-      recordBtn.innerText = "⏹️";
-      recordBtn.classList.add('record-btn');
-      isRecording = true;
-    } catch(e) {
-      alert("Mic blocked. Allow microphone permission.");
-    }
-  } else {
-    mediaRecorder.stop();
-    recordBtn.innerText = "🎤";
-    recordBtn.classList.remove('record-btn');
-    isRecording = false;
-  }
-}
-
-function getX(e){ return e.touches? e.touches[0].clientX : e.clientX; }
-function startDrag(e, msgKey){
-  dragging = { id: msgKey, startX: getX(e), x: 0 };
-}
-function moveDrag(e){
-  if(!dragging) return;
-  dragging.x = getX(e) - dragging.startX;
-  if(dragging.x < 0) dragging.x = 0;
-  const el = document.getElementById('wrapper-' + dragging.id);
-  if(el) el.style.transform = `translateX(${dragging.x}px)`;
-  const hint = el?.querySelector('.reply-hint');
-  if(hint) hint.style.opacity = dragging.x > 30? 1 : 0;
-  if(dragging.x > 20) e.preventDefault();
-}
-function endDrag(e, msgData, msgKey){
-  if(!dragging) return;
-  if(dragging.x > DRAG_THRESHOLD){ setReply(msgData, msgKey); }
-  const el = document.getElementById('wrapper-' + dragging.id);
-  if(el) el.style.transform = 'translateX(0)';
-  dragging = null;
-}
-
 function loadChat() {
   off(ref(db, 'globalChat'));
-  document.getElementById('global-chat').innerHTML = '<p style="text-align:center; opacity:0.6">Loading messages...</p>';
+  document.getElementById('global-chat').innerHTML = '';
   loadedMessages.clear();
   get(query(ref(db, 'globalChat'), orderByChild('timestamp'), limitToLast(50))).then(async (snapshot) => {
-    document.getElementById('global-chat').innerHTML = '';
     const promises = [];
     snapshot.forEach((snap) => { promises.push(renderMessage(snap, false)); })
     await Promise.all(promises);
@@ -619,7 +451,6 @@ async function renderMessage(snap, scroll){
   const user = await getUser(msg.uid);
   const userPic = user.profilePic || DEFAULT_PIC;
   const isMe = msg.uid === currentUser.uid;
-  const userReact = msg.reactions?.[currentUser.uid] || null;
   msg.name = user.name;
 
   const wrapper = document.createElement('div');
@@ -628,26 +459,16 @@ async function renderMessage(snap, scroll){
 
   let delBtn = isMe? `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>` : '';
 
-  let replyHtml = '';
-  if(msg.replyTo && allMessagesCache[msg.replyTo]){
-    const repliedMsg = allMessagesCache[msg.replyTo];
-    const repliedUser = await getUser(repliedMsg.uid);
-    replyHtml = `<div class="reply-quote">
-      <div class="reply-quote-name">${repliedUser.name}</div>
-      <div class="reply-quote-text">${repliedMsg.text || 'Media'}</div>
-    </div>`;
-  }
-
   let content = '';
   if(msg.image) {
-    content = `${replyHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<img class="bubble-img" src="${msg.image}" onclick="openProfilePopup('${msg.image}')">`;
+    content = `<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<img class="bubble-img" src="${msg.image}" onclick="openProfilePopup('${msg.image}')">`;
   } else if(msg.audio) {
-    content = `${replyHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`;
+    content = `<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`;
   } else {
-    content = `${replyHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`;
+    content = `<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`;
   }
 
-  // REACTION BUBBLE UNDER MESSAGE - WHATSAPP STYLE
+  // REACTION BUBBLE UNDER MESSAGE
   let reactHtml = '';
   const reactCount = Object.keys(msg.reactions||{}).length;
   if(reactCount > 0){
@@ -658,29 +479,17 @@ async function renderMessage(snap, scroll){
 
   wrapper.innerHTML = `<div class="reply-hint">↩️</div><div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}" id="bubble-${msgKey}">${content}${reactHtml}</div><div class="react-picker" id="msg-picker-${msgKey}">${REACTIONS.map(r=>`<span onclick="reactToMsg('${msgKey}','${r}')">${r}</span>`).join('')}</div>`;
 
-  // DRAG TO REPLY
-  wrapper.addEventListener('touchstart', e => startDrag(e, msgKey), {passive: true});
-  wrapper.addEventListener('touchmove', e => moveDrag(e), {passive: false});
-  wrapper.addEventListener('touchend', e => endDrag(e, msg, msgKey));
-  wrapper.addEventListener('mousedown', e => startDrag(e, msgKey));
-  wrapper.addEventListener('mousemove', e => moveDrag(e));
-  wrapper.addEventListener('mouseup', e => endDrag(e, msg, msgKey));
-  wrapper.addEventListener('mouseleave', e => endDrag(e, msg, msgKey));
-
   // HOLD BUBBLE = SHOW 6 REACTIONS
   const bubble = wrapper.querySelector(`#bubble-${msgKey}`);
   const picker = wrapper.querySelector(`#msg-picker-${msgKey}`);
   let timer;
-  let longPressTriggered = false;
 
   bubble.onmousedown = bubble.ontouchstart = (e) => {
     e.stopPropagation();
-    longPressTriggered = false;
-    timer = setTimeout(()=>{ 
+    timer = setTimeout(()=>{
       picker.style.left = isMe? 'auto' : '10px'; 
       picker.style.right = isMe? '10px' : 'auto'; 
       picker.classList.add('show'); 
-      longPressTriggered = true; 
     }, LONG_PRESS);
   }
   bubble.onmouseup = bubble.ontouchend = bubble.onmouseleave = () => {
@@ -689,6 +498,7 @@ async function renderMessage(snap, scroll){
 
   document.getElementById('global-chat').appendChild(wrapper);
 
+  // UPDATE REACTIONS IN REALTIME
   onValue(ref(db, `globalChat/${msgKey}/reactions`), (s)=>{
     const reacts = s.val() || {};
     const reactEl = wrapper.querySelector('.bubble-reactions');
