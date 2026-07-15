@@ -18,11 +18,11 @@
 .link-btn { background: transparent!important; text-decoration: underline; font-size: 14px; width: auto; background-image: none!important; }
     textarea { border-radius: 12px; height: 60px; background: #2a3942; color: white; width: 90%; }
     #app { display:none; }
-.post-box { padding: 10px; background: #202c33; display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:center }
+.post-box { padding: 10px; background: #202c33; display:flex; gap:8px; align-items:center }
     #feed { padding: 10px; padding-bottom: 20px; }
 .profile-box {background:#202c33; padding:15px; border-radius:12px; margin:10px; text-align:center; display:none}
 .profile-box img{width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid #00C896}
-.card { background: #202c33; padding:10px 12px 10px 12px; margin:10px auto; border-radius:12px; position: relative; max-width: 600px; width: 95%; }
+.card { background: #202c33; padding:10px 12px 10px 12px; margin:10px 0; border-radius:12px; position: relative; max-width: 85%; }
 .card.name { font-weight: 700; font-size: 13px; margin-bottom: 4px; display:flex; align-items:center; gap:8px; cursor:pointer }
 .card-avatar {width:30px; height:30px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block}
 .card-post-img {width:100%; max-width:400px; border-radius:12px; margin-top:8px; cursor:pointer}
@@ -57,6 +57,8 @@
 .reply-quote-text { color: #d1d7db; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .reply-hint { position: absolute; top: 50%; transform: translateY(-50%); font-size: 18px; opacity: 0; transition: opacity 0.1s; z-index: 1; }
+.other-wrapper.reply-hint { left: -30px; }
+.me-wrapper.reply-hint { right: -30px; }
 
 .chat-input-area { display: flex; padding: 10px; background: #202c33; position: fixed; bottom: 0; left:0; width: 100%; z-index: 5; gap:5px }
 .chat-input-area input { flex: 1; border-radius: 25px; background: #2a3942; color: white; }
@@ -71,12 +73,15 @@
 .profile-popup img { max-width: 90%; max-height: 80%; border-radius: 15px; border: 3px solid #00C896; }
 .profile-popup-close { position:absolute; top:20px; right:20px; font-size:40px; color:white; cursor:pointer }
 
-.react-summary { display:flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px; color:#aebac1; cursor:pointer; position:relative; width: fit-content; margin-top:4px; min-height:24px }
+.actions-row { display:flex; gap:4px; padding:6px 0; border-top:1px solid #2a3942; margin-top:8px; justify-content:space-around; position:relative }
+.action-btn { background:transparent; border:none; border-radius:8px; padding:6px; color:#00C896; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:1; gap:6px; font-weight:500 }
+.action-btn:hover { background:#2a3942 }
+.react-summary { display:flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px; color:#aebac1; cursor:pointer; position:relative }
 .react-bubble { background:#3a3b3c; border-radius:20px; padding:2px 6px; display:flex; gap:2px; }
-.react-names-tooltip { display:none; position:absolute; bottom:45px; left:0; background:#111b21; padding:8px 10px; border-radius:8px; font-size:12px; z-index:999; border:1px solid #00C896; white-space:nowrap; max-height:200px; overflow-y:auto; box-shadow: 0 4px 12px rgba(0,0,0,0.8) }
-.react-names-tooltip div { margin:4px 0; color:#d1d7db }
-.react-names-tooltip b { color:#00C896 }
-.react-picker { display:none; position:absolute; bottom:45px; left:0; background:#3a3b3c; padding:6px; border-radius:50px; box-shadow:0 4px 12px rgba(0,0,0,0.8); gap:6px; z-index:999; }
+.react-names-tooltip { display:none; position:absolute; bottom:40px; left:10px; background:#000; padding:6px 10px; border-radius:8px; font-size:12px; z-index:10; border:1px solid #2a3942; white-space:nowrap }
+.react-summary:hover.react-names-tooltip { display:block }
+.react-summary.show-tooltip.react-names-tooltip { display:block } /* for mobile tap */
+.react-picker { display:none; position:absolute; bottom:45px; left:10px; background:#3a3b3c; padding:6px; border-radius:50px; box-shadow:0 4px 12px rgba(0,0,0,0.8); gap:6px; z-index:999; }
 .react-picker.show { display:flex }
 .react-picker span { font-size:28px; cursor:pointer; transition:transform 0.15s; }
 .react-picker span:hover { transform:translateY(-10px) scale(1.4) }
@@ -88,7 +93,7 @@
 .comment-input-row { display:flex; gap:6px; margin-top:6px; align-items:center }
 .comment-input-row input { flex:1; background:#2a3942; color:white; border-radius:20px; padding:8px 12px }
 .comment-input-row button { width:40px; height:40px; border-radius:50%; padding:0; font-size:16px; min-width:40px }
-.bubble-reactions { display:flex; gap:2px; margin-top:3px; font-size:11px; position:absolute; bottom:-10px; left:10px; background:#3a3b3c; border-radius:12px; padding:2px 4px; cursor:pointer; z-index:2; min-height:18px }
+.bubble-reactions { display:flex; gap:2px; margin-top:3px; font-size:11px; position:absolute; bottom:-10px; left:10px; background:#3a3b3c; border-radius:12px; padding:2px 4px; cursor:pointer; z-index:2 }
   </style>
 </head>
 <body>
@@ -160,7 +165,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.12 - FIXED REACTIONS
+    Version 2.0.8 - GREEN FB ICONS
   </div>
 </div>
 
@@ -205,7 +210,7 @@ let allMessagesCache = {};
 let replyToMsg = null;
 let dragging = null;
 const DRAG_THRESHOLD = 70;
-const REACTIONS = ['❤️','😂','😮','😢','😡','👎'];
+const REACTIONS = ['👍','❤️','😂','😮','😢','😡'];
 const LONG_PRESS = 500;
 
 window.openProfilePopup = (imgSrc) => {
@@ -251,19 +256,12 @@ async function renderReactions(container, reactions){
   let html = '<div class="react-bubble">';
   Object.keys(counts).slice(0,3).forEach(e=> html += e);
   html += `<span style="font-size:11px; margin-left:4px">${Object.values(counts).reduce((a,b)=>a+b,0)}</span></div>`;
-  let tooltip = '<div class="react-names-tooltip">';
-  for(const [emoji, names] of Object.entries(usersByEmoji)){
-    tooltip += `<div>${emoji} <b>${names.length}</b> - ${names.join(', ')}</div>`;
-  }
-  tooltip += '</div>';
-  html += tooltip;
+  html += `<div class="react-names-tooltip">${Object.entries(usersByEmoji).map(([e, names])=>`${e} ${names.join(', ')}`).join('<br>')}</div>`;
   container.innerHTML = html;
-  container.onclick = (e) => {
-    e.stopPropagation();
-    document.querySelectorAll('.react-names-tooltip').forEach(t => t.style.display = 'none');
-    const tip = container.querySelector('.react-names-tooltip');
-    tip.style.display = 'block';
-    setTimeout(()=>{ if(tip) tip.style.display = 'none' }, 3000);
+
+  container.onclick = () => {
+    container.classList.toggle('show-tooltip');
+    setTimeout(()=>container.classList.remove('show-tooltip'), 2000);
   }
 }
 
@@ -411,6 +409,11 @@ function loadPosts() {
 
     postDiv.innerHTML = `${delBtn}<div class="name" style="color:${user.color}"><img class="card-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</div><div>${post.text||''}</div>${imgHtml}
     <div class="react-summary" id="react-sum-${postKey}"></div>
+    <div class="actions-row">
+      <button class="action-btn" id="react-btn-${postKey}">👍 Like</button>
+      <button class="action-btn" onclick="toggleComments('${postKey}')">💬 Comment</button>
+      <button class="action-btn" onclick="sharePost('${postKey}')">↗️ Share</button>
+    </div>
     <div class="react-picker" id="picker-${postKey}">${REACTIONS.map(r=>`<span onclick="reactToPost('${postKey}','${r}')">${r}</span>`).join('')}</div>
     <div class="comments-section" id="comments-${postKey}"><div id="comment-list-${postKey}"></div><div class="comment-input-row"><input id="comment-input-${postKey}" placeholder="Write a comment..."><button onclick="addComment('${postKey}')">➤</button></div></div>`;
     document.getElementById('feed').prepend(postDiv);
@@ -419,20 +422,10 @@ function loadPosts() {
     loadComments(postKey);
     onValue(ref(db, `posts/${postKey}/reactions`), (s)=>{ renderReactions(document.getElementById(`react-sum-${postKey}`), s.val()) });
 
-    const reactSum = document.getElementById(`react-sum-${postKey}`);
-    const picker = document.getElementById(`picker-${postKey}`);
-    let timer;
-    let longPressTriggered = false;
-
-    reactSum.onmousedown = reactSum.ontouchstart = (e) => {
-      e.stopPropagation();
-      longPressTriggered = false;
-      timer = setTimeout(()=>{ picker.classList.add('show'); longPressTriggered = true; }, LONG_PRESS);
-    }
-    reactSum.onmouseup = reactSum.ontouchend = reactSum.onmouseleave = () => {
-      clearTimeout(timer);
-      if(!longPressTriggered){ setReaction(`posts/${postKey}/reactions`, '👍') }
-    }
+    const btn = document.getElementById(`react-btn-${postKey}`); const picker = document.getElementById(`picker-${postKey}`); let timer;
+    btn.onmousedown = btn.ontouchstart = () => { timer = setTimeout(()=>picker.classList.add('show'), LONG_PRESS); }
+    btn.onmouseup = btn.ontouchend = btn.onmouseleave = () => clearTimeout(timer);
+    btn.onclick = () => { if(!timer) setReaction(`posts/${postKey}/reactions`, '👍') }
   });
 }
 window.deletePost = async (key) => {
@@ -455,6 +448,7 @@ function loadComments(key){
     document.getElementById(`comment-list-${key}`).appendChild(div);
   })
 }
+window.sharePost = (key) => { navigator.clipboard.writeText(`${window.location.origin}#post-${key}`); alert("Link copied!"); }
 
 document.getElementById('chat-img-btn').onclick = () => document.getElementById('chat-file').click();
 document.getElementById('chat-file').onchange = async (e)=>{
@@ -527,7 +521,9 @@ function moveDrag(e){
 }
 function endDrag(e, msgData, msgKey){
   if(!dragging) return;
-  if(dragging.x > DRAG_THRESHOLD){ setReply(msgData, msgKey); }
+  if(dragging.x > DRAG_THRESHOLD){
+    setReply(msgData, msgKey);
+  }
   const el = document.getElementById('wrapper-' + dragging.id);
   if(el) el.style.transform = 'translateX(0)';
   dragging = null;
@@ -537,15 +533,20 @@ function loadChat() {
   off(ref(db, 'globalChat'));
   document.getElementById('global-chat').innerHTML = '<p style="text-align:center; opacity:0.6">Loading messages...</p>';
   loadedMessages.clear();
+
   get(query(ref(db, 'globalChat'), orderByChild('timestamp'), limitToLast(50))).then(async (snapshot) => {
     document.getElementById('global-chat').innerHTML = '';
     const promises = [];
-    snapshot.forEach((snap) => { promises.push(renderMessage(snap, false)); })
+    snapshot.forEach((snap) => {
+      promises.push(renderMessage(snap, false));
+    })
     await Promise.all(promises);
     document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
 
     onChildAdded(query(ref(db, 'globalChat'), orderByChild('timestamp'), limitToLast(1)), (snap) => {
-      if(!loadedMessages.has(snap.key)){ renderMessage(snap, true); }
+      if(!loadedMessages.has(snap.key)){
+        renderMessage(snap, true);
+      }
     });
   });
 }
@@ -566,7 +567,10 @@ async function renderMessage(snap, scroll){
   wrapper.className = `bubble-wrapper ${isMe? 'me-wrapper' : 'other-wrapper'}`;
   wrapper.id = 'wrapper-' + msgKey;
 
-  let delBtn = isMe ? `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>` : '';
+  let delBtn = '';
+  if(isMe) {
+    delBtn = `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>`;
+  }
 
   let replyHtml = '';
   if(msg.replyTo && allMessagesCache[msg.replyTo]){
@@ -589,30 +593,22 @@ async function renderMessage(snap, scroll){
 
   wrapper.innerHTML = `<div class="reply-hint">↩️</div><div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}" id="bubble-${msgKey}">${content}<div class="bubble-reactions" id="msg-react-${msgKey}"></div></div><div class="react-picker" id="msg-picker-${msgKey}">${REACTIONS.map(r=>`<span onclick="reactToMsg('${msgKey}','${r}')">${r}</span>`).join('')}</div>`;
 
-  // DRAG TO REPLY
+  // DRAG TO REPLY EVENTS
   wrapper.addEventListener('touchstart', e => startDrag(e, msgKey), {passive: true});
   wrapper.addEventListener('touchmove', e => moveDrag(e), {passive: false});
   wrapper.addEventListener('touchend', e => endDrag(e, msg, msgKey));
+
   wrapper.addEventListener('mousedown', e => startDrag(e, msgKey));
   wrapper.addEventListener('mousemove', e => moveDrag(e));
   wrapper.addEventListener('mouseup', e => endDrag(e, msg, msgKey));
   wrapper.addEventListener('mouseleave', e => endDrag(e, msg, msgKey));
 
-  // TAP = TOGGLE LIKE. HOLD = OPEN PICKER
-  const reactSum = wrapper.querySelector(`#msg-react-${msgKey}`);
-  const picker = wrapper.querySelector(`#msg-picker-${msgKey}`);
+  // LONG PRESS FOR REACTIONS
+  const bubble = wrapper.querySelector(`#bubble-${msgKey}`); 
+  const picker = wrapper.querySelector(`#msg-picker-${msgKey}`); 
   let timer;
-  let longPressTriggered = false;
-
-  reactSum.onmousedown = reactSum.ontouchstart = (e) => {
-    e.stopPropagation();
-    longPressTriggered = false;
-    timer = setTimeout(()=>{ picker.classList.add('show'); longPressTriggered = true; }, LONG_PRESS);
-  }
-  reactSum.onmouseup = reactSum.ontouchend = reactSum.onmouseleave = () => {
-    clearTimeout(timer);
-    if(!longPressTriggered){ setReaction(`globalChat/${msgKey}/reactions`, '👍') }
-  }
+  bubble.onmousedown = bubble.ontouchstart = () => { timer = setTimeout(()=>picker.classList.add('show'), LONG_PRESS); }
+  bubble.onmouseup = bubble.ontouchend = bubble.onmouseleave = () => clearTimeout(timer);
 
   document.getElementById('global-chat').appendChild(wrapper);
   renderReactions(document.getElementById(`msg-react-${msgKey}`), msg.reactions);
@@ -629,7 +625,6 @@ window.deleteMsg = async (key) => {
     delete allMessagesCache[key];
   }
 }
-window.reactToMsg = async (key, emoji) => { await setReaction(`globalChat/${key}/reactions`, emoji); document.getElementById(`msg-picker-${key}`).classList.remove('show'); }
 
 document.getElementById('chat-icon-btn').onclick = () => {
   document.getElementById('feed-section').style.display = 'none';
@@ -646,12 +641,9 @@ document.getElementById('logo-btn').onclick = () => {
   document.getElementById('chat-section').style.display = 'none';
   document.getElementById('profile-box').style.display = 'none';
 }
-
-// CLOSE PICKER WHEN TAP ANYWHERE
-document.addEventListener('click', () => {
-  document.querySelectorAll('.react-picker').forEach(p => p.classList.remove('show'));
-  document.querySelectorAll('.react-names-tooltip').forEach(t => t.style.display = 'none');
-});
+window.reactToMsg = async (key, emoji) => { await setReaction(`globalChat/${key}/reactions`, emoji); document.getElementById(`msg-picker-${key}`).classList.remove('show'); }
 </script>
 </body>
 </html>
+
+The reactions i hold must vanish when i touch tge rraction i want and also there must be where someone wants to dislike so fix
