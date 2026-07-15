@@ -79,6 +79,8 @@
 .react-summary { display:flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px; color:#aebac1; cursor:pointer; position:relative }
 .react-bubble { background:#3a3b3c; border-radius:20px; padding:2px 6px; display:flex; gap:2px; }
 .react-names-tooltip { display:none; position:absolute; bottom:40px; left:10px; background:#000; padding:6px 10px; border-radius:8px; font-size:12px; z-index:10; border:1px solid #2a3942; white-space:nowrap }
+.react-names-tooltip { display:none; position:absolute; bottom:40px; left:10px; background:#000; padding:8px 10px; border-radius:8px; font-size:12px; z-index:10; border:1px solid #2a3942; white-space:nowrap; max-height:200px; overflow-y:auto }
+.react-names-tooltip div { margin:3px 0 }
 .react-summary:hover.react-names-tooltip { display:block }
 .react-summary.show-tooltip.react-names-tooltip { display:block } /* for mobile tap */
 .react-picker { display:none; position:absolute; bottom:45px; left:10px; background:#3a3b3c; padding:6px; border-radius:50px; box-shadow:0 4px 12px rgba(0,0,0,0.8); gap:6px; z-index:999; }
@@ -253,16 +255,37 @@ async function renderReactions(container, reactions){
     usersByEmoji[emoji].push(u.name);
   }
   if(Object.keys(counts).length === 0) return;
+  
   let html = '<div class="react-bubble">';
   Object.keys(counts).slice(0,3).forEach(e=> html += e);
   html += `<span style="font-size:11px; margin-left:4px">${Object.values(counts).reduce((a,b)=>a+b,0)}</span></div>`;
-  html += `<div class="react-names-tooltip">${Object.entries(usersByEmoji).map(([e, names])=>`${e} ${names.join(', ')}`).join('<br>')}</div>`;
+  
+  // BUILD TOOLTIP WITH WHO + WHAT
+  let tooltip = '<div class="react-names-tooltip">';
+  for(const [emoji, names] of Object.entries(usersByEmoji)){
+    tooltip += `<div>${emoji} <b>${names.length}</b> - ${names.join(', ')}</div>`;
+  }
+  tooltip += '</div>';
+  html += tooltip;
   container.innerHTML = html;
 
-  container.onclick = () => {
-    container.classList.toggle('show-tooltip');
-    setTimeout(()=>container.classList.remove('show-tooltip'), 2000);
+  // MOBILE TAP TO SHOW/HIDE NAMES
+  container.onclick = (e) => {
+    e.stopPropagation();
+    document.querySelectorAll('.react-names-tooltip').forEach(t => t.style.display = 'none'); // close others
+    const tip = container.querySelector('.react-names-tooltip');
+    tip.style.display = tip.style.display === 'block'? 'none' : 'block';
+    setTimeout(()=>{ if(tip) tip.style.display = 'none' }, 3000); // auto hide after 3s
   }
+}
+
+window.reactToPost = async (key, emoji) => { 
+  await setReaction(`posts/${key}/reactions`, emoji); 
+  document.getElementById(`picker-${key}`).classList.remove('show'); // HIDE PICKER
+}
+window.reactToMsg = async (key, emoji) => { 
+  await setReaction(`globalChat/${key}/reactions`, emoji); 
+  document.getElementById(`msg-picker-${key}`).classList.remove('show'); // HIDE PICKER
 }
 
 function startAutoDelete() {
