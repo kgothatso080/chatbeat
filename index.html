@@ -73,16 +73,14 @@
 .profile-popup img { max-width: 90%; max-height: 80%; border-radius: 15px; border: 3px solid #00C896; }
 .profile-popup-close { position:absolute; top:20px; right:20px; font-size:40px; color:white; cursor:pointer }
 
-.actions-row { display:flex; gap:4px; padding:6px 0; border-top:1px solid #2a3942; margin-top:8px; justify-content:space-around; position:relative }
-.action-btn { background:transparent; border:none; border-radius:8px; padding:6px; color:#00C896; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:1; gap:6px; font-weight:500 }
-.action-btn:hover { background:#2a3942 }
+.actions-row { display:flex; gap:2px; padding:4px 0; border-top:1px solid #2a3942; margin-top:6px; justify-content:flex-start; position:relative }
+.action-btn { background:transparent; border:none; border-radius:4px; padding:4px 8px; color:#aebac1; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; font-weight:500 }
+.action-btn:hover { background:#2a3942; color:#00C896 }
 .react-summary { display:flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px; color:#aebac1; cursor:pointer; position:relative }
 .react-bubble { background:#3a3b3c; border-radius:20px; padding:2px 6px; display:flex; gap:2px; }
-.react-names-tooltip { display:none; position:absolute; bottom:40px; left:10px; background:#000; padding:6px 10px; border-radius:8px; font-size:12px; z-index:10; border:1px solid #2a3942; white-space:nowrap }
-.react-names-tooltip { display:none; position:absolute; bottom:40px; left:10px; background:#000; padding:8px 10px; border-radius:8px; font-size:12px; z-index:10; border:1px solid #2a3942; white-space:nowrap; max-height:200px; overflow-y:auto }
-.react-names-tooltip div { margin:3px 0 }
-.react-summary:hover.react-names-tooltip { display:block }
-.react-summary.show-tooltip.react-names-tooltip { display:block } /* for mobile tap */
+.react-names-tooltip { display:none; position:absolute; bottom:45px; left:10px; background:#111b21; padding:8px 10px; border-radius:8px; font-size:12px; z-index:999; border:1px solid #00C896; white-space:nowrap; max-height:200px; overflow-y:auto; box-shadow: 0 4px 12px rgba(0,0,0,0.8) }
+.react-names-tooltip div { margin:4px 0; color:#d1d7db }
+.react-names-tooltip b { color:#00C896 }
 .react-picker { display:none; position:absolute; bottom:45px; left:10px; background:#3a3b3c; padding:6px; border-radius:50px; box-shadow:0 4px 12px rgba(0,0,0,0.8); gap:6px; z-index:999; }
 .react-picker.show { display:flex }
 .react-picker span { font-size:28px; cursor:pointer; transition:transform 0.15s; }
@@ -167,7 +165,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.9 - DISLIKE + AUTO HIDE
+    Version 2.0.10 - FB STYLE REACTIONS
   </div>
 </div>
 
@@ -212,7 +210,7 @@ let allMessagesCache = {};
 let replyToMsg = null;
 let dragging = null;
 const DRAG_THRESHOLD = 70;
-const REACTIONS = ['👍','❤️','😂','😮','😢','😡','👎']; // ADDED DISLIKE
+const REACTIONS = ['👍','❤️','😂','😮','😢','😡','👎'];
 const LONG_PRESS = 500;
 
 window.openProfilePopup = (imgSrc) => {
@@ -255,12 +253,9 @@ async function renderReactions(container, reactions){
     usersByEmoji[emoji].push(u.name);
   }
   if(Object.keys(counts).length === 0) return;
-  
   let html = '<div class="react-bubble">';
   Object.keys(counts).slice(0,3).forEach(e=> html += e);
   html += `<span style="font-size:11px; margin-left:4px">${Object.values(counts).reduce((a,b)=>a+b,0)}</span></div>`;
-  
-  // BUILD TOOLTIP WITH WHO + WHAT
   let tooltip = '<div class="react-names-tooltip">';
   for(const [emoji, names] of Object.entries(usersByEmoji)){
     tooltip += `<div>${emoji} <b>${names.length}</b> - ${names.join(', ')}</div>`;
@@ -268,24 +263,13 @@ async function renderReactions(container, reactions){
   tooltip += '</div>';
   html += tooltip;
   container.innerHTML = html;
-
-  // MOBILE TAP TO SHOW/HIDE NAMES
   container.onclick = (e) => {
     e.stopPropagation();
-    document.querySelectorAll('.react-names-tooltip').forEach(t => t.style.display = 'none'); // close others
+    document.querySelectorAll('.react-names-tooltip').forEach(t => t.style.display = 'none');
     const tip = container.querySelector('.react-names-tooltip');
-    tip.style.display = tip.style.display === 'block'? 'none' : 'block';
-    setTimeout(()=>{ if(tip) tip.style.display = 'none' }, 3000); // auto hide after 3s
+    tip.style.display = 'block';
+    setTimeout(()=>{ if(tip) tip.style.display = 'none' }, 3000);
   }
-}
-
-window.reactToPost = async (key, emoji) => { 
-  await setReaction(`posts/${key}/reactions`, emoji); 
-  document.getElementById(`picker-${key}`).classList.remove('show'); // HIDE PICKER
-}
-window.reactToMsg = async (key, emoji) => { 
-  await setReaction(`globalChat/${key}/reactions`, emoji); 
-  document.getElementById(`msg-picker-${key}`).classList.remove('show'); // HIDE PICKER
 }
 
 function startAutoDelete() {
@@ -448,6 +432,10 @@ function loadPosts() {
     const btn = document.getElementById(`react-btn-${postKey}`); const picker = document.getElementById(`picker-${postKey}`); let timer;
     btn.onmousedown = btn.ontouchstart = () => { timer = setTimeout(()=>picker.classList.add('show'), LONG_PRESS); }
     btn.onmouseup = btn.ontouchend = btn.onmouseleave = () => clearTimeout(timer);
+    onValue(ref(db, `posts/${postKey}/reactions/${currentUser.uid}`), (s)=>{
+      if(s.exists()){ btn.innerHTML = `${s.val()} Liked`; btn.style.color = '#00C896'; }
+      else { btn.innerHTML = `👍 Like`; btn.style.color = '#aebac1'; }
+    })
     btn.onclick = () => { if(!timer) setReaction(`posts/${postKey}/reactions`, '👍') }
   });
 }
@@ -458,7 +446,7 @@ window.deletePost = async (key) => {
     if(el) el.remove();
   }
 }
-window.reactToPost = async (key, emoji) => { await setReaction(`posts/${key}/reactions`, emoji); document.getElementById(`picker-${key}`).classList.remove('show'); } // AUTO HIDE ADDED
+window.reactToPost = async (key, emoji) => { await setReaction(`posts/${key}/reactions`, emoji); document.getElementById(`picker-${key}`).classList.remove('show'); }
 window.toggleComments = (key) => document.getElementById(`comments-${key}`).classList.toggle('show');
 window.addComment = async (key) => { const input = document.getElementById(`comment-input-${key}`); const text = input.value.trim(); if(!text) return; await push(ref(db, `posts/${key}/comments`), {uid: currentUser.uid, text, timestamp: Date.now()}); input.value = ''; }
 function loadComments(key){
@@ -625,12 +613,18 @@ async function renderMessage(snap, scroll){
   wrapper.addEventListener('mouseup', e => endDrag(e, msg, msgKey));
   wrapper.addEventListener('mouseleave', e => endDrag(e, msg, msgKey));
 
-  // LONG PRESS FOR REACTIONS + AUTO HIDE
+  // LONG PRESS FOR REACTIONS
   const bubble = wrapper.querySelector(`#bubble-${msgKey}`); 
   const picker = wrapper.querySelector(`#msg-picker-${msgKey}`); 
   let timer;
   bubble.onmousedown = bubble.ontouchstart = () => { timer = setTimeout(()=>picker.classList.add('show'), LONG_PRESS); }
   bubble.onmouseup = bubble.ontouchend = bubble.onmouseleave = () => clearTimeout(timer);
+
+  // SHOW IF I REACTED
+  onValue(ref(db, `globalChat/${msgKey}/reactions/${currentUser.uid}`), (s)=>{
+    if(s.exists()){ bubble.style.outline = '1px solid #00C896'; }
+    else { bubble.style.outline = 'none'; }
+  })
 
   document.getElementById('global-chat').appendChild(wrapper);
   renderReactions(document.getElementById(`msg-react-${msgKey}`), msg.reactions);
@@ -663,7 +657,7 @@ document.getElementById('logo-btn').onclick = () => {
   document.getElementById('chat-section').style.display = 'none';
   document.getElementById('profile-box').style.display = 'none';
 }
-window.reactToMsg = async (key, emoji) => { await setReaction(`globalChat/${key}/reactions`, emoji); document.getElementById(`msg-picker-${key}`).classList.remove('show'); } // picker hides after tap
+window.reactToMsg = async (key, emoji) => { await setReaction(`globalChat/${key}/reactions`, emoji); document.getElementById(`msg-picker-${key}`).classList.remove('show'); }
 </script>
 </body>
 </html>
