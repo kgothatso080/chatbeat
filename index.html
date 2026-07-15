@@ -165,7 +165,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.8 - GREEN FB ICONS
+    Version 2.0.9 - DISLIKE + AUTO HIDE
   </div>
 </div>
 
@@ -210,7 +210,7 @@ let allMessagesCache = {};
 let replyToMsg = null;
 let dragging = null;
 const DRAG_THRESHOLD = 70;
-const REACTIONS = ['👍','❤️','😂','😮','😢','😡'];
+const REACTIONS = ['👍','❤️','😂','😮','😢','😡','👎']; // ADDED DISLIKE
 const LONG_PRESS = 500;
 
 window.openProfilePopup = (imgSrc) => {
@@ -435,7 +435,7 @@ window.deletePost = async (key) => {
     if(el) el.remove();
   }
 }
-window.reactToPost = async (key, emoji) => { await setReaction(`posts/${key}/reactions`, emoji); document.getElementById(`picker-${key}`).classList.remove('show'); }
+window.reactToPost = async (key, emoji) => { await setReaction(`posts/${key}/reactions`, emoji); document.getElementById(`picker-${key}`).classList.remove('show'); } // AUTO HIDE ADDED
 window.toggleComments = (key) => document.getElementById(`comments-${key}`).classList.toggle('show');
 window.addComment = async (key) => { const input = document.getElementById(`comment-input-${key}`); const text = input.value.trim(); if(!text) return; await push(ref(db, `posts/${key}/comments`), {uid: currentUser.uid, text, timestamp: Date.now()}); input.value = ''; }
 function loadComments(key){
@@ -593,17 +593,16 @@ async function renderMessage(snap, scroll){
 
   wrapper.innerHTML = `<div class="reply-hint">↩️</div><div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}" id="bubble-${msgKey}">${content}<div class="bubble-reactions" id="msg-react-${msgKey}"></div></div><div class="react-picker" id="msg-picker-${msgKey}">${REACTIONS.map(r=>`<span onclick="reactToMsg('${msgKey}','${r}')">${r}</span>`).join('')}</div>`;
 
-  // DRAG TO REPLY EVENTS
+  // DRAG TO REPLY
   wrapper.addEventListener('touchstart', e => startDrag(e, msgKey), {passive: true});
   wrapper.addEventListener('touchmove', e => moveDrag(e), {passive: false});
   wrapper.addEventListener('touchend', e => endDrag(e, msg, msgKey));
-
   wrapper.addEventListener('mousedown', e => startDrag(e, msgKey));
   wrapper.addEventListener('mousemove', e => moveDrag(e));
   wrapper.addEventListener('mouseup', e => endDrag(e, msg, msgKey));
   wrapper.addEventListener('mouseleave', e => endDrag(e, msg, msgKey));
 
-  // LONG PRESS FOR REACTIONS
+  // LONG PRESS FOR REACTIONS + AUTO HIDE
   const bubble = wrapper.querySelector(`#bubble-${msgKey}`); 
   const picker = wrapper.querySelector(`#msg-picker-${msgKey}`); 
   let timer;
@@ -641,7 +640,7 @@ document.getElementById('logo-btn').onclick = () => {
   document.getElementById('chat-section').style.display = 'none';
   document.getElementById('profile-box').style.display = 'none';
 }
-window.reactToMsg = async (key, emoji) => { await setReaction(`globalChat/${key}/reactions`, emoji); document.getElementById(`msg-picker-${key}`).classList.remove('show'); }
+window.reactToMsg = async (key, emoji) => { await setReaction(`globalChat/${key}/reactions`, emoji); document.getElementById(`msg-picker-${key}`).classList.remove('show'); } // picker hides after tap
 </script>
 </body>
 </html>
