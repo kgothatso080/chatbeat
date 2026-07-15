@@ -127,6 +127,24 @@
 .share-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#202c33; padding:20px; border-radius:15px; z-index:9999; display:none; border:2px solid #00C896; width:90%; max-width:300px }
 .share-popup.show { display:block }
 .share-popup button { width:100%; margin:8px 0; display:flex; align-items:center; justify-content:center; gap:8px }
+
+/* NEW: VIDEO FEED TIKTOK STYLE */
+#videos-section { display:none; height: calc(100vh - 60px); overflow-y: scroll; scroll-snap-type: y mandatory; background:#000 }
+.video-card { height: 100vh; width:100%; position:relative; scroll-snap-align: start; display:flex; align-items:center; justify-content:center }
+.video-card video { width:100%; height:100%; object-fit:cover }
+.video-info { position:absolute; bottom:80px; left:10px; right:70px }
+.video-info h4 { margin:5px 0; color:#fff; text-shadow:0 0 5px #000 }
+.follow-btn { background:#00C896; padding:4px 10px; border-radius:15px; font-size:12px; border:none; color:white }
+.add-video-btn { position:fixed; bottom:80px; right:15px; width:50px; height:50px; border-radius:50%; font-size:24px; z-index:20 }
+
+/* NEW: DM LIST */
+.dm-list { padding:10px }
+.dm-item { display:flex; gap:10px; padding:12px; background:#202c33; border-radius:12px; margin:8px 0; cursor:pointer }
+.dm-item img { width:45px; height:45px; border-radius:50% }
+
+/* NEW: FRIENDS LIST */
+.friends-list { padding:10px }
+.friend-item { display:flex; justify-content:space-between; align-items:center; padding:12px; background:#202c33; border-radius:12px; margin:8px 0 }
   </style>
 </head>
 <body>
@@ -173,7 +191,22 @@
       <button id="post-btn">Post</button>
     </div>
     <div id="feed"></div>
-<button id="load-more-btn" onclick="loadMorePosts()" style="width:100%; background:#2a3942; margin:10px 0">Load Older Posts</button>
+  </div>
+
+  <div id="videos-section">
+    <div id="video-feed"></div>
+    <button class="add-video-btn" onclick="document.getElementById('video-upload').click()">+</button>
+    <input id="video-upload" type="file" accept="video/*" style="display:none">
+  </div>
+
+  <div id="dm-section" style="display:none">
+    <div class="chat-header"><button onclick="backToFeed()">← Back</button><h3>Messages</h3></div>
+    <div id="dm-list" class="dm-list"></div>
+  </div>
+
+  <div id="friends-section" style="display:none">
+    <div class="chat-header"><button onclick="backToFeed()">← Back</button><h3>Friends</h3></div>
+    <div id="friends-list" class="friends-list"></div>
   </div>
 
   <div id="chat-section" style="display:none;">
@@ -181,13 +214,6 @@
       <button id="back-to-feed">← Back</button>
       <h3>Global Chat</h3>
     </div>
-
-    
-  <div id="videos-section" style="display:none; height: calc(100vh - 60px); overflow-y: scroll; scroll-snap-type: y mandatory;">
-  <div id="video-feed"></div>
-  <button onclick="document.getElementById('video-upload').click()" style="position:fixed; bottom:80px; right:15px; width:50px; height:50px; border-radius:50%; font-size:24px; z-index:20">+</button>
-  <input id="video-upload" type="file" accept="video/*" style="display:none">
-</div>
 
     <div id="reply-bar">
       <div id="reply-content">
@@ -209,7 +235,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.20 - FIXED LOGIN
+    Version 2.1.0 - NEW FEATURES
   </div>
 </div>
 
@@ -228,7 +254,7 @@
   
   <div id="settings-popup" class="share-popup">
   <h3>Settings</h3>
-  <button onclick="handleLogout()">🚪 Logout</button>
+  <button onclick="signOut(auth)">🚪 Logout</button>
   <button onclick="closeSettings()" style="background:#555">Cancel</button>
 </div>
 
@@ -236,7 +262,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-import { getDatabase, ref, set, get, query, orderByChild, equalTo, push, onChildAdded, remove, off, limitToLast, onValue, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
+import { getDatabase, ref, set, get, query, orderByChild, equalTo, push, onChildAdded, remove, off, limitToLast, onValue } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD97-el91-ISWGkOhxWy4V_wXyOK6MJl0k",
@@ -253,14 +279,6 @@ const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-// WHATSAPP STYLE: Save data offline so it loads instantly
-enableIndexedDbPersistence(db).catch((err) => {
-  if (err.code == 'failed-precondition') {
-    console.log("Offline cache failed: multiple tabs open");
-  } else if (err.code == 'unimplemented') {
-    console.log("Offline cache not supported");
-  }
-});
 const colors = ['#00C896', '#0077FF', '#00FFD1', '#FF6B6B', '#F7DC6F', '#9B59B6', '#E67E22', '#1ABC9C'];
 const DEFAULT_PIC = 'https://ui-avatars.com/api/?name=U&background=00C896&color=fff';
 let currentUser = null;
@@ -396,14 +414,6 @@ document.getElementById('forgot-btn').onclick = () => {
 .catch((error) => { err.innerText = error.message; });
 }
 
-// FIXED LOGOUT FUNCTION
-window.handleLogout = () => {
-  userCache = {};
-  allMessagesCache = {};
-  signOut(auth).catch(e => console.log(e));
-  closeSettings();
-}
-
 onAuthStateChanged(auth, async (user) => {
  if(user) {
    currentUser = user;
@@ -427,6 +437,9 @@ onAuthStateChanged(auth, async (user) => {
    startAutoDelete();
    loadPosts();
    loadChat();
+   loadVideos();
+   loadDMs();
+   loadFriends();
  } else {
    document.getElementById('cover').style.display = 'flex';
    document.getElementById('app').style.display = 'none';
@@ -450,6 +463,9 @@ document.getElementById('profile-icon-btn').onclick = () => {
   document.getElementById('profile-box').style.display = 'block';
   document.getElementById('feed-section').style.display = 'none';
   document.getElementById('chat-section').style.display = 'none';
+  document.getElementById('videos-section').style.display = 'none';
+  document.getElementById('dm-section').style.display = 'none';
+  document.getElementById('friends-section').style.display = 'none';
 }
 
 document.getElementById('post-img-btn').onclick = () => document.getElementById('post-file').click();
@@ -479,15 +495,9 @@ async function getUser(uid){
   return user;
 }
 
-let lastPostTimestamp = null;
 function loadPosts() {
-  off(ref(db, 'posts')); 
-  document.getElementById('feed').innerHTML = '';
-  lastPostTimestamp = null;
-  
-  const postsQuery = query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50));
-  onChildAdded(postsQuery, async (snap) => {
-    lastPostTimestamp = snap.val().timestamp; // remember oldest loaded
+  off(ref(db, 'posts')); document.getElementById('feed').innerHTML = '';
+  onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50)), async (snap) => {
     const post = snap.val(); const postKey = snap.key; const user = await getUser(post.uid); const userPic = user.profilePic || DEFAULT_PIC;
     const userReact = post.reactions?.[currentUser.uid] || null;
     const postDiv = document.createElement('div'); postDiv.className = 'card'; postDiv.id = 'post-' + postKey;
@@ -527,7 +537,7 @@ function loadPosts() {
       else { btn.classList.remove('active'); btn.innerHTML = '👍'; }
     });
     onValue(ref(db, `posts/${postKey}/comments`), (s)=>{
-      document.getElementById(`comment-count-${postKey}`).innerText = `${s.size} Comments`;
+            document.getElementById(`comment-count-${postKey}`).innerText = `${s.size} Comments`;
     })
 
     const likeBtn = document.getElementById(`like-btn-${postKey}`);
@@ -594,6 +604,112 @@ window.shareTo = (type) => {
   if(type==='copy'){ navigator.clipboard.writeText(shareLink); alert("Link copied!") }
   closeShare();
 }
+
+// NEW: VIDEOS TIKTOK STYLE
+function loadVideos(){
+  off(ref(db, 'videos')); document.getElementById('video-feed').innerHTML = '';
+  onChildAdded(query(ref(db, 'videos'), orderByChild('timestamp'), limitToLast(20)), async (snap) => {
+    const v = snap.val(); const u = await getUser(v.uid);
+    const div = document.createElement('div'); div.className = 'video-card';
+    div.innerHTML = `
+      <video src="${v.video}" loop playsinline onclick="this.paused?this.play():this.pause()"></video>
+      <div class="video-info">
+        <h4>@${u.name}</h4>
+        <p>${v.desc||''}</p>
+        <button class="follow-btn" onclick="toggleFollow('${v.uid}')">Follow</button>
+      </div>
+    `;
+    document.getElementById('video-feed').appendChild(div);
+  })
+}
+document.getElementById('video-upload').onchange = async (e)=>{
+  const file = e.target.files[0];
+  if(file){
+    const reader = new FileReader();
+    reader.onload = async ()=>{
+      const desc = prompt("Add a description:");
+      await push(ref(db, 'videos'), { uid: currentUser.uid, video: reader.result, desc, timestamp: Date.now() });
+      alert("Video posted!")
+    }
+    reader.readAsDataURL(file);
+  }
+}
+
+// NEW: DMs
+function loadDMs(){
+  off(ref(db, 'users')); document.getElementById('dm-list').innerHTML = '';
+  onValue(ref(db, 'users'), async (snap)=>{
+    document.getElementById('dm-list').innerHTML = '';
+    snap.forEach(uSnap=>{
+      if(uSnap.key!== currentUser.uid){
+        const u = uSnap.val();
+        const div = document.createElement('div'); div.className = 'dm-item';
+        div.innerHTML = `<img src="${u.profilePic}"><div><b>${u.name}</b></div>`;
+        div.onclick = () => alert("Opening DM with " + u.name + " - coming full next update");
+        document.getElementById('dm-list').appendChild(div);
+      }
+    })
+  })
+}
+
+// NEW: FOLLOWING
+function loadFriends(){
+  off(ref(db, 'friends/'+currentUser.uid)); document.getElementById('friends-list').innerHTML = '';
+  onValue(ref(db, 'users'), async (snap)=>{
+    document.getElementById('friends-list').innerHTML = '';
+    snap.forEach(uSnap=>{
+      if(uSnap.key!== currentUser.uid){
+        const u = uSnap.val();
+        const div = document.createElement('div'); div.className = 'friend-item';
+        div.innerHTML = `<div><img style="width:40px;height:40px;border-radius:50%" src="${u.profilePic}"> ${u.name}</div>
+        <button class="follow-btn" id="follow-${uSnap.key}" onclick="toggleFollow('${uSnap.key}')">Follow</button>`;
+        document.getElementById('friends-list').appendChild(div);
+      }
+    })
+  })
+}
+window.toggleFollow = async (uid) => {
+  const followRef = ref(db, `friends/${currentUser.uid}/${uid}`);
+  const snap = await get(followRef);
+  if(snap.exists()){ await remove(followRef); alert("Unfollowed"); }
+  else { await set(followRef, true); alert("Following!"); }
+}
+
+// NAVIGATION
+window.openVideos = () => {
+  document.getElementById('feed-section').style.display = 'none';
+  document.getElementById('chat-section').style.display = 'none';
+  document.getElementById('videos-section').style.display = 'block';
+  document.getElementById('dm-section').style.display = 'none';
+  document.getElementById('friends-section').style.display = 'none';
+  document.getElementById('profile-box').style.display = 'none';
+}
+window.openDMs = () => {
+  document.getElementById('feed-section').style.display = 'none';
+  document.getElementById('chat-section').style.display = 'none';
+  document.getElementById('videos-section').style.display = 'none';
+  document.getElementById('dm-section').style.display = 'block';
+  document.getElementById('friends-section').style.display = 'none';
+  document.getElementById('profile-box').style.display = 'none';
+}
+window.openFriends = () => {
+  document.getElementById('feed-section').style.display = 'none';
+  document.getElementById('chat-section').style.display = 'none';
+  document.getElementById('videos-section').style.display = 'none';
+  document.getElementById('dm-section').style.display = 'none';
+  document.getElementById('friends-section').style.display = 'block';
+  document.getElementById('profile-box').style.display = 'none';
+}
+window.backToFeed = () => {
+  document.getElementById('feed-section').style.display = 'block';
+  document.getElementById('chat-section').style.display = 'none';
+  document.getElementById('videos-section').style.display = 'none';
+  document.getElementById('dm-section').style.display = 'none';
+  document.getElementById('friends-section').style.display = 'none';
+  document.getElementById('profile-box').style.display = 'none';
+}
+window.openSettings = () => document.getElementById('settings-popup').classList.add('show');
+window.closeSettings = () => document.getElementById('settings-popup').classList.remove('show');
 
 document.getElementById('chat-img-btn').onclick = () => document.getElementById('chat-file').click();
 document.getElementById('chat-file').onchange = async (e)=>{
@@ -776,53 +892,17 @@ document.getElementById('chat-icon-btn').onclick = () => {
   document.getElementById('feed-section').style.display = 'none';
   document.getElementById('chat-section').style.display = 'block';
   document.getElementById('profile-box').style.display = 'none';
+  document.getElementById('videos-section').style.display = 'none';
+  document.getElementById('dm-section').style.display = 'none';
+  document.getElementById('friends-section').style.display = 'none';
 }
-document.getElementById('back-to-feed').onclick = () => {
-  document.getElementById('feed-section').style.display = 'block';
-  document.getElementById('chat-section').style.display = 'none';
-  document.getElementById('profile-box').style.display = 'none';
-}
-document.getElementById('logo-btn').onclick = () => {
-  document.getElementById('feed-section').style.display = 'block';
-  document.getElementById('chat-section').style.display = 'none';
-  document.getElementById('profile-box').style.display = 'none';
-}
+document.getElementById('back-to-feed').onclick = backToFeed;
+document.getElementById('logo-btn').onclick = backToFeed;
 
-  window.loadMorePosts = async () => {
-  if(!lastPostTimestamp) return;
-  const olderQuery = query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50));
-  const snap = await get(olderQuery);
-  alert("Loading more posts...")
-}
-window.openSettings = () => document.getElementById('settings-popup').classList.add('show');
-window.closeSettings = () => document.getElementById('settings-popup').classList.remove('show');
-
-  document.getElementById('videos-btn').onclick = () => {
-  document.getElementById('feed-section').style.display = 'none';
-  document.getElementById('chat-section').style.display = 'none';
-  document.getElementById('videos-section').style.display = 'block';
-}
-
-document.getElementById('video-upload').onchange = async (e)=>{
-  const file = e.target.files[0];
-  if(file){
-    const reader = new FileReader();
-    reader.onload = async ()=>{
-      const desc = prompt("Add a description:");
-      await push(ref(db, 'videos'), { uid: currentUser.uid, video: reader.result, desc, timestamp: Date.now() });
-      alert("Video posted!")
-    }
-    reader.readAsDataURL(file);
-  }
-}
-
-document.getElementById('dm-btn').onclick = () => alert("DMs coming next! Private 1-on-1 chat");
-document.getElementById('friends-btn').onclick = () => alert("Following coming next! Add friends here");
-
-  document.addEventListener('click', () => {
+document.addEventListener('click', () => {
   document.querySelectorAll('.react-picker').forEach(p => p.classList.remove('show'));
   document.querySelectorAll('.react-names-tooltip').forEach(t => t.style.display = 'none');
-  });
+});
 </script>
 </body>
 </html>
