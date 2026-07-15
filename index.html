@@ -517,8 +517,7 @@ function loadComments(key){
     div.id = 'comment-' + commentKey; // ADDED THIS
     
     // ADDED DELETE BUTTON IF IT'S YOUR COMMENT
-    let delBtn = c.uid === currentUser.uid ? `<button onclick="deleteComment('${key}','${commentKey}')" style="background:transparent;border:none;color:#FF6B6B;font-size:12px;cursor:pointer;margin-left:4px">×</button>` : '';
-
+    let delBtn = c.uid === currentUser.uid ? `<button onclick="deleteComment('${key}','${commentKey}')" style="background:rgba(0,0,0,0.4);border:none;border-radius:50%;color:white;font-size:10px;width:16px;height:16px;line-height:16px;text-align:center;cursor:pointer;margin-left:4px">×</button>` : '';
     div.innerHTML = `<img class="comment-avatar" src="${u.profilePic}">
     <div class="comment-bubble">
       <div style="display:flex;justify-content:space-between;align-items:center">
