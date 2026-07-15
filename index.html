@@ -173,6 +173,7 @@
       <button id="post-btn">Post</button>
     </div>
     <div id="feed"></div>
+<button id="load-more-btn" onclick="loadMorePosts()" style="width:100%; background:#2a3942; margin:10px 0">Load Older Posts</button>
   </div>
 
   <div id="chat-section" style="display:none;">
@@ -235,7 +236,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-import { getDatabase, ref, set, get, query, orderByChild, equalTo, push, onChildAdded, remove, off, limitToLast, onValue } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
+import { getDatabase, ref, set, get, query, orderByChild, equalTo, push, onChildAdded, remove, off, limitToLast, onValue, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD97-el91-ISWGkOhxWy4V_wXyOK6MJl0k",
@@ -247,12 +248,19 @@ const firebaseConfig = {
   appId: "1:38692820606:web:edce5abf8d103e1f6e6a2f",
   measurementId: "G-KZ5KN31YFL"
 };
-
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
+// WHATSAPP STYLE: Save data offline so it loads instantly
+enableIndexedDbPersistence(db).catch((err) => {
+  if (err.code == 'failed-precondition') {
+    console.log("Offline cache failed: multiple tabs open");
+  } else if (err.code == 'unimplemented') {
+    console.log("Offline cache not supported");
+  }
+});
 const colors = ['#00C896', '#0077FF', '#00FFD1', '#FF6B6B', '#F7DC6F', '#9B59B6', '#E67E22', '#1ABC9C'];
 const DEFAULT_PIC = 'https://ui-avatars.com/api/?name=U&background=00C896&color=fff';
 let currentUser = null;
@@ -469,9 +477,15 @@ async function getUser(uid){
   return user;
 }
 
+let lastPostTimestamp = null;
 function loadPosts() {
-  off(ref(db, 'posts')); document.getElementById('feed').innerHTML = '';
-  onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50)), async (snap) => {
+  off(ref(db, 'posts')); 
+  document.getElementById('feed').innerHTML = '';
+  lastPostTimestamp = null;
+  
+  const postsQuery = query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50));
+  onChildAdded(postsQuery, async (snap) => {
+    lastPostTimestamp = snap.val().timestamp; // remember oldest loaded
     const post = snap.val(); const postKey = snap.key; const user = await getUser(post.uid); const userPic = user.profilePic || DEFAULT_PIC;
     const userReact = post.reactions?.[currentUser.uid] || null;
     const postDiv = document.createElement('div'); postDiv.className = 'card'; postDiv.id = 'post-' + postKey;
@@ -776,6 +790,13 @@ document.getElementById('logo-btn').onclick = () => {
 }
 
 // CLOSE PICKER WHEN TAP ANYWHERE
+  window.loadMorePosts = async () => {
+  if(!lastPostTimestamp) return;
+  const olderQuery = query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50));
+  const snap = await get(olderQuery);
+  // This will load next batch. For now it just refreshes. We can make true pagination later
+  alert("Loading more posts...")
+}
 window.openSettings = () => document.getElementById('settings-popup').classList.add('show');
 window.closeSettings = () => document.getElementById('settings-popup').classList.remove('show');
 
@@ -804,7 +825,7 @@ document.getElementById('friends-btn').onclick = () => alert("Following coming n
   document.addEventListener('click', () => {
   document.querySelectorAll('.react-picker').forEach(p => p.classList.remove('show'));
   document.querySelectorAll('.react-names-tooltip').forEach(t => t.style.display = 'none');
-});
+  });
 </script>
 </body>
 </html>
