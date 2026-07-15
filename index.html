@@ -7,10 +7,19 @@
   <style>
     * { box-sizing: border-box; }
     body { margin:0; font-family: 'Roboto', sans-serif; background: #0b141a; color: white; touch-action: pan-y; }
-.topbar { background: linear-gradient(90deg, #00C896, #0077FF); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
-.topbar h2 { margin: 0; font-size: 20px; text-shadow: 0 0 5px #fff; cursor: pointer; }
-.topbar div { display:flex; gap:8px }
-.topbar button { background: rgba(0,0,0,0.3); width: auto; padding: 8px 12px; border-radius: 20px; font-weight: 500; border: none; color: white; cursor:pointer }
+.topbar { 
+  background: linear-gradient(90deg, #00C896, #0077FF); 
+  padding: 8px 10px; 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  position: sticky; 
+  top: 0; 
+  z-index: 10; 
+}
+.topbar h2 { margin: 0; font-size: 16px; text-shadow: 0 0 5px #fff; cursor: pointer; }
+.topbar div { display:flex; gap:4px }
+.topbar button { background: rgba(0,0,0,0.3); width: 36px; height: 36px; padding: 0; border-radius: 50%; font-size: 18px; border: none; color: white; cursor:pointer; display:flex; align-items:center; justify-content:center }
     #cover { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; text-align:center; padding:20px; background: linear-gradient(135deg, #00C896 0%, #0077FF 50%, #000 100%); }
     #cover h1 { font-size: 3em; text-shadow: 0 0 20px #00C896; }
     input, button, textarea { padding:12px; margin:8px; border-radius:25px; border:none; width:80%; max-width:300px; font-size:16px; font-family: 'Roboto', sans-serif; }
@@ -137,13 +146,16 @@
 
 <div id="app">
   <div class="topbar">
-    <button id="logout-btn">Logout</button>
-    <h2 id="logo-btn">ChatBeat</h2>
-    <div>
-      <button id="profile-icon-btn">👤</button>
-      <button id="chat-icon-btn">💬</button>
-    </div>
+  <button id="settings-btn" onclick="openSettings()">⚙️</button>
+  <h2 id="logo-btn">ChatBeat</h2>
+  <div>
+    <button id="videos-btn" onclick="openVideos()">🎥</button>
+    <button id="dm-btn" onclick="openDMs()">✉️</button>
+    <button id="friends-btn" onclick="openFriends()">👥</button>
+    <button id="profile-icon-btn">👤</button>
+    <button id="chat-icon-btn">💬</button>
   </div>
+</div>
 
   <div id="profile-box" class="profile-box">
     <img id="profile-pic" src="https://ui-avatars.com/api/?name=U&background=00C896&color=fff">
@@ -168,6 +180,13 @@
       <button id="back-to-feed">← Back</button>
       <h3>Global Chat</h3>
     </div>
+
+    
+  <div id="videos-section" style="display:none; height: calc(100vh - 60px); overflow-y: scroll; scroll-snap-type: y mandatory;">
+  <div id="video-feed"></div>
+  <button onclick="document.getElementById('video-upload').click()" style="position:fixed; bottom:80px; right:15px; width:50px; height:50px; border-radius:50%; font-size:24px; z-index:20">+</button>
+  <input id="video-upload" type="file" accept="video/*" style="display:none">
+</div>
 
     <div id="reply-bar">
       <div id="reply-content">
@@ -204,6 +223,12 @@
   <button onclick="shareTo('facebook')">📘 Facebook</button>
   <button onclick="shareTo('copy')">🔗 Copy Link</button>
   <button onclick="closeShare()" style="background:#555">Cancel</button>
+</div>
+  
+  <div id="settings-popup" class="share-popup">
+  <h3>Settings</h3>
+  <button onclick="signOut(auth)">🚪 Logout</button>
+  <button onclick="closeSettings()" style="background:#555">Cancel</button>
 </div>
 
 <script type="module">
@@ -751,7 +776,32 @@ document.getElementById('logo-btn').onclick = () => {
 }
 
 // CLOSE PICKER WHEN TAP ANYWHERE
-document.addEventListener('click', () => {
+window.openSettings = () => document.getElementById('settings-popup').classList.add('show');
+window.closeSettings = () => document.getElementById('settings-popup').classList.remove('show');
+
+  document.getElementById('videos-btn').onclick = () => {
+  document.getElementById('feed-section').style.display = 'none';
+  document.getElementById('chat-section').style.display = 'none';
+  document.getElementById('videos-section').style.display = 'block';
+}
+
+document.getElementById('video-upload').onchange = async (e)=>{
+  const file = e.target.files[0];
+  if(file){
+    const reader = new FileReader();
+    reader.onload = async ()=>{
+      const desc = prompt("Add a description:");
+      await push(ref(db, 'videos'), { uid: currentUser.uid, video: reader.result, desc, timestamp: Date.now() });
+      alert("Video posted!")
+    }
+    reader.readAsDataURL(file);
+  }
+}
+
+document.getElementById('dm-btn').onclick = () => alert("DMs coming next! Private 1-on-1 chat");
+document.getElementById('friends-btn').onclick = () => alert("Following coming next! Add friends here");
+  
+  document.addEventListener('click', () => {
   document.querySelectorAll('.react-picker').forEach(p => p.classList.remove('show'));
   document.querySelectorAll('.react-names-tooltip').forEach(t => t.style.display = 'none');
 });
