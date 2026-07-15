@@ -209,7 +209,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.19 - ICONS ONLY
+    Version 2.0.20 - FIXED LOGIN
   </div>
 </div>
 
@@ -228,7 +228,7 @@
   
   <div id="settings-popup" class="share-popup">
   <h3>Settings</h3>
-  <button onclick="signOut(auth)">🚪 Logout</button>
+  <button onclick="handleLogout()">🚪 Logout</button>
   <button onclick="closeSettings()" style="background:#555">Cancel</button>
 </div>
 
@@ -396,10 +396,12 @@ document.getElementById('forgot-btn').onclick = () => {
 .catch((error) => { err.innerText = error.message; });
 }
 
-document.getElementById('logout-btn').onclick = () => {
+// FIXED LOGOUT FUNCTION
+window.handleLogout = () => {
   userCache = {};
   allMessagesCache = {};
-  signOut(auth)
+  signOut(auth).catch(e => console.log(e));
+  closeSettings();
 }
 
 onAuthStateChanged(auth, async (user) => {
@@ -562,18 +564,17 @@ window.deleteComment = async (postKey, commentKey) => {
     const el = document.getElementById('comment-' + commentKey);
     if(el) el.remove();
   }
-}  
+}
 function loadComments(key){
   onChildAdded(ref(db, `posts/${key}/comments`), async (snap)=>{
     const c = snap.val();
-    const commentKey = snap.key; // ADDED THIS
+    const commentKey = snap.key;
     const u = await getUser(c.uid);
     const div = document.createElement('div');
     div.className='comment';
-    div.id = 'comment-' + commentKey; // ADDED THIS
-    
-    // ADDED DELETE BUTTON IF IT'S YOUR COMMENT
-    let delBtn = c.uid === currentUser.uid ? `<button onclick="deleteComment('${key}','${commentKey}')" style="background:rgba(0,0,0,0.4);border:none;border-radius:50%;color:white;font-size:10px;width:16px;height:16px;line-height:16px;text-align:center;cursor:pointer;margin-left:4px">×</button>` : '';
+    div.id = 'comment-' + commentKey;
+
+    let delBtn = c.uid === currentUser.uid? `<button onclick="deleteComment('${key}','${commentKey}')" style="background:rgba(0,0,0,0.4);border:none;border-radius:50%;color:white;font-size:10px;width:16px;height:16px;line-height:16px;text-align:center;cursor:pointer;margin-left:4px">×</button>` : '';
     div.innerHTML = `<img class="comment-avatar" src="${u.profilePic}">
     <div class="comment-bubble">
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -728,7 +729,6 @@ async function renderMessage(snap, scroll){
 
   wrapper.innerHTML = `<div class="reply-hint">↩️</div><div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}" id="bubble-${msgKey}">${content}<div class="bubble-reactions" id="msg-react-${msgKey}"></div></div><div class="react-picker" id="msg-picker-${msgKey}">${REACTIONS.map(r=>`<span onclick="reactToMsg('${msgKey}','${r}')">${r}</span>`).join('')}</div>`;
 
-  // DRAG TO REPLY
   wrapper.addEventListener('touchstart', e => startDrag(e, msgKey), {passive: true});
   wrapper.addEventListener('touchmove', e => moveDrag(e), {passive: false});
   wrapper.addEventListener('touchend', e => endDrag(e, msg, msgKey));
@@ -737,7 +737,6 @@ async function renderMessage(snap, scroll){
   wrapper.addEventListener('mouseup', e => endDrag(e, msg, msgKey));
   wrapper.addEventListener('mouseleave', e => endDrag(e, msg, msgKey));
 
-  // HOLD = SHOW 6 REACTIONS. TAP = TOGGLE LIKE
   const reactSum = wrapper.querySelector(`#msg-react-${msgKey}`);
   const picker = wrapper.querySelector(`#msg-picker-${msgKey}`);
   let timer;
@@ -789,12 +788,10 @@ document.getElementById('logo-btn').onclick = () => {
   document.getElementById('profile-box').style.display = 'none';
 }
 
-// CLOSE PICKER WHEN TAP ANYWHERE
   window.loadMorePosts = async () => {
   if(!lastPostTimestamp) return;
   const olderQuery = query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50));
   const snap = await get(olderQuery);
-  // This will load next batch. For now it just refreshes. We can make true pagination later
   alert("Loading more posts...")
 }
 window.openSettings = () => document.getElementById('settings-popup').classList.add('show');
@@ -821,7 +818,7 @@ document.getElementById('video-upload').onchange = async (e)=>{
 
 document.getElementById('dm-btn').onclick = () => alert("DMs coming next! Private 1-on-1 chat");
 document.getElementById('friends-btn').onclick = () => alert("Following coming next! Add friends here");
-  
+
   document.addEventListener('click', () => {
   document.querySelectorAll('.react-picker').forEach(p => p.classList.remove('show'));
   document.querySelectorAll('.react-names-tooltip').forEach(t => t.style.display = 'none');
