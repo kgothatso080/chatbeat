@@ -165,7 +165,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.14 - EXACT FB REACTIONS
+    Version 2.0.15 - FB REACTIONS FIXED
   </div>
 </div>
 
@@ -185,7 +185,7 @@ const firebaseConfig = {
   authDomain: "chatbeat-71f80.firebaseapp.com",
   databaseURL: "https://chatbeat-71f80-default-rtdb.firebaseio.com",
   projectId: "chatbeat-71f80",
-  storageBucket: "chatbeat-71f80.firebasestorage.app",
+  storageBucket: "chatbeat-71f80.appspot.com", // FIXED
   messagingSenderId: "38692820606",
   appId: "1:38692820606:web:edce5abf8d103e1f6e6a2f",
   measurementId: "G-KZ5KN31YFL"
@@ -302,6 +302,7 @@ document.getElementById('register-btn').onclick = async () => {
  const err = document.getElementById('cover-error');
  err.innerText = '';
  if(name.length < 3) { err.innerText = "Name must be 3+ letters"; return; }
+ if(!email || !pass) { err.innerText = "Enter email and password"; return; }
  try {
    const cred = await createUserWithEmailAndPassword(auth, email, pass);
    const nameSnap = await get(query(ref(db, 'users'), orderByChild('name'), equalTo(name)));
@@ -313,7 +314,15 @@ document.getElementById('register-btn').onclick = async () => {
 document.getElementById('login-btn').onclick = () => {
  const email = document.getElementById('email-input').value.trim();
  const pass = document.getElementById('pass-input').value.trim();
- signInWithEmailAndPassword(auth, email, pass).catch(e => { document.getElementById('cover-error').innerText = e.message; });
+ const err = document.getElementById('cover-error');
+ err.innerText = '';
+ if(!email || !pass) { err.innerText = "Enter email and password"; return; }
+ 
+ signInWithEmailAndPassword(auth, email, pass)
+ .catch(e => { 
+   console.log(e);
+   err.innerText = e.message; 
+ });
 }
 
 document.getElementById('forgot-btn').onclick = () => {
@@ -419,7 +428,7 @@ function loadPosts() {
     postDiv.innerHTML = `${delBtn}<div class="name" style="color:${user.color}"><img class="card-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</div><div>${post.text||''}</div>${imgHtml}
     <div class="react-summary" id="react-sum-${postKey}"></div>
     <div class="actions-row">
-      <button class="action-btn ${userReact? 'active' : ''}" id="like-btn-${postKey}">👍 Like</button>
+      <button class="action-btn ${userReact? 'active' : ''}" id="like-btn-${postKey}">${userReact || '👍'} Like</button>
       <button class="action-btn" onclick="toggleComments('${postKey}')">💬 Comment</button>
       <button class="action-btn" onclick="sharePost('${postKey}')">↗️ Share</button>
     </div>
@@ -437,7 +446,6 @@ function loadPosts() {
       else { btn.classList.remove('active'); btn.innerHTML = `👍 Like`; }
     });
 
-    // FB EXACT: TAP = TOGGLE LIKE. HOLD = OPEN PICKER
     const likeBtn = document.getElementById(`like-btn-${postKey}`);
     const picker = document.getElementById(`picker-${postKey}`);
     let timer;
@@ -490,7 +498,10 @@ document.getElementById('chat-file').onchange = async (e)=>{
       cancelReply();
     }
     reader.readAsDataURL(file);
-  document.getElementById('send-chat').onclick = async () => {
+  }
+}
+
+document.getElementById('send-chat').onclick = async () => {
   const text = document.getElementById('chat-input').value.trim();
   if(!text) return;
   document.getElementById('chat-input').value = '';
