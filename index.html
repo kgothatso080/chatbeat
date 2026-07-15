@@ -78,6 +78,8 @@
 .action-btn:hover { background:#2a3942 }
 .action-icon { font-size:20px; line-height:1 }
 
+.post-stats { display:flex; justify-content:space-between; padding:6px 4px; font-size:12px; color:#aebac1; border-bottom:1px solid #2a3942 }
+
 .react-summary { display:flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px; color:#aebac1; cursor:pointer; position:relative; width: fit-content; margin-top:4px }
 .react-bubble { background:#3a3b3c; border-radius:20px; padding:2px 6px; display:flex; gap:2px; }
 .react-names-tooltip { display:none; position:absolute; bottom:45px; left:10px; background:#111b21; padding:8px 10px; border-radius:8px; font-size:12px; z-index:999; border:1px solid #00C896; white-space:nowrap; max-height:200px; overflow-y:auto; box-shadow: 0 4px 12px rgba(0,0,0,0.8) }
@@ -96,6 +98,10 @@
 .comment-input-row input { flex:1; background:#2a3942; color:white; border-radius:20px; padding:8px 12px }
 .comment-input-row button { width:40px; height:40px; border-radius:50%; padding:0; font-size:16px; min-width:40px }
 .bubble-reactions { display:flex; gap:2px; margin-top:3px; font-size:11px; position:absolute; bottom:-10px; left:10px; background:#3a3b3c; border-radius:12px; padding:2px 4px; cursor:pointer; z-index:2 }
+
+.share-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#202c33; padding:20px; border-radius:15px; z-index:9999; display:none; border:2px solid #00C896 }
+.share-popup.show { display:block }
+.share-popup button { width:100%; margin:8px 0; display:flex; align-items:center; justify-content:center; gap:8px }
   </style>
 </head>
 <body>
@@ -167,13 +173,21 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.16 - FULL FB STYLE
+    Version 2.0.17 - REAL SHARE + REACTIONS
   </div>
 </div>
 
 <div id="profile-popup" class="profile-popup">
   <span class="profile-popup-close" onclick="closeProfilePopup()">×</span>
   <img id="profile-popup-img" src="" onclick="event.stopPropagation()">
+</div>
+
+<div id="share-popup" class="share-popup">
+  <h3>Share to</h3>
+  <button onclick="shareTo('whatsapp')">📱 WhatsApp</button>
+  <button onclick="shareTo('facebook')">📘 Facebook</button>
+  <button onclick="shareTo('copy')">🔗 Copy Link</button>
+  <button onclick="closeShare()" style="background:#555">Cancel</button>
 </div>
 
 <script type="module">
@@ -211,6 +225,7 @@ let userCache = {};
 let allMessagesCache = {};
 let replyToMsg = null;
 let dragging = null;
+let shareLink = '';
 const DRAG_THRESHOLD = 70;
 const REACTIONS = ['❤️','😂','😮','😢','😡','👎'];
 const LONG_PRESS = 500;
@@ -240,7 +255,7 @@ document.getElementById('cancel-reply').onclick = cancelReply;
 async function setReaction(path, emoji){
   const userReactRef = ref(db, path + '/' + currentUser.uid);
   const snap = await get(userReactRef);
-  if(snap.exists() && snap.val() === emoji){ await remove(userReactRef); }
+  if(snap.exists() && snap.val() === emoji){ await remove(userReactRef); } // DELETE REACTION
   else { await set(userReactRef, emoji); }
 }
 
@@ -421,6 +436,8 @@ function loadPosts() {
     const postDiv = document.createElement('div'); postDiv.className = 'card'; postDiv.id = 'post-' + postKey;
     let delBtn = post.uid === currentUser.uid? `<button class="del-btn" onclick="deletePost('${postKey}')">×</button>` : '';
     let imgHtml = post.image? `<img class="card-post-img" src="${post.image}" onclick="openProfilePopup('${post.image}')">` : '';
+    const reactCount = Object.keys(post.reactions||{}).length;
+    const commentCount = Object.keys(post.comments||{}).length;
 
     postDiv.innerHTML = `${delBtn}
     <div class="card-header">
@@ -428,11 +445,15 @@ function loadPosts() {
       <div class="name" style="color:${user.color}">${user.name}</div>
     </div>
     <div>${post.text||''}</div>${imgHtml}
+    <div class="post-stats">
+      <span id="react-count-${postKey}">${reactCount} Reactions</span>
+      <span id="comment-count-${postKey}">${commentCount} Comments</span>
+    </div>
     <div class="react-summary" id="react-sum-${postKey}"></div>
     <div class="actions-row">
-      <button class="action-btn ${userReact? 'active' : ''}" id="like-btn-${postKey}"><span class="action-icon">${userReact || '👍'}</span><span>Like</span></button>
+      <button class="action-btn ${userReact? 'active' : ''}" id="like-btn-${postKey}"><span class="action-icon">${userReact || '👍'}</span><span>${userReact? 'Liked' : 'Like'}</span></button>
       <button class="action-btn" onclick="toggleComments('${postKey}')"><span class="action-icon">💬</span><span>Comment</span></button>
-      <button class="action-btn" onclick="sharePost('${postKey}')"><span class="action-icon">↗️</span><span>Share</span></button>
+      <button class="action-btn" onclick="openShare('${window.location.origin}#post-${postKey}')"><span class="action-icon">↗️</span><span>Share</span></button>
     </div>
     <div class="react-picker" id="picker-${postKey}">${REACTIONS.map(r=>`<span onclick="reactToPost('${postKey}','${r}')">${r}</span>`).join('')}</div>
     <div class="comments-section" id="comments-${postKey}"><div id="comment-list-${postKey}"></div><div class="comment-input-row"><input id="comment-input-${postKey}" placeholder="Write a comment..."><button onclick="addComment('${postKey}')">➤</button></div></div>`;
@@ -443,10 +464,14 @@ function loadPosts() {
     onValue(ref(db, `posts/${postKey}/reactions`), (s)=>{
       const reacts = s.val() || {};
       renderReactions(document.getElementById(`react-sum-${postKey}`), reacts, reacts[currentUser.uid]);
+      document.getElementById(`react-count-${postKey}`).innerText = `${Object.keys(reacts).length} Reactions`;
       const btn = document.getElementById(`like-btn-${postKey}`);
-      if(reacts[currentUser.uid]){ btn.classList.add('active'); btn.innerHTML = `<span class="action-icon">${reacts[currentUser.uid]}</span><span>Like</span>`; }
+      if(reacts[currentUser.uid]){ btn.classList.add('active'); btn.innerHTML = `<span class="action-icon">${reacts[currentUser.uid]}</span><span>Liked</span>`; }
       else { btn.classList.remove('active'); btn.innerHTML = `<span class="action-icon">👍</span><span>Like</span>`; }
     });
+    onValue(ref(db, `posts/${postKey}/comments`), (s)=>{
+      document.getElementById(`comment-count-${postKey}`).innerText = `${s.size} Comments`;
+    })
 
     const likeBtn = document.getElementById(`like-btn-${postKey}`);
     const picker = document.getElementById(`picker-${postKey}`);
@@ -486,7 +511,14 @@ function loadComments(key){
     document.getElementById(`comment-list-${key}`).appendChild(div);
   })
 }
-window.sharePost = (key) => { navigator.clipboard.writeText(`${window.location.origin}#post-${key}`); alert("Link copied!"); }
+window.openShare = (link) => { shareLink = link; document.getElementById('share-popup').classList.add('show'); }
+window.closeShare = () => document.getElementById('share-popup').classList.remove('show');
+window.shareTo = (type) => {
+  if(type==='whatsapp') window.open(`https://wa.me/?text=${encodeURIComponent(shareLink)}`,'_blank');
+  if(type==='facebook') window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`,'_blank');
+  if(type==='copy'){ navigator.clipboard.writeText(shareLink); alert("Link copied!") }
+  closeShare();
+}
 
 document.getElementById('chat-img-btn').onclick = () => document.getElementById('chat-file').click();
 document.getElementById('chat-file').onchange = async (e)=>{
@@ -631,7 +663,7 @@ async function renderMessage(snap, scroll){
   wrapper.addEventListener('mouseup', e => endDrag(e, msg, msgKey));
   wrapper.addEventListener('mouseleave', e => endDrag(e, msg, msgKey));
 
-  // FB EXACT: TAP = TOGGLE LIKE. HOLD = OPEN PICKER
+  // HOLD = SHOW REACTIONS. TAP REACTION = REACT/UNREACT
   const reactSum = wrapper.querySelector(`#msg-react-${msgKey}`);
   const picker = wrapper.querySelector(`#msg-picker-${msgKey}`);
   let timer;
@@ -691,3 +723,4 @@ document.addEventListener('click', () => {
 </script>
 </body>
 </html>
+     
