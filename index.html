@@ -500,13 +500,33 @@ window.deletePost = async (key) => {
 window.reactToPost = async (key, emoji) => { await setReaction(`posts/${key}/reactions`, emoji); document.getElementById(`picker-${key}`).classList.remove('show'); }
 window.toggleComments = (key) => document.getElementById(`comments-${key}`).classList.toggle('show');
 window.addComment = async (key) => { const input = document.getElementById(`comment-input-${key}`); const text = input.value.trim(); if(!text) return; await push(ref(db, `posts/${key}/comments`), {uid: currentUser.uid, text, timestamp: Date.now()}); input.value = ''; }
+window.deleteComment = async (postKey, commentKey) => {
+  if(confirm("Delete this comment?")) {
+    await remove(ref(db, `posts/${postKey}/comments/${commentKey}`));
+    const el = document.getElementById('comment-' + commentKey);
+    if(el) el.remove();
+  }
+}  
 function loadComments(key){
   onChildAdded(ref(db, `posts/${key}/comments`), async (snap)=>{
     const c = snap.val();
+    const commentKey = snap.key; // ADDED THIS
     const u = await getUser(c.uid);
     const div = document.createElement('div');
     div.className='comment';
-    div.innerHTML = `<img class="comment-avatar" src="${u.profilePic}"><div class="comment-bubble"><div style="font-weight:700; font-size:12px; color:${u.color}">${u.name}</div><div style="font-size:14px">${c.text}</div></div>`;
+    div.id = 'comment-' + commentKey; // ADDED THIS
+    
+    // ADDED DELETE BUTTON IF IT'S YOUR COMMENT
+    let delBtn = c.uid === currentUser.uid ? `<button onclick="deleteComment('${key}','${commentKey}')" style="background:transparent;border:none;color:#FF6B6B;font-size:12px;cursor:pointer;margin-left:4px">×</button>` : '';
+
+    div.innerHTML = `<img class="comment-avatar" src="${u.profilePic}">
+    <div class="comment-bubble">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:700; font-size:12px; color:${u.color}">${u.name}</div>
+        ${delBtn}
+      </div>
+      <div style="font-size:14px">${c.text}</div>
+    </div>`;
     document.getElementById(`comment-list-${key}`).appendChild(div);
   })
 }
@@ -722,4 +742,3 @@ document.addEventListener('click', () => {
 </script>
 </body>
 </html>
-The reaction; comment and share icons on posts are big make them very 
