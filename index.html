@@ -22,9 +22,10 @@
     #feed { padding: 10px; padding-bottom: 20px; }
 .profile-box {background:#202c33; padding:15px; border-radius:12px; margin:10px; text-align:center; display:none}
 .profile-box img{width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid #00C896}
-.card { background: #202c33; padding:10px 12px 10px 12px; margin:10px 0; border-radius:12px; position: relative; max-width: 85%; }
-.card.name { font-weight: 700; font-size: 13px; margin-bottom: 4px; display:flex; align-items:center; gap:8px; cursor:pointer }
-.card-avatar {width:30px; height:30px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block}
+.card { background: #202c33; padding:10px 12px 10px 12px; margin:10px 0; border-radius:12px; position: relative; }
+.card-header { display:flex; align-items:center; gap:10px; margin-bottom:8px }
+.card.name { font-weight: 700; font-size: 14px; display:flex; align-items:center; gap:8px; cursor:pointer }
+.card-avatar {width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block; border:2px solid #00C896}
 .card-post-img {width:100%; max-width:400px; border-radius:12px; margin-top:8px; cursor:pointer}
 .card.del-btn { position: absolute; top: 8px; right: 8px; background: #FF6B6B; padding: 0; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; line-height: 20px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
 .chat-header { display: flex; align-items: center; padding: 10px; background: #202c33; border-bottom: 1px solid #2a3942; }
@@ -72,9 +73,10 @@
 .profile-popup-close { position:absolute; top:20px; right:20px; font-size:40px; color:white; cursor:pointer }
 
 .actions-row { display:flex; gap:4px; padding:6px 0; border-top:1px solid #2a3942; margin-top:8px; justify-content:space-around; position:relative }
-.action-btn { background:transparent; border:none; border-radius:8px; padding:6px; color:#aebac1; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:1; gap:6px; font-weight:500 }
-.action-btn.active { color: #0077FF; font-weight:700 }
+.action-btn { background:transparent; border:none; border-radius:8px; padding:8px 4px; color:#00C896; font-size:13px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:3px; font-weight:600 }
+.action-btn.active { color: #00FFD1; font-weight:700 }
 .action-btn:hover { background:#2a3942 }
+.action-icon { font-size:20px; line-height:1 }
 
 .react-summary { display:flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px; color:#aebac1; cursor:pointer; position:relative; width: fit-content; margin-top:4px }
 .react-bubble { background:#3a3b3c; border-radius:20px; padding:2px 6px; display:flex; gap:2px; }
@@ -165,7 +167,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.15 - FB REACTIONS FIXED
+    Version 2.0.16 - FULL FB STYLE
   </div>
 </div>
 
@@ -185,7 +187,7 @@ const firebaseConfig = {
   authDomain: "chatbeat-71f80.firebaseapp.com",
   databaseURL: "https://chatbeat-71f80-default-rtdb.firebaseio.com",
   projectId: "chatbeat-71f80",
-  storageBucket: "chatbeat-71f80.appspot.com", // FIXED
+  storageBucket: "chatbeat-71f80.appspot.com",
   messagingSenderId: "38692820606",
   appId: "1:38692820606:web:edce5abf8d103e1f6e6a2f",
   measurementId: "G-KZ5KN31YFL"
@@ -302,7 +304,7 @@ document.getElementById('register-btn').onclick = async () => {
  const err = document.getElementById('cover-error');
  err.innerText = '';
  if(name.length < 3) { err.innerText = "Name must be 3+ letters"; return; }
- if(!email || !pass) { err.innerText = "Enter email and password"; return; }
+ if(!email ||!pass) { err.innerText = "Enter email and password"; return; }
  try {
    const cred = await createUserWithEmailAndPassword(auth, email, pass);
    const nameSnap = await get(query(ref(db, 'users'), orderByChild('name'), equalTo(name)));
@@ -316,13 +318,8 @@ document.getElementById('login-btn').onclick = () => {
  const pass = document.getElementById('pass-input').value.trim();
  const err = document.getElementById('cover-error');
  err.innerText = '';
- if(!email || !pass) { err.innerText = "Enter email and password"; return; }
- 
- signInWithEmailAndPassword(auth, email, pass)
- .catch(e => { 
-   console.log(e);
-   err.innerText = e.message; 
- });
+ if(!email ||!pass) { err.innerText = "Enter email and password"; return; }
+ signInWithEmailAndPassword(auth, email, pass).catch(e => { err.innerText = e.message; });
 }
 
 document.getElementById('forgot-btn').onclick = () => {
@@ -425,12 +422,17 @@ function loadPosts() {
     let delBtn = post.uid === currentUser.uid? `<button class="del-btn" onclick="deletePost('${postKey}')">×</button>` : '';
     let imgHtml = post.image? `<img class="card-post-img" src="${post.image}" onclick="openProfilePopup('${post.image}')">` : '';
 
-    postDiv.innerHTML = `${delBtn}<div class="name" style="color:${user.color}"><img class="card-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</div><div>${post.text||''}</div>${imgHtml}
+    postDiv.innerHTML = `${delBtn}
+    <div class="card-header">
+      <img class="card-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">
+      <div class="name" style="color:${user.color}">${user.name}</div>
+    </div>
+    <div>${post.text||''}</div>${imgHtml}
     <div class="react-summary" id="react-sum-${postKey}"></div>
     <div class="actions-row">
-      <button class="action-btn ${userReact? 'active' : ''}" id="like-btn-${postKey}">${userReact || '👍'} Like</button>
-      <button class="action-btn" onclick="toggleComments('${postKey}')">💬 Comment</button>
-      <button class="action-btn" onclick="sharePost('${postKey}')">↗️ Share</button>
+      <button class="action-btn ${userReact? 'active' : ''}" id="like-btn-${postKey}"><span class="action-icon">${userReact || '👍'}</span><span>Like</span></button>
+      <button class="action-btn" onclick="toggleComments('${postKey}')"><span class="action-icon">💬</span><span>Comment</span></button>
+      <button class="action-btn" onclick="sharePost('${postKey}')"><span class="action-icon">↗️</span><span>Share</span></button>
     </div>
     <div class="react-picker" id="picker-${postKey}">${REACTIONS.map(r=>`<span onclick="reactToPost('${postKey}','${r}')">${r}</span>`).join('')}</div>
     <div class="comments-section" id="comments-${postKey}"><div id="comment-list-${postKey}"></div><div class="comment-input-row"><input id="comment-input-${postKey}" placeholder="Write a comment..."><button onclick="addComment('${postKey}')">➤</button></div></div>`;
@@ -438,12 +440,12 @@ function loadPosts() {
 
     renderReactions(document.getElementById(`react-sum-${postKey}`), post.reactions, userReact);
     loadComments(postKey);
-    onValue(ref(db, `posts/${postKey}/reactions`), (s)=>{ 
+    onValue(ref(db, `posts/${postKey}/reactions`), (s)=>{
       const reacts = s.val() || {};
       renderReactions(document.getElementById(`react-sum-${postKey}`), reacts, reacts[currentUser.uid]);
       const btn = document.getElementById(`like-btn-${postKey}`);
-      if(reacts[currentUser.uid]){ btn.classList.add('active'); btn.innerHTML = `${reacts[currentUser.uid]} Like`; }
-      else { btn.classList.remove('active'); btn.innerHTML = `👍 Like`; }
+      if(reacts[currentUser.uid]){ btn.classList.add('active'); btn.innerHTML = `<span class="action-icon">${reacts[currentUser.uid]}</span><span>Like</span>`; }
+      else { btn.classList.remove('active'); btn.innerHTML = `<span class="action-icon">👍</span><span>Like</span>`; }
     });
 
     const likeBtn = document.getElementById(`like-btn-${postKey}`);
