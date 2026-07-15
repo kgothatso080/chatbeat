@@ -26,7 +26,7 @@
 .card-header { display:flex; align-items:center; gap:10px; margin-bottom:8px }
 .card.name { font-weight: 700; font-size: 14px; display:flex; align-items:center; gap:8px; cursor:pointer }
 .card-avatar {width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block; border:2px solid #00C896}
-.card-post-img {width:100%; max-width:400px; border-radius:12px; margin-top:8px; cursor:pointer}
+.card-post-img {width:100%; max-width:400px; max-height:400px; object-fit:cover; border-radius:8px; margin-top:8px; cursor:pointer}
 .card.del-btn { position: absolute; top: 8px; right: 8px; background: #FF6B6B; padding: 0; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; line-height: 20px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
 .chat-header { display: flex; align-items: center; padding: 10px; background: #202c33; border-bottom: 1px solid #2a3942; }
 .chat-header h3 { margin: 0 auto; }
@@ -49,7 +49,7 @@
 .bubble-name { display: flex; align-items:center; gap:6px; font-size: 12px; font-weight: 700; margin-bottom: 3px; cursor:pointer }
 .bubble-avatar {width:20px; height:20px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block}
 .bubble-text { display: block; }
-.bubble-img {max-width:200px; border-radius:8px; margin-top:4px; cursor:pointer}
+.bubble-img {max-width:200px; max-height:200px; object-fit:cover; border-radius:8px; margin-top:4px; cursor:pointer}
 .bubble-del { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.4); padding: 0; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
 .bubble audio { width: 220px; max-width: 100%; margin-top: 4px; }
 
@@ -73,12 +73,11 @@
 .profile-popup-close { position:absolute; top:20px; right:20px; font-size:40px; color:white; cursor:pointer }
 
 .actions-row { display:flex; gap:4px; padding:6px 0; border-top:1px solid #2a3942; margin-top:8px; justify-content:space-around; position:relative }
-.action-btn { background:transparent; border:none; border-radius:8px; padding:8px 4px; color:#00C896; font-size:13px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:3px; font-weight:600 }
-.action-btn.active { color: #00FFD1; font-weight:700 }
+.action-btn { background:transparent; border:none; border-radius:8px; padding:10px; color:#aebac1; font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:1 }
+.action-btn.active { color: #00FFD1; }
 .action-btn:hover { background:#2a3942 }
-.action-icon { font-size:20px; line-height:1 }
 
-.post-stats { display:flex; justify-content:space-between; padding:6px 4px; font-size:12px; color:#aebac1; border-bottom:1px solid #2a3942 }
+.post-stats { display:flex; justify-content:space-between; padding:6px 4px; font-size:12px; color:#aebac1; border-bottom:1px solid #2a3942; cursor:pointer }
 
 .react-summary { display:flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px; color:#aebac1; cursor:pointer; position:relative; width: fit-content; margin-top:4px }
 .react-bubble { background:#3a3b3c; border-radius:20px; padding:2px 6px; display:flex; gap:2px; }
@@ -99,7 +98,7 @@
 .comment-input-row button { width:40px; height:40px; border-radius:50%; padding:0; font-size:16px; min-width:40px }
 .bubble-reactions { display:flex; gap:2px; margin-top:3px; font-size:11px; position:absolute; bottom:-10px; left:10px; background:#3a3b3c; border-radius:12px; padding:2px 4px; cursor:pointer; z-index:2 }
 
-.share-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#202c33; padding:20px; border-radius:15px; z-index:9999; display:none; border:2px solid #00C896 }
+.share-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#202c33; padding:20px; border-radius:15px; z-index:9999; display:none; border:2px solid #00C896; width:90%; max-width:300px }
 .share-popup.show { display:block }
 .share-popup button { width:100%; margin:8px 0; display:flex; align-items:center; justify-content:center; gap:8px }
   </style>
@@ -173,7 +172,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.17 - REAL SHARE + REACTIONS
+    Version 2.0.19 - ICONS ONLY
   </div>
 </div>
 
@@ -255,8 +254,8 @@ document.getElementById('cancel-reply').onclick = cancelReply;
 async function setReaction(path, emoji){
   const userReactRef = ref(db, path + '/' + currentUser.uid);
   const snap = await get(userReactRef);
-  if(snap.exists() && snap.val() === emoji){ await remove(userReactRef); } // DELETE REACTION
-  else { await set(userReactRef, emoji); }
+  if(snap.exists() && snap.val() === emoji){ await remove(userReactRef); } // TOGGLE OFF
+  else { await set(userReactRef, emoji); } // TOGGLE ON
 }
 
 async function renderReactions(container, reactions, userReact){
@@ -445,15 +444,15 @@ function loadPosts() {
       <div class="name" style="color:${user.color}">${user.name}</div>
     </div>
     <div>${post.text||''}</div>${imgHtml}
-    <div class="post-stats">
+    <div class="post-stats" onclick="toggleComments('${postKey}')">
       <span id="react-count-${postKey}">${reactCount} Reactions</span>
       <span id="comment-count-${postKey}">${commentCount} Comments</span>
     </div>
     <div class="react-summary" id="react-sum-${postKey}"></div>
     <div class="actions-row">
-      <button class="action-btn ${userReact? 'active' : ''}" id="like-btn-${postKey}"><span class="action-icon">${userReact || '👍'}</span><span>${userReact? 'Liked' : 'Like'}</span></button>
-      <button class="action-btn" onclick="toggleComments('${postKey}')"><span class="action-icon">💬</span><span>Comment</span></button>
-      <button class="action-btn" onclick="openShare('${window.location.origin}#post-${postKey}')"><span class="action-icon">↗️</span><span>Share</span></button>
+      <button class="action-btn ${userReact? 'active' : ''}" id="like-btn-${postKey}">${userReact || '👍'}</button>
+      <button class="action-btn" onclick="toggleComments('${postKey}')">💬</button>
+      <button class="action-btn" onclick="openShare('${window.location.origin}#post-${postKey}')">↗️</button>
     </div>
     <div class="react-picker" id="picker-${postKey}">${REACTIONS.map(r=>`<span onclick="reactToPost('${postKey}','${r}')">${r}</span>`).join('')}</div>
     <div class="comments-section" id="comments-${postKey}"><div id="comment-list-${postKey}"></div><div class="comment-input-row"><input id="comment-input-${postKey}" placeholder="Write a comment..."><button onclick="addComment('${postKey}')">➤</button></div></div>`;
@@ -466,8 +465,8 @@ function loadPosts() {
       renderReactions(document.getElementById(`react-sum-${postKey}`), reacts, reacts[currentUser.uid]);
       document.getElementById(`react-count-${postKey}`).innerText = `${Object.keys(reacts).length} Reactions`;
       const btn = document.getElementById(`like-btn-${postKey}`);
-      if(reacts[currentUser.uid]){ btn.classList.add('active'); btn.innerHTML = `<span class="action-icon">${reacts[currentUser.uid]}</span><span>Liked</span>`; }
-      else { btn.classList.remove('active'); btn.innerHTML = `<span class="action-icon">👍</span><span>Like</span>`; }
+      if(reacts[currentUser.uid]){ btn.classList.add('active'); btn.innerHTML = reacts[currentUser.uid]; }
+      else { btn.classList.remove('active'); btn.innerHTML = '👍'; }
     });
     onValue(ref(db, `posts/${postKey}/comments`), (s)=>{
       document.getElementById(`comment-count-${postKey}`).innerText = `${s.size} Comments`;
@@ -486,7 +485,7 @@ function loadPosts() {
     likeBtn.onmouseup = likeBtn.ontouchend = likeBtn.onmouseleave = () => {
       clearTimeout(timer);
       if(!longPressTriggered){
-        setReaction(`posts/${postKey}/reactions`, '👍')
+        setReaction(`posts/${postKey}/reactions`, '👍') // TAP = TOGGLE
       }
     }
   });
@@ -527,7 +526,7 @@ document.getElementById('chat-file').onchange = async (e)=>{
     const reader = new FileReader();
     reader.onload = async ()=>{
       chatImageData = reader.result;
-      await push(ref(db, 'globalChat'), { uid: currentUser.uid, image: chatImageData, replyTo: replyToMsg?.key || null, timestamp: Date.now(), reactions:{} });
+     await push(ref(db, 'globalChat'), { uid: currentUser.uid, image: chatImageData, replyTo: replyToMsg?.key || null, timestamp: Date.now(), reactions:{} });
       chatImageData = null;
       cancelReply();
     }
@@ -663,7 +662,7 @@ async function renderMessage(snap, scroll){
   wrapper.addEventListener('mouseup', e => endDrag(e, msg, msgKey));
   wrapper.addEventListener('mouseleave', e => endDrag(e, msg, msgKey));
 
-  // HOLD = SHOW REACTIONS. TAP REACTION = REACT/UNREACT
+  // HOLD = SHOW 6 REACTIONS. TAP = TOGGLE LIKE
   const reactSum = wrapper.querySelector(`#msg-react-${msgKey}`);
   const picker = wrapper.querySelector(`#msg-picker-${msgKey}`);
   let timer;
@@ -722,5 +721,4 @@ document.addEventListener('click', () => {
 });
 </script>
 </body>
-</html>
-     
+</html> 
