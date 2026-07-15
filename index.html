@@ -73,10 +73,7 @@
 .profile-popup img { max-width: 90%; max-height: 80%; border-radius: 15px; border: 3px solid #00C896; }
 .profile-popup-close { position:absolute; top:20px; right:20px; font-size:40px; color:white; cursor:pointer }
 
-.actions-row { display:flex; gap:2px; padding:4px 0; border-top:1px solid #2a3942; margin-top:6px; justify-content:flex-start; position:relative }
-.action-btn { background:transparent; border:none; border-radius:4px; padding:4px 8px; color:#aebac1; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; font-weight:500 }
-.action-btn:hover { background:#2a3942; color:#00C896 }
-.react-summary { display:flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px; color:#aebac1; cursor:pointer; position:relative }
+.react-summary { display:flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px; color:#aebac1; cursor:pointer; position:relative; width: fit-content; margin-top:4px }
 .react-bubble { background:#3a3b3c; border-radius:20px; padding:2px 6px; display:flex; gap:2px; }
 .react-names-tooltip { display:none; position:absolute; bottom:45px; left:10px; background:#111b21; padding:8px 10px; border-radius:8px; font-size:12px; z-index:999; border:1px solid #00C896; white-space:nowrap; max-height:200px; overflow-y:auto; box-shadow: 0 4px 12px rgba(0,0,0,0.8) }
 .react-names-tooltip div { margin:4px 0; color:#d1d7db }
@@ -165,7 +162,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.10 - FB STYLE REACTIONS
+    Version 2.0.11 - EMOJI ONLY REACTIONS
   </div>
 </div>
 
@@ -210,7 +207,7 @@ let allMessagesCache = {};
 let replyToMsg = null;
 let dragging = null;
 const DRAG_THRESHOLD = 70;
-const REACTIONS = ['👍','❤️','😂','😮','😢','😡','👎'];
+const REACTIONS = ['❤️','😂','😮','😢','😡','👎']; // REMOVED 👍 FROM PICKER
 const LONG_PRESS = 500;
 
 window.openProfilePopup = (imgSrc) => {
@@ -416,11 +413,6 @@ function loadPosts() {
 
     postDiv.innerHTML = `${delBtn}<div class="name" style="color:${user.color}"><img class="card-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</div><div>${post.text||''}</div>${imgHtml}
     <div class="react-summary" id="react-sum-${postKey}"></div>
-    <div class="actions-row">
-      <button class="action-btn" id="react-btn-${postKey}">👍 Like</button>
-      <button class="action-btn" onclick="toggleComments('${postKey}')">💬 Comment</button>
-      <button class="action-btn" onclick="sharePost('${postKey}')">↗️ Share</button>
-    </div>
     <div class="react-picker" id="picker-${postKey}">${REACTIONS.map(r=>`<span onclick="reactToPost('${postKey}','${r}')">${r}</span>`).join('')}</div>
     <div class="comments-section" id="comments-${postKey}"><div id="comment-list-${postKey}"></div><div class="comment-input-row"><input id="comment-input-${postKey}" placeholder="Write a comment..."><button onclick="addComment('${postKey}')">➤</button></div></div>`;
     document.getElementById('feed').prepend(postDiv);
@@ -429,14 +421,25 @@ function loadPosts() {
     loadComments(postKey);
     onValue(ref(db, `posts/${postKey}/reactions`), (s)=>{ renderReactions(document.getElementById(`react-sum-${postKey}`), s.val()) });
 
-    const btn = document.getElementById(`react-btn-${postKey}`); const picker = document.getElementById(`picker-${postKey}`); let timer;
-    btn.onmousedown = btn.ontouchstart = () => { timer = setTimeout(()=>picker.classList.add('show'), LONG_PRESS); }
-    btn.onmouseup = btn.ontouchend = btn.onmouseleave = () => clearTimeout(timer);
-    onValue(ref(db, `posts/${postKey}/reactions/${currentUser.uid}`), (s)=>{
-      if(s.exists()){ btn.innerHTML = `${s.val()} Liked`; btn.style.color = '#00C896'; }
-      else { btn.innerHTML = `👍 Like`; btn.style.color = '#aebac1'; }
-    })
-    btn.onclick = () => { if(!timer) setReaction(`posts/${postKey}/reactions`, '👍') }
+    // TAP = TOGGLE LIKE. HOLD = OPEN PICKER
+    const reactSum = document.getElementById(`react-sum-${postKey}`); 
+    const picker = document.getElementById(`picker-${postKey}`); 
+    let timer;
+    let longPressTriggered = false;
+
+    reactSum.onmousedown = reactSum.ontouchstart = () => { 
+      longPressTriggered = false;
+      timer = setTimeout(()=>{
+        picker.classList.add('show');
+        longPressTriggered = true;
+      }, LONG_PRESS); 
+    }
+    reactSum.onmouseup = reactSum.ontouchend = reactSum.onmouseleave = () => {
+      clearTimeout(timer);
+      if(!longPressTriggered){
+        setReaction(`posts/${postKey}/reactions`, '👍')
+      }
+    }
   });
 }
 window.deletePost = async (key) => {
@@ -459,7 +462,6 @@ function loadComments(key){
     document.getElementById(`comment-list-${key}`).appendChild(div);
   })
 }
-window.sharePost = (key) => { navigator.clipboard.writeText(`${window.location.origin}#post-${key}`); alert("Link copied!"); }
 
 document.getElementById('chat-img-btn').onclick = () => document.getElementById('chat-file').click();
 document.getElementById('chat-file').onchange = async (e)=>{
@@ -516,7 +518,6 @@ recordBtn.onclick = async () => {
   }
 }
 
-function getX(e){ return e.touches? e.touches[0].clientX : e.clientX; }
 function startDrag(e, msgKey){
   dragging = { id: msgKey, startX: getX(e), x: 0 };
 }
@@ -532,9 +533,7 @@ function moveDrag(e){
 }
 function endDrag(e, msgData, msgKey){
   if(!dragging) return;
-  if(dragging.x > DRAG_THRESHOLD){
-    setReply(msgData, msgKey);
-  }
+  if(dragging.x > DRAG_THRESHOLD){ setReply(msgData, msgKey); }
   const el = document.getElementById('wrapper-' + dragging.id);
   if(el) el.style.transform = 'translateX(0)';
   dragging = null;
@@ -544,20 +543,15 @@ function loadChat() {
   off(ref(db, 'globalChat'));
   document.getElementById('global-chat').innerHTML = '<p style="text-align:center; opacity:0.6">Loading messages...</p>';
   loadedMessages.clear();
-
   get(query(ref(db, 'globalChat'), orderByChild('timestamp'), limitToLast(50))).then(async (snapshot) => {
     document.getElementById('global-chat').innerHTML = '';
     const promises = [];
-    snapshot.forEach((snap) => {
-      promises.push(renderMessage(snap, false));
-    })
+    snapshot.forEach((snap) => { promises.push(renderMessage(snap, false)); })
     await Promise.all(promises);
     document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
 
     onChildAdded(query(ref(db, 'globalChat'), orderByChild('timestamp'), limitToLast(1)), (snap) => {
-      if(!loadedMessages.has(snap.key)){
-        renderMessage(snap, true);
-      }
+      if(!loadedMessages.has(snap.key)){ renderMessage(snap, true); }
     });
   });
 }
@@ -578,10 +572,7 @@ async function renderMessage(snap, scroll){
   wrapper.className = `bubble-wrapper ${isMe? 'me-wrapper' : 'other-wrapper'}`;
   wrapper.id = 'wrapper-' + msgKey;
 
-  let delBtn = '';
-  if(isMe) {
-    delBtn = `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>`;
-  }
+  let delBtn = isMe ? `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>` : '';
 
   let replyHtml = '';
   if(msg.replyTo && allMessagesCache[msg.replyTo]){
@@ -613,18 +604,20 @@ async function renderMessage(snap, scroll){
   wrapper.addEventListener('mouseup', e => endDrag(e, msg, msgKey));
   wrapper.addEventListener('mouseleave', e => endDrag(e, msg, msgKey));
 
-  // LONG PRESS FOR REACTIONS
-  const bubble = wrapper.querySelector(`#bubble-${msgKey}`); 
-  const picker = wrapper.querySelector(`#msg-picker-${msgKey}`); 
+  // TAP = TOGGLE LIKE. HOLD = OPEN PICKER
+  const reactSum = wrapper.querySelector(`#msg-react-${msgKey}`);
+  const picker = wrapper.querySelector(`#msg-picker-${msgKey}`);
   let timer;
-  bubble.onmousedown = bubble.ontouchstart = () => { timer = setTimeout(()=>picker.classList.add('show'), LONG_PRESS); }
-  bubble.onmouseup = bubble.ontouchend = bubble.onmouseleave = () => clearTimeout(timer);
+  let longPressTriggered = false;
 
-  // SHOW IF I REACTED
-  onValue(ref(db, `globalChat/${msgKey}/reactions/${currentUser.uid}`), (s)=>{
-    if(s.exists()){ bubble.style.outline = '1px solid #00C896'; }
-    else { bubble.style.outline = 'none'; }
-  })
+  reactSum.onmousedown = reactSum.ontouchstart = () => {
+    longPressTriggered = false;
+    timer = setTimeout(()=>{ picker.classList.add('show'); longPressTriggered = true; }, LONG_PRESS);
+  }
+  reactSum.onmouseup = reactSum.ontouchend = reactSum.onmouseleave = () => {
+    clearTimeout(timer);
+    if(!longPressTriggered){ setReaction(`globalChat/${msgKey}/reactions`, '👍') }
+  }
 
   document.getElementById('global-chat').appendChild(wrapper);
   renderReactions(document.getElementById(`msg-react-${msgKey}`), msg.reactions);
@@ -641,6 +634,7 @@ window.deleteMsg = async (key) => {
     delete allMessagesCache[key];
   }
 }
+window.reactToMsg = async (key, emoji) => { await setReaction(`globalChat/${key}/reactions`, emoji); document.getElementById(`msg-picker-${key}`).classList.remove('show'); }
 
 document.getElementById('chat-icon-btn').onclick = () => {
   document.getElementById('feed-section').style.display = 'none';
@@ -657,7 +651,12 @@ document.getElementById('logo-btn').onclick = () => {
   document.getElementById('chat-section').style.display = 'none';
   document.getElementById('profile-box').style.display = 'none';
 }
-window.reactToMsg = async (key, emoji) => { await setReaction(`globalChat/${key}/reactions`, emoji); document.getElementById(`msg-picker-${key}`).classList.remove('show'); }
+
+// CLOSE PICKER WHEN TAP ANYWHERE
+document.addEventListener('click', () => {
+  document.querySelectorAll('.react-picker').forEach(p => p.classList.remove('show'));
+  document.querySelectorAll('.react-names-tooltip').forEach(t => t.style.display = 'none');
+});
 </script>
 </body>
 </html>
