@@ -74,15 +74,16 @@
 .profile-popup-close { position:absolute; top:20px; right:20px; font-size:40px; color:white; cursor:pointer }
 
 .actions-row { display:flex; gap:4px; padding:6px 0; border-top:1px solid #2a3942; margin-top:8px; justify-content:space-around; position:relative }
-.action-btn { background:transparent; border:none; border-radius:8px; padding:8px; color:#aebac1; font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:1 }
+.action-btn { background:transparent; border:none; border-radius:8px; padding:6px; color:#00C896; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:1; font-weight:500 }
 .action-btn:hover { background:#2a3942 }
-.react-summary { display:flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px; color:#aebac1; }
+.react-summary { display:flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px; color:#aebac1; cursor:pointer; position:relative }
 .react-bubble { background:#3a3b3c; border-radius:20px; padding:2px 6px; display:flex; gap:2px; }
-.react-names-tooltip { display:none; position:absolute; bottom:40px; left:10px; background:#000; padding:6px 10px; border-radius:8px; font-size:12px; z-index:10; border:1px solid #2a3942 }
+.react-names-tooltip { display:none; position:absolute; bottom:40px; left:10px; background:#000; padding:6px 10px; border-radius:8px; font-size:12px; z-index:10; border:1px solid #2a3942; white-space:nowrap }
 .react-summary:hover.react-names-tooltip { display:block }
+.react-summary.show-tooltip.react-names-tooltip { display:block } /* for mobile tap */
 .react-picker { display:none; position:absolute; bottom:45px; left:10px; background:#3a3b3c; padding:6px; border-radius:50px; box-shadow:0 4px 12px rgba(0,0,0,0.8); gap:6px; z-index:999; }
 .react-picker.show { display:flex }
-.react-picker span { font-size:32px; cursor:pointer; transition:transform 0.15s; }
+.react-picker span { font-size:28px; cursor:pointer; transition:transform 0.15s; }
 .react-picker span:hover { transform:translateY(-10px) scale(1.4) }
 .comments-section { margin-top:8px; border-top:1px solid #2a3942; padding-top:8px; display:none }
 .comments-section.show { display:block }
@@ -163,7 +164,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.0.6 - REACTIONS + COMMENTS
+    Version 2.0.7 - FB STYLE REACTIONS
   </div>
 </div>
 
@@ -256,6 +257,12 @@ async function renderReactions(container, reactions){
   html += `<span style="font-size:11px; margin-left:4px">${Object.values(counts).reduce((a,b)=>a+b,0)}</span></div>`;
   html += `<div class="react-names-tooltip">${Object.entries(usersByEmoji).map(([e, names])=>`${e} ${names.join(', ')}`).join('<br>')}</div>`;
   container.innerHTML = html;
+
+  // MOBILE TAP TO SHOW NAMES
+  container.onclick = () => {
+    container.classList.toggle('show-tooltip');
+    setTimeout(()=>container.classList.remove('show-tooltip'), 2000);
+  }
 }
 
 function startAutoDelete() {
@@ -403,9 +410,9 @@ function loadPosts() {
     postDiv.innerHTML = `${delBtn}<div class="name" style="color:${user.color}"><img class="card-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</div><div>${post.text||''}</div>${imgHtml}
     <div class="react-summary" id="react-sum-${postKey}"></div>
     <div class="actions-row">
-      <button class="action-btn" id="react-btn-${postKey}">👍</button>
-      <button class="action-btn" onclick="toggleComments('${postKey}')">💬</button>
-      <button class="action-btn" onclick="sharePost('${postKey}')">↗️</button>
+      <button class="action-btn" id="react-btn-${postKey}">Like</button>
+      <button class="action-btn" onclick="toggleComments('${postKey}')">Comment</button>
+      <button class="action-btn" onclick="sharePost('${postKey}')">Share</button>
     </div>
     <div class="react-picker" id="picker-${postKey}">${REACTIONS.map(r=>`<span onclick="reactToPost('${postKey}','${r}')">${r}</span>`).join('')}</div>
     <div class="comments-section" id="comments-${postKey}"><div id="comment-list-${postKey}"></div><div class="comment-input-row"><input id="comment-input-${postKey}" placeholder="Write a comment..."><button onclick="addComment('${postKey}')">Send</button></div></div>`;
@@ -586,7 +593,7 @@ async function renderMessage(snap, scroll){
 
   wrapper.innerHTML = `<div class="reply-hint">↩️</div><div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}" id="bubble-${msgKey}">${content}<div class="bubble-reactions" id="msg-react-${msgKey}"></div></div><div class="react-picker" id="msg-picker-${msgKey}">${REACTIONS.map(r=>`<span onclick="reactToMsg('${msgKey}','${r}')">${r}</span>`).join('')}</div>`;
 
-  // ADD DRAG EVENTS
+  // DRAG TO REPLY EVENTS
   wrapper.addEventListener('touchstart', e => startDrag(e, msgKey), {passive: true});
   wrapper.addEventListener('touchmove', e => moveDrag(e), {passive: false});
   wrapper.addEventListener('touchend', e => endDrag(e, msg, msgKey));
@@ -596,6 +603,7 @@ async function renderMessage(snap, scroll){
   wrapper.addEventListener('mouseup', e => endDrag(e, msg, msgKey));
   wrapper.addEventListener('mouseleave', e => endDrag(e, msg, msgKey));
 
+  // LONG PRESS FOR REACTIONS
   const bubble = wrapper.querySelector(`#bubble-${msgKey}`); 
   const picker = wrapper.querySelector(`#msg-picker-${msgKey}`); 
   let timer;
