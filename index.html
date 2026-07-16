@@ -854,6 +854,13 @@ if(type=="more"){
 }
   closeShare();
 }
+window.likeVideo = async (id)=>{
+    const r = ref(db, `videos/${id}/likes/${currentUser.uid}`);
+    const s = await get(r);
+
+    if(s.exists()) await remove(r);
+    else await set(r,true);
+}
 
 // VIDEOS TIKTOK STYLE
 function loadVideos(){
