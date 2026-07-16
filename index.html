@@ -7,24 +7,50 @@
   <style>
     * { box-sizing: border-box; }
     body { margin:0; font-family: 'Roboto', sans-serif; background: #0b141a; color: white; touch-action: pan-y; }
-    
-    /* FACEBOOK STYLE TOPBAR */
-.topbar { 
-  background: linear-gradient(90deg, #00C896, #0077FF); 
-  padding: 8px 12px; 
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center; 
+    .topbar { 
+  background: #111b21; 
+  padding: 8px 12px 4px 12px; 
   position: sticky; 
   top: 0; 
   z-index: 10; 
+  border-bottom: 1px solid #2a3942;
 }
-.topbar-left { display: flex; align-items: center; gap: 8px; }
-.topbar h2 { margin: 0; font-size: 22px; font-weight: 700; text-shadow: 0 0 5px #fff; cursor: pointer; }
-.topbar-right { display:flex; gap:8px; overflow-x: auto; scrollbar-width: none; }
-.topbar-right::-webkit-scrollbar { display: none; }
-.topbar button { background: rgba(0,0,0,0.25); width: 40px; height: 40px; padding: 0; border-radius: 50%; font-size: 20px; border: none; color: white; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink: 0; }
-.topbar button:hover { background: rgba(0,0,0,0.4); }
+.topbar-brand { text-align: left; padding-bottom: 6px; }
+.topbar h2 { margin: 0; font-size: 28px; font-weight: 700; color: #00C896; cursor: pointer; letter-spacing: -0.5px; }
+.topbar-icons { display:flex; gap:8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.topbar-icons::-webkit-scrollbar { display: none; }
+.icon-btn { 
+  position: relative;
+  background: #2a3942; 
+  width: 30px; 
+  height: 30px; 
+  padding: 0; 
+  border-radius: 50%; 
+  font-size: 15px; 
+  border: none; 
+  color: white; 
+  cursor:pointer; 
+  display:flex; 
+  align-items:center; 
+  justify-content:center; 
+  flex-shrink: 0; 
+}
+.icon-btn:hover { background: #3a4a52; }
+.badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #FF0000;
+  color: white;
+  font-size: 8px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 1px 4px;
+  min-width: 14px;
+  text-align: center;
+  border: 2px solid #111b21;
+}
+    
     
     #cover { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; text-align:center; padding:20px; background: linear-gradient(135deg, #00C896 0%, #0077FF 50%, #000 100%); }
     #cover h1 { font-size: 3em; text-shadow: 0 0 20px #00C896; }
@@ -167,23 +193,28 @@
   <button id="forgot-btn" class="link-btn">Forgot Password?</button>
   <p id="cover-error" style="color:#FF6B6B;"></p>
 </div>
-
+  
 <div id="app">
   <!-- FACEBOOK STYLE HEADER -->
   <div class="topbar">
     <div class="topbar-left">
       <h2 id="logo-btn">ChatBeat</h2>
     </div>
-    <div class="topbar-right">
-      <button id="settings-btn" onclick="openSettings()">⚙️</button>
-      <button id="videos-btn" onclick="openVideos()">🎥</button>
-      <button id="dm-btn" onclick="openDMs()">✉️</button>
-      <button id="friends-btn" onclick="openFriends()">👥</button>
-      <button id="profile-icon-btn">👤</button>
-      <button id="chat-icon-btn">💬</button>
-    </div>
-  </div>
 
+<div class="topbar">
+  <div class="topbar-brand">
+    <h2 id="logo-btn">ChatBeat</h2>
+  </div>
+  <div class="topbar-icons">
+    <button class="icon-btn" id="settings-btn" onclick="openSettings()">⚙️</button>
+    <button class="icon-btn" id="videos-btn" onclick="openVideos()">🎥<span class="badge">3</span></button>
+    <button class="icon-btn" id="dm-btn" onclick="openDMs()">✉️<span class="badge">5</span></button>
+    <button class="icon-btn" id="friends-btn" onclick="openFriends()">👥<span class="badge">2</span></button>
+    <button class="icon-btn" id="profile-icon-btn">👤</button>
+    <button class="icon-btn" id="chat-icon-btn">💬<span class="badge">12</span></button>
+  </div>
+</div>
+    
   <div id="profile-box" class="profile-box">
     <img id="profile-pic" src="https://ui-avatars.com/api/?name=U&background=00C896&color=fff">
     <h3 id="my-name"></h3>
