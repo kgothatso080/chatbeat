@@ -763,17 +763,106 @@ function loadVideos(){
     document.getElementById('video-feed').appendChild(div);
   })
 }
+// VIDEO UPLOAD WITH AUTO COMPRESSION + 10MB ALERT
 document.getElementById('video-upload').onchange = async (e)=>{
   const file = e.target.files[0];
-  if(file){
-    const reader = new FileReader();
-    reader.onload = async ()=>{
-      const desc = prompt("Add a description:");
-      await push(ref(db, 'videos'), { uid: currentUser.uid, video: reader.result, desc, timestamp: Date.now() });
-      alert("Video posted!")
-    }
-    reader.readAsDataURL(file);
+  if(!file) return;
+
+  alert("Checking video size...");
+
+  // Step 1: If already under 9MB, just upload
+  if(file.size <= 9000000){
+    uploadVideo(file);
+    return;
   }
+
+  // Step 2: If over 10MB, alert and try compress
+  if(file.size > 10000000){
+    alert(`Video is ${(file.size/1024/1024).toFixed(1)}MB. Max is 10MB. I will try to compress it now...`);
+  } else {
+    alert(`Video is ${(file.size/1024/1024).toFixed(1)}MB. Compressing to fit...`);
+  }
+
+  // Step 3: Compress using canvas
+  const compressedBlob = await compressVideo(file);
+
+  if(!compressedBlob){
+    alert("Compression failed. Please record a shorter video or use 480p");
+    return;
+  }
+
+  if(compressedBlob.size > 10000000){
+    alert(`Still too big: ${(compressedBlob.size/1024/1024).toFixed(1)}MB. Please make it under 10 seconds.`);
+    return;
+  }
+
+  uploadVideo(compressedBlob);
+}
+
+// Helper: upload function
+async function uploadVideo(fileBlob){
+  alert("Uploading video...");
+  const reader = new FileReader();
+  reader.onload = async ()=>{
+    const desc = prompt("Add a description:");
+    await push(ref(db, 'videos'), {
+      uid: currentUser.uid,
+      video: reader.result, // base64
+      desc,
+      timestamp: Date.now(),
+      reactions:{},
+      comments:{}
+    });
+    alert("Video posted!")
+  }
+  reader.readAsDataURL(fileBlob);
+}
+
+// Helper: compress video using MediaRecorder
+function compressVideo(file){
+  return new Promise((resolve)=>{
+    const video = document.createElement('video');
+    video.src = URL.createObjectURL(file);
+    video.muted = true;
+
+    video.onloadedmetadata = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      // Reduce quality: 480p max
+      const scale = Math.min(854 / video.videoWidth, 480 / video.videoHeight, 1);
+      canvas.width = video.videoWidth * scale;
+      canvas.height = video.videoHeight * scale;
+
+      const stream = canvas.captureStream(15); // 15fps to reduce size
+      const recorder = new MediaRecorder(stream, {
+        mimeType: 'video/webm;codecs=vp9',
+        videoBitsPerSecond: 500000 // 500kbps = ~3.7MB for 10sec
+      });
+
+      const chunks = [];
+      recorder.ondataavailable = e => chunks.push(e.data);
+      recorder.onstop = () => resolve(new Blob(chunks, {type: 'video/webm'}));
+
+      video.play();
+      recorder.start();
+
+      const draw = () => {
+        if(video.paused || video.ended){
+          recorder.stop();
+          return;
+        }
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        requestAnimationFrame(draw);
+      };
+      draw();
+
+      setTimeout(()=>{ // Stop after 10 seconds max
+        if(recorder.state === 'recording') recorder.stop();
+      }, 10000);
+    };
+    video.onerror = () => resolve(null);
+  });
 }
 
 // DMs
