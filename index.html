@@ -887,7 +887,7 @@ function loadVideos(){
         <span>${Object.keys(v.likes || {}).length}</span>
     </div>
 
-    <div class="video-action">
+    <div class="video-action" onclick="openVideoComments('${snap.key}')">
         💬
         <span>${Object.keys(v.comments || {}).length}</span>
     </div>
