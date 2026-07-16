@@ -206,11 +206,11 @@
   </div>
   <div class="topbar-icons">
     <button class="icon-btn" id="settings-btn" onclick="openSettings()">⚙️</button>
-    <button class="icon-btn" id="videos-btn" onclick="openVideos()">🎥<span class="badge">3</span></button>
-    <button class="icon-btn" id="dm-btn" onclick="openDMs()">✉️<span class="badge">5</span></button>
-    <button class="icon-btn" id="friends-btn" onclick="openFriends()">👥<span class="badge">2</span></button>
+    <button class="icon-btn" id="videos-btn" onclick="openVideos()">🎥<span class="badge" id="video-badge" style="display:none">0</span></button>
+    <button class="icon-btn" id="dm-btn" onclick="openDMs()">✉️<span class="badge" id="dm-badge" style="display:none">0</span></button>
+    <button class="icon-btn" id="friends-btn" onclick="openFriends()">👥<span class="badge" id="friend-badge" style="display:none">0</span></button>
     <button class="icon-btn" id="profile-icon-btn">👤</button>
-    <button class="icon-btn" id="chat-icon-btn">💬<span class="badge">12</span></button>
+    <button class="icon-btn" id="chat-icon-btn">💬<span class="badge" id="chat-badge" style="display:none">0</span></button>
   </div>
 </div>
     
@@ -452,7 +452,108 @@ document.getElementById('forgot-btn').onclick = () => {
 .then(() => { alert("Password reset email sent! Check inbox and spam folder"); })
 .catch((error) => { err.innerText = error.message; });
 }
+let lastSeen = {
+  posts: 0,
+  chat: 0,
+  videos: 0,
+  dms: 0
+}
 
+// Helper to show/hide badge
+function updateBadge(id, count){
+  const badge = document.getElementById(id);
+  if(count > 0){
+    badge.innerText = count > 99 ? '99+' : count;
+    badge.style.display = 'block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// Load last seen times from localStorage
+function loadLastSeen(){
+  const saved = localStorage.getItem('chatbeat_lastseen_' + currentUser.uid);
+  if(saved) lastSeen = JSON.parse(saved);
+}
+function saveLastSeen(){
+  localStorage.setItem('chatbeat_lastseen_' + currentUser.uid, JSON.stringify(lastSeen));
+}
+
+// REAL NOTIFICATION LISTENERS
+function setupNotifications(){
+  loadLastSeen();
+  
+  // 1. GLOBAL CHAT UNREAD
+  onValue(ref(db, 'globalChat'), (snap)=>{
+    let unread = 0;
+    snap.forEach(child=>{
+      if(child.val().timestamp > lastSeen.chat && child.val().uid !== currentUser.uid){
+        unread++;
+      }
+    })
+    updateBadge('chat-badge', unread);
+  })
+
+  // 2. POSTS UNREAD
+  onValue(ref(db, 'posts'), (snap)=>{
+    let unread = 0;
+    snap.forEach(child=>{
+      if(child.val().timestamp > lastSeen.posts && child.val().uid !== currentUser.uid){
+        unread++;
+      }
+    })
+    updateBadge('video-badge', unread); // using video icon for new posts for now
+  })
+
+  // 3. VIDEOS UNREAD
+  onValue(ref(db, 'videos'), (snap)=>{
+    let unread = 0;
+    snap.forEach(child=>{
+      if(child.val().timestamp > lastSeen.videos && child.val().uid !== currentUser.uid){
+        unread++;
+      }
+    })
+    // if you want separate badge, add id="video-new-badge"
+  })
+
+  // 4. DMS UNREAD - placeholder for now
+  updateBadge('dm-badge', 0);
+}
+
+// Mark as read when user opens section
+window.openVideos = () => {
+  lastSeen.posts = Date.now(); // mark posts as read
+  lastSeen.videos = Date.now();
+  saveLastSeen();
+  updateBadge('video-badge', 0);
+  // ...your existing code
+  document.getElementById('feed-section').style.display = 'none';
+  document.getElementById('chat-section').style.display = 'none';
+  document.getElementById('videos-section').style.display = 'block';
+  document.getElementById('dm-section').style.display = 'none';
+  document.getElementById('friends-section').style.display = 'none';
+  document.getElementById('profile-box').style.display = 'none';
+}
+
+window.openDMs = () => {
+  lastSeen.dms = Date.now();
+  saveLastSeen();
+  updateBadge('dm-badge', 0);
+  // ...your existing code
+}
+
+document.getElementById('chat-icon-btn').onclick = () => {
+  lastSeen.chat = Date.now();
+  saveLastSeen();
+  updateBadge('chat-badge', 0);
+  // ...your existing code
+  document.getElementById('feed-section').style.display = 'none';
+  document.getElementById('chat-section').style.display = 'block';
+  document.getElementById('profile-box').style.display = 'none';
+  document.getElementById('videos-section').style.display = 'none';
+  document.getElementById('dm-section').style.display = 'none';
+  document.getElementById('friends-section').style.display = 'none';
+}
 onAuthStateChanged(auth, async (user) => {
  if(user) {
    currentUser = user;
@@ -479,6 +580,7 @@ onAuthStateChanged(auth, async (user) => {
    loadVideos();
    loadDMs();
    loadFriends();
+   setupNotifications();
  } else {
    document.getElementById('cover').style.display = 'flex';
    document.getElementById('app').style.display = 'none';
