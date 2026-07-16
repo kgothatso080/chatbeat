@@ -830,6 +830,28 @@ window.shareTo = (type) => {
   if(type==='whatsapp') window.open(`https://wa.me/?text=${encodeURIComponent(shareLink)}`,'_blank');
   if(type==='facebook') window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`,'_blank');
   if(type==='copy'){ navigator.clipboard.writeText(shareLink); alert("Link copied!") }
+  if(type=="instagram"){
+    alert("Instagram sharing coming soon");
+}
+
+if(type=="tiktok"){
+    alert("TikTok sharing coming soon");
+}
+
+if(type=="twitter"){
+    window.open(
+      "https://twitter.com/intent/tweet?url="+encodeURIComponent(shareLink)
+    );
+}
+
+if(type=="more"){
+    if(navigator.share){
+        navigator.share({
+            title:"ChatBeat",
+            url:shareLink
+        });
+    }
+}
   closeShare();
 }
 
