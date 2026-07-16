@@ -824,10 +824,43 @@ function loadVideos(){
     div.innerHTML = `
       <video src="${v.video}" loop playsinline onclick="this.paused?this.play():this.pause()"></video>
       <div class="video-info">
-        <h4>@${u.name}</h4>
-        <p>${v.desc||''}</p>
-        <button class="follow-btn" onclick="toggleFollow('${v.uid}')">Follow</button>
-      </div>
+    <h4>@${u.name}</h4>
+    <p>${v.desc || ""}</p>
+</div>
+
+<div class="video-sidebar">
+
+    <div class="profile-wrap">
+        <img class="side-profile" src="${u.profilePic}">
+        <span class="plus-badge">+</span>
+    </div>
+
+    <div class="video-action">
+        ❤️
+        <span>${Object.keys(v.likes || {}).length}</span>
+    </div>
+
+    <div class="video-action">
+        💬
+        <span>${Object.keys(v.comments || {}).length}</span>
+    </div>
+
+    <div class="video-action">
+        🔖
+        <span>${Object.keys(v.favorites || {}).length}</span>
+    </div>
+
+    <div class="video-action"
+         onclick="openVideoShare('${snap.key}')">
+        ↗
+        <span>${Object.keys(v.shares || {}).length}</span>
+    </div>
+
+    <div class="music-disc">
+        🎵
+    </div>
+
+</div>
     `;
     document.getElementById('video-feed').appendChild(div);
   })
