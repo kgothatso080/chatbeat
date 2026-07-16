@@ -7,7 +7,7 @@
   <style>
     * { box-sizing: border-box; }
     body { margin:0; font-family: 'Roboto', sans-serif; background: #0b141a; color: white; touch-action: pan-y; }
-  .topbar {
+   .topbar {
       background: #111b21;
       padding: 8px 12px 4px 12px;
       position: sticky;
@@ -15,11 +15,11 @@
       z-index: 10;
       border-bottom: 1px solid #2a3942;
     }
-  .topbar-brand { text-align: left; padding-bottom: 6px; }
-  .topbar h2 { margin: 0; font-size: 28px; font-weight: 700; color: #00C896; cursor: pointer; letter-spacing: -0.5px; }
-  .topbar-icons { display:flex; gap:8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
-  .topbar-icons::-webkit-scrollbar { display: none; }
-  .icon-btn {
+   .topbar-brand { text-align: left; padding-bottom: 6px; }
+   .topbar h2 { margin: 0; font-size: 28px; font-weight: 700; color: #00C896; cursor: pointer; letter-spacing: -0.5px; }
+   .topbar-icons { display:flex; gap:8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+   .topbar-icons::-webkit-scrollbar { display: none; }
+   .icon-btn {
       position: relative;
       background: #2a3942;
       width: 30px;
@@ -35,8 +35,8 @@
       justify-content:center;
       flex-shrink: 0;
     }
-  .icon-btn:hover { background: #3a4a52; }
-  .badge {
+   .icon-btn:hover { background: #3a4a52; }
+   .badge {
       position: absolute;
       top: -2px;
       right: -2px;
@@ -55,18 +55,18 @@
     #cover h1 { font-size: 3em; text-shadow: 0 0 20px #00C896; }
     input, button, textarea { padding:12px; margin:8px; border-radius:25px; border:none; width:80%; max-width:300px; font-size:16px; font-family: 'Roboto', sans-serif; }
     button { background: linear-gradient(90deg, #00C896, #0077FF); color:white; font-weight:700; cursor:pointer; }
-  .link-btn { background: transparent!important; text-decoration: underline; font-size: 14px; width: auto; background-image: none!important; }
+   .link-btn { background: transparent!important; text-decoration: underline; font-size: 14px; width: auto; background-image: none!important; }
     textarea { border-radius: 12px; height: 60px; background: #2a3942; color: white; width: 90%; }
     #app { display:none; }
-  .post-box { padding: 10px; background: #202c33; display:flex; gap:8px; align-items:center }
+   .post-box { padding: 10px; background: #202c33; display:flex; gap:8px; align-items:center }
     #feed { padding: 10px; padding-bottom: 20px; }
-  .profile-box {background:#202c33; padding:15px; border-radius:12px; margin:10px; text-align:center; display:none}
-  .profile-box img{width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid #00C896}
-  .card { background: #202c33; padding:10px 12px 10px 12px; margin:10px 0; border-radius:12px; position: relative; }
-  .card-header { display:flex; align-items:center; gap:10px; margin-bottom:8px }
-  .name { font-weight: 700; font-size: 14px; display:flex; align-items:center; gap:8px; cursor:pointer }
-  .card-avatar {width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block; border:2px solid #00C896}
-  .del-btn {
+   .profile-box {background:#202c33; padding:15px; border-radius:12px; margin:10px; text-align:center; display:none}
+   .profile-box img{width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid #00C896}
+   .card { background: #202c33; padding:10px 12px 10px 12px; margin:10px 0; border-radius:12px; position: relative; }
+   .card-header { display:flex; align-items:center; gap:10px; margin-bottom:8px }
+   .name { font-weight: 700; font-size: 14px; display:flex; align-items:center; gap:8px; cursor:pointer }
+   .card-avatar {width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block; border:2px solid #00C896}
+   .del-btn {
       position: absolute!important;
       top: 8px!important;
       right: 8px!important;
@@ -84,40 +84,45 @@
       z-index: 2!important;
       display: block!important;
     }
-  .chat-header { display: flex; align-items: center; padding: 10px; background: #202c33; border-bottom: 1px solid #2a3942; }
-  .chat-header h3 { margin: 0 auto; }
+   .chat-header { display: flex; align-items: center; padding: 10px; background: #202c33; border-bottom: 1px solid #2a3942; }
+   .chat-header h3 { margin: 0 auto; }
 
-    /* VIDEO FEED */
+    /* VIDEO FEED TIKTOK STYLE */
     #videos-section { display:none; height: calc(100vh - 60px); overflow-y: scroll; scroll-snap-type: y mandatory; background:#000 }
-  .video-header { display:flex; align-items:center; gap:10px; padding:10px; background:#111; position:sticky; top:0; z-index:10 }
-  .video-header button { background:#2a3942; width:36px; height:36px; border-radius:50%; font-size:20px; border:none; color:white }
-  .video-card { height: calc(100vh - 60px); width:100%; position:relative; scroll-snap-align: start; display:flex; align-items:center; justify-content:center }
-  .video-card video { width:100%; height:100%; object-fit:cover }
-  .video-info { position:absolute; bottom:80px; left:10px; right:70px }
-  .video-info h4 { margin:5px 0; color:#fff; text-shadow:0 0 5px #000 }
-  .video-del-btn { position:absolute; top:10px; right:10px; background:red; border:none; color:white; padding:5px 10px; border-radius:6px; font-size:12px }
-  .add-video-btn { position:fixed; bottom:80px; right:15px; width:50px; height:50px; border-radius:50%; font-size:24px; z-index:20 }
+   .video-header { display:flex; align-items:center; gap:10px; padding:10px; background:#111; position:sticky; top:0; z-index:10 }
+   .video-header button { background:#2a3942; width:36px; height:36px; border-radius:50%; font-size:20px; border:none; color:white }
+   .video-card { height: calc(100vh - 60px); width:100%; position:relative; scroll-snap-align: start; display:flex; align-items:center; justify-content:center }
+   .video-card video { width:100%; height:100%; object-fit:cover }
+   .video-info { position:absolute; bottom:80px; left:10px; right:70px }
+   .video-info h4 { margin:5px 0; color:#fff; text-shadow:0 0 5px #000 }
+   .video-del-btn { position:absolute; top:10px; right:10px; background:red; border:none; color:white; padding:5px 10px; border-radius:6px; font-size:12px; z-index:5 }
+   .follow-btn { background:#00C896; padding:4px 10px; border-radius:15px; font-size:12px; border:none; color:white }
+   .add-video-btn { position:fixed; bottom:80px; right:15px; width:50px; height:50px; border-radius:50%; font-size:24px; z-index:20 }
 
-    /* CHAT */
-    #global-chat { height: calc(100vh - 160px); overflow-y:auto; background:#0b141a; padding:10px; display: flex; flex-direction: column; gap: 2px; padding-bottom: 70px; }
-  .bubble-wrapper { display: flex; }
-  .me-wrapper { justify-content: flex-end; }
-  .other-wrapper { justify-content: flex-start; }
-  .bubble { max-width: 75%; padding: 6px 10px 8px 10px; border-radius: 8px; position: relative; word-wrap: break-word; font-size: 15px; line-height: 1.4; }
-  .me-bubble { background: #0077FF; border-bottom-right-radius: 2px; }
-  .other-bubble { background: #005c4b; border-bottom-left-radius: 2px; }
-  .bubble-name { display: flex; align-items:center; gap:6px; font-size: 12px; font-weight: 700; margin-bottom: 3px; }
-  .bubble-avatar {width:20px; height:20px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block}
-  .bubble-del { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.4); padding: 0; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
+    #global-chat { height: calc(100vh - 280px); overflow-y:auto; background:#0b141a; padding:10px; display: flex; flex-direction: column; gap: 2px; }
+   .bubble-wrapper { display: flex; transition: transform 0.15s ease-out; user-select: none; position:relative }
+   .me-wrapper { justify-content: flex-end; }
+   .other-wrapper { justify-content: flex-start; }
+   .bubble { max-width: 75%; padding: 6px 10px 8px 10px; border-radius: 8px; position: relative; word-wrap: break-word; font-size: 15px; line-height: 1.4; }
+   .me-bubble { background: #0077FF; border-bottom-right-radius: 2px; }
+   .other-bubble { background: #005c4b; border-bottom-left-radius: 2px; }
+   .bubble-name { display: flex; align-items:center; gap:6px; font-size: 12px; font-weight: 700; margin-bottom: 3px; cursor:pointer }
+   .bubble-avatar {width:20px; height:20px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block}
+   .bubble-del { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.4); padding: 0; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; cursor: pointer; border: none; color: white; z-index: 2; }
 
-  .chat-input-area { display: flex; padding: 10px; background: #202c33; position: fixed; bottom: 0; left:0; width: 100%; z-index: 5; gap:5px }
-  .chat-input-area input { flex: 1; border-radius: 25px; background: #2a3942; color: white; }
-  .chat-input-area button { width: 50px; border-radius: 50%; }
-  .footer { text-align:center; padding:20px; font-size:12px; opacity:0.8; border-top:1px solid #2a3942; background: #111b21; padding-bottom: 80px; }
-  .footer a { color:#00C896; text-decoration:none; font-weight:700; }
+   .chat-input-area { display: flex; padding: 10px; background: #202c33; position: fixed; bottom: 0; left:0; width: 100%; z-index: 5; gap:5px }
+   .chat-input-area input { flex: 1; border-radius: 25px; background: #2a3942; color: white; }
+   .chat-input-area button { width: 50px; border-radius: 50%; }
+   .footer { text-align:center; padding:20px; font-size:12px; opacity:0.8; border-top:1px solid #2a3942; background: #111b21; padding-bottom: 80px; }
+   .footer a { color:#00C896; text-decoration:none; font-weight:700; }
 
-  .share-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#202c33; padding:20px; border-radius:15px; z-index:9999; display:none; border:2px solid #00C896; width:90%; max-width:300px }
-  .share-popup.show { display:block }
+   .profile-popup { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); display:none; justify-content:center; align-items:center; z-index: 9999; }
+   .profile-popup.show { display:flex!important; }
+   .profile-popup img { max-width: 90%; max-height: 80%; border-radius: 15px; border: 3px solid #00C896; }
+   .profile-popup-close { position:absolute; top:20px; right:20px; font-size:40px; color:white; cursor:pointer }
+
+   .share-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#202c33; padding:20px; border-radius:15px; z-index:9999; display:none; border:2px solid #00C896; width:90%; max-width:300px }
+   .share-popup.show { display:block }
   </style>
 </head>
 <body>
@@ -136,6 +141,7 @@
 </div>
 
 <div id="app">
+  <!-- ONLY 1 TOPBAR NOW -->
   <div class="topbar">
     <div class="topbar-brand">
       <h2 id="logo-btn">ChatBeat</h2>
@@ -166,6 +172,7 @@
     <div id="feed"></div>
   </div>
 
+  <!-- VIDEOS WITH BACK BUTTON + DELETE -->
   <div id="videos-section">
     <div class="video-header">
       <button onclick="backToFeed()">←</button>
@@ -200,7 +207,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.1.3 - LOGIN FIXED
+    Version 2.1.4 - DELETE VIDEOS FIXED
   </div>
 </div>
 
@@ -237,27 +244,7 @@ let currentUser = null;
 let userCache = {};
 let lastSeen = { posts: 0, chat: 0, videos: 0, dms: 0 }
 
-// NOTIFICATIONS
-function updateBadge(id, count){
-  const badge = document.getElementById(id);
-  if(count > 0){ badge.innerText = count > 99? '99+' : count; badge.style.display = 'block'; }
-  else { badge.style.display = 'none'; }
-}
-function loadLastSeen(){ const saved = localStorage.getItem('chatbeat_lastseen_' + currentUser.uid); if(saved) lastSeen = JSON.parse(saved); }
-function saveLastSeen(){ localStorage.setItem('chatbeat_lastseen_' + currentUser.uid, JSON.stringify(lastSeen)); }
-function setupNotifications(){
-  loadLastSeen();
-  onValue(ref(db, 'globalChat'), (snap)=>{
-    let unread = 0; snap.forEach(child=>{ if(child.val().timestamp > lastSeen.chat && child.val().uid!== currentUser.uid){ unread++; } })
-    updateBadge('chat-badge', unread);
-  })
-  onValue(ref(db, 'posts'), (snap)=>{
-    let unread = 0; snap.forEach(child=>{ if(child.val().timestamp > lastSeen.posts && child.val().uid!== currentUser.uid){ unread++; } })
-    updateBadge('video-badge', unread);
-  })
-}
-
-// AUTH - LOGIN/REGISTER
+// AUTH
 document.getElementById('register-btn').onclick = async () => {
  const name = document.getElementById('name-input').value.trim();
  const email = document.getElementById('email-input').value.trim();
@@ -281,16 +268,6 @@ document.getElementById('login-btn').onclick = () => {
  err.innerText = '';
  if(!email ||!pass) { err.innerText = "Enter email and password"; return; }
  signInWithEmailAndPassword(auth, email, pass).catch(e => { err.innerText = e.message; });
-}
-
-document.getElementById('forgot-btn').onclick = () => {
-  const email = document.getElementById('email-input').value.trim();
-  const err = document.getElementById('cover-error');
-  err.innerText = '';
-  if(!email) { err.innerText = "Type your email first"; return; }
-  sendPasswordResetEmail(auth, email)
- .then(() => { alert("Password reset email sent! Check inbox and spam folder"); })
- .catch((error) => { err.innerText = error.message; });
 }
 
 onAuthStateChanged(auth, async (user) => {
@@ -345,7 +322,7 @@ function loadPosts() {
 }
 window.deletePost = async (key) => { if(confirm("Delete this post?")) { await remove(ref(db, 'posts/' + key)); } }
 
-// VIDEOS
+// VIDEOS WITH DELETE BUTTON
 function loadVideos(){
   off(ref(db, 'videos')); document.getElementById('video-feed').innerHTML = '';
   onChildAdded(query(ref(db, 'videos'), orderByChild('timestamp'), limitToLast(20)), async (snap) => {
@@ -370,11 +347,16 @@ document.getElementById('video-upload').onchange = async (e)=>{
     reader.onload = async ()=>{
       const desc = prompt("Add a description:");
       await push(ref(db, 'videos'), { uid: currentUser.uid, video: reader.result, desc, timestamp: Date.now() });
+      alert("Video posted!")
     }
     reader.readAsDataURL(file);
   }
 }
-window.deleteVideo = async (key) => { if(confirm("Delete this video?")) { await remove(ref(db, 'videos/' + key)); } }
+window.deleteVideo = async (key) => {
+  if(confirm("Delete this video?")) {
+    await remove(ref(db, 'videos/' + key));
+  }
+}
 
 // CHAT
 document.getElementById('send-chat').onclick = async () => {
@@ -390,16 +372,28 @@ function loadChat() {
     const isMe = msg.uid === currentUser.uid;
     const wrapper = document.createElement('div'); wrapper.className = `bubble-wrapper ${isMe? 'me-wrapper' : 'other-wrapper'}`;
     let delBtn = isMe? `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>` : '';
-    wrapper.innerHTML = `<div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}"><span class="bubble-name"><img class="bubble-avatar" src="${user.profilePic}">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span></div>`;
+    wrapper.innerHTML = `<div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}"><span class="bubble-name"><img class="bubble-avatar" src="${user.profilePic}">${user.name}</span>${delBtn}<span>${msg.text}</span></div>`;
     document.getElementById('global-chat').appendChild(wrapper);
     document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
   });
 }
 window.deleteMsg = async (key) => { if(confirm("Delete this message?")) { await remove(ref(db, 'globalChat/' + key)); } }
 
+// NOTIFICATIONS
+function updateBadge(id, count){
+  const badge = document.getElementById(id);
+  if(count > 0){ badge.innerText = count > 99? '99+' : count; badge.style.display = 'block'; }
+  else { badge.style.display = 'none'; }
+}
+function setupNotifications(){
+  onValue(ref(db, 'globalChat'), (snap)=>{
+    let unread = 0; snap.forEach(child=>{ if(child.val().uid!== currentUser.uid){ unread++; } })
+    updateBadge('chat-badge', unread);
+  })
+}
+
 // NAVIGATION
 window.openVideos = () => {
-  lastSeen.posts = Date.now(); lastSeen.videos = Date.now(); saveLastSeen(); updateBadge('video-badge', 0);
   document.getElementById('feed-section').style.display = 'none';
   document.getElementById('chat-section').style.display = 'none';
   document.getElementById('videos-section').style.display = 'block';
@@ -408,7 +402,6 @@ window.openVideos = () => {
   document.getElementById('profile-box').style.display = 'none';
 }
 window.openDMs = () => {
-  lastSeen.dms = Date.now(); saveLastSeen(); updateBadge('dm-badge', 0);
   document.getElementById('feed-section').style.display = 'none';
   document.getElementById('chat-section').style.display = 'none';
   document.getElementById('videos-section').style.display = 'none';
@@ -424,15 +417,6 @@ window.openFriends = () => {
   document.getElementById('friends-section').style.display = 'block';
   document.getElementById('profile-box').style.display = 'none';
 }
-document.getElementById('chat-icon-btn').onclick = () => {
-  lastSeen.chat = Date.now(); saveLastSeen(); updateBadge('chat-badge', 0);
-  document.getElementById('feed-section').style.display = 'none';
-  document.getElementById('chat-section').style.display = 'block';
-  document.getElementById('profile-box').style.display = 'none';
-  document.getElementById('videos-section').style.display = 'none';
-  document.getElementById('dm-section').style.display = 'none';
-  document.getElementById('friends-section').style.display = 'none';
-}
 window.backToFeed = () => {
   document.getElementById('feed-section').style.display = 'block';
   document.getElementById('chat-section').style.display = 'none';
@@ -443,6 +427,14 @@ window.backToFeed = () => {
 }
 document.getElementById('logo-btn').onclick = backToFeed;
 document.getElementById('profile-icon-btn').onclick = () => document.getElementById('profile-box').style.display = 'block';
+document.getElementById('chat-icon-btn').onclick = () => {
+  document.getElementById('feed-section').style.display = 'none';
+  document.getElementById('chat-section').style.display = 'block';
+  document.getElementById('videos-section').style.display = 'none';
+  document.getElementById('dm-section').style.display = 'none';
+  document.getElementById('friends-section').style.display = 'none';
+  document.getElementById('profile-box').style.display = 'none';
+}
 window.openSettings = () => document.getElementById('settings-popup').classList.add('show');
 window.closeSettings = () => document.getElementById('settings-popup').classList.remove('show');
 </script>
