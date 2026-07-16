@@ -7,33 +7,33 @@
   <style>
     * { box-sizing: border-box; }
     body { margin:0; font-family: 'Roboto', sans-serif; background: #0b141a; color: white; touch-action: pan-y; }
-    .topbar { 
-  background: #111b21; 
-  padding: 8px 12px 4px 12px; 
-  position: sticky; 
-  top: 0; 
-  z-index: 10; 
+   .topbar {
+  background: #111b21;
+  padding: 8px 12px 4px 12px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
   border-bottom: 1px solid #2a3942;
 }
 .topbar-brand { text-align: left; padding-bottom: 6px; }
 .topbar h2 { margin: 0; font-size: 28px; font-weight: 700; color: #00C896; cursor: pointer; letter-spacing: -0.5px; }
 .topbar-icons { display:flex; gap:8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
 .topbar-icons::-webkit-scrollbar { display: none; }
-.icon-btn { 
+.icon-btn {
   position: relative;
-  background: #2a3942; 
-  width: 30px; 
-  height: 30px; 
-  padding: 0; 
-  border-radius: 50%; 
-  font-size: 15px; 
-  border: none; 
-  color: white; 
-  cursor:pointer; 
-  display:flex; 
-  align-items:center; 
-  justify-content:center; 
-  flex-shrink: 0; 
+  background: #2a3942;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 15px;
+  border: none;
+  color: white;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink: 0;
 }
 .icon-btn:hover { background: #3a4a52; }
 .badge {
@@ -50,8 +50,7 @@
   text-align: center;
   border: 2px solid #111b21;
 }
-    
-    
+
     #cover { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; text-align:center; padding:20px; background: linear-gradient(135deg, #00C896 0%, #0077FF 50%, #000 100%); }
     #cover h1 { font-size: 3em; text-shadow: 0 0 20px #00C896; }
     input, button, textarea { padding:12px; margin:8px; border-radius:25px; border:none; width:80%; max-width:300px; font-size:16px; font-family: 'Roboto', sans-serif; }
@@ -68,23 +67,23 @@
 .card.name { font-weight: 700; font-size: 14px; display:flex; align-items:center; gap:8px; cursor:pointer }
 .card-avatar {width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block; border:2px solid #00C896}
 .card-post-img {width:100%; max-width:400px; max-height:400px; object-fit:cover; border-radius:8px; margin-top:8px; cursor:pointer}
-.del-btn { 
-  position: absolute !important; 
-  top: 8px !important; 
-  right: 8px !important; 
-  background: rgba(0,0,0,0.4) !important; 
-  padding: 0 !important; 
-  width: 16px !important; 
-  height: 16px !important; 
-  border-radius: 50% !important; 
-  font-size: 10px !important; 
-  line-height: 16px !important; 
-  text-align: center !important; 
-  cursor: pointer !important; 
-  border: none !important; 
-  color: white !important; 
-  z-index: 2 !important;
-  display: block !important;
+.del-btn {
+  position: absolute!important;
+  top: 8px!important;
+  right: 8px!important;
+  background: rgba(0,0,0,0.4)!important;
+  padding: 0!important;
+  width: 16px!important;
+  height: 16px!important;
+  border-radius: 50%!important;
+  font-size: 10px!important;
+  line-height: 16px!important;
+  text-align: center!important;
+  cursor: pointer!important;
+  border: none!important;
+  color: white!important;
+  z-index: 2!important;
+  display: block!important;
 }
 .chat-header { display: flex; align-items: center; padding: 10px; background: #202c33; border-bottom: 1px solid #2a3942; }
 .chat-header h3 { margin: 0 auto; }
@@ -198,7 +197,7 @@
   <button id="forgot-btn" class="link-btn">Forgot Password?</button>
   <p id="cover-error" style="color:#FF6B6B;"></p>
 </div>
-  
+
 <div id="app">
   <!-- FACEBOOK STYLE HEADER -->
   <div class="topbar">
@@ -218,7 +217,7 @@
     <button class="icon-btn" id="chat-icon-btn">💬<span class="badge" id="chat-badge" style="display:none">0</span></button>
   </div>
 </div>
-    
+
   <div id="profile-box" class="profile-box">
     <img id="profile-pic" src="https://ui-avatars.com/api/?name=U&background=00C896&color=fff">
     <h3 id="my-name"></h3>
@@ -279,7 +278,7 @@
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.1.1 - FACEBOOK STYLE
+    Version 2.1.2 - VIDEO FIX
   </div>
 </div>
 
@@ -296,7 +295,7 @@
   <button id="delete-video-btn" onclick="deleteCurrentVideo()" style="background:red; display:none">🗑️ Delete Video</button>
   <button onclick="closeShare()" style="background:#555">Cancel</button>
 </div>
-  
+
   <div id="settings-popup" class="share-popup">
   <h3>Settings</h3>
   <button onclick="signOut(auth)">🚪 Logout</button>
@@ -308,6 +307,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/fireba
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 import { getDatabase, ref, set, get, query, orderByChild, equalTo, push, onChildAdded, remove, off, limitToLast, onValue } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js"; // <-- ADDED
 
 const firebaseConfig = {
   apiKey: "AIzaSyD97-el91-ISWGkOhxWy4V_wXyOK6MJl0k",
@@ -323,6 +323,7 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getDatabase(app);
+const storage = getStorage(app); // <-- ADDED
 
 const colors = ['#00C896', '#0077FF', '#00FFD1', '#FF6B6B', '#F7DC6F', '#9B59B6', '#E67E22', '#1ABC9C'];
 const DEFAULT_PIC = 'https://ui-avatars.com/api/?name=U&background=00C896&color=fff';
@@ -470,7 +471,7 @@ let lastSeen = {
 function updateBadge(id, count){
   const badge = document.getElementById(id);
   if(count > 0){
-    badge.innerText = count > 99 ? '99+' : count;
+    badge.innerText = count > 99? '99+' : count;
     badge.style.display = 'block';
   } else {
     badge.style.display = 'none';
@@ -489,12 +490,12 @@ function saveLastSeen(){
 // REAL NOTIFICATION LISTENERS
 function setupNotifications(){
   loadLastSeen();
-  
+
   // 1. GLOBAL CHAT UNREAD
   onValue(ref(db, 'globalChat'), (snap)=>{
     let unread = 0;
     snap.forEach(child=>{
-      if(child.val().timestamp > lastSeen.chat && child.val().uid !== currentUser.uid){
+      if(child.val().timestamp > lastSeen.chat && child.val().uid!== currentUser.uid){
         unread++;
       }
     })
@@ -505,7 +506,7 @@ function setupNotifications(){
   onValue(ref(db, 'posts'), (snap)=>{
     let unread = 0;
     snap.forEach(child=>{
-      if(child.val().timestamp > lastSeen.posts && child.val().uid !== currentUser.uid){
+      if(child.val().timestamp > lastSeen.posts && child.val().uid!== currentUser.uid){
         unread++;
       }
     })
@@ -516,7 +517,7 @@ function setupNotifications(){
   onValue(ref(db, 'videos'), (snap)=>{
     let unread = 0;
     snap.forEach(child=>{
-      if(child.val().timestamp > lastSeen.videos && child.val().uid !== currentUser.uid){
+      if(child.val().timestamp > lastSeen.videos && child.val().uid!== currentUser.uid){
         unread++;
       }
     })
@@ -533,7 +534,7 @@ window.openVideos = () => {
   lastSeen.videos = Date.now();
   saveLastSeen();
   updateBadge('video-badge', 0);
-  // ...your existing code
+  //...your existing code
   document.getElementById('feed-section').style.display = 'none';
   document.getElementById('chat-section').style.display = 'none';
   document.getElementById('videos-section').style.display = 'block';
@@ -546,14 +547,14 @@ window.openDMs = () => {
   lastSeen.dms = Date.now();
   saveLastSeen();
   updateBadge('dm-badge', 0);
-  // ...your existing code
+  //...your existing code
 }
 
 document.getElementById('chat-icon-btn').onclick = () => {
   lastSeen.chat = Date.now();
   saveLastSeen();
   updateBadge('chat-badge', 0);
-  // ...your existing code
+  //...your existing code
   document.getElementById('feed-section').style.display = 'none';
   document.getElementById('chat-section').style.display = 'block';
   document.getElementById('profile-box').style.display = 'none';
@@ -767,7 +768,7 @@ window.deleteCurrentVideo = async () => {
   }
 }
 
-// VIDEOS TIKTOK STYLE
+// VIDEOS TIKTOK STYLE - UPDATED FOR STORAGE
 function loadVideos(){
   off(ref(db, 'videos')); document.getElementById('video-feed').innerHTML = '';
   onChildAdded(query(ref(db, 'videos'), orderByChild('timestamp'), limitToLast(20)), async (snap) => {
@@ -847,16 +848,31 @@ function loadVideoComments(key){
     document.getElementById(`video-comment-list-${key}`).appendChild(div);
   })
 }
-  document.getElementById('video-upload').onchange = async (e)=>{
+
+// UPDATED VIDEO UPLOAD WITH FIREBASE STORAGE
+document.getElementById('video-upload').onchange = async (e)=>{
   const file = e.target.files[0];
-  if(file){
-    const reader = new FileReader();
-    reader.onload = async ()=>{
-      const desc = prompt("Add a description:");
-      await push(ref(db, 'videos'), { uid: currentUser.uid, video: reader.result, desc, timestamp: Date.now(), reactions:{}, comments:{} });
-      alert("Video posted!")
-    }
-    reader.readAsDataURL(file);
+  if(!file) return;
+
+  alert("Uploading video... This may take 10-30s");
+  const desc = prompt("Add a description:");
+
+  try {
+    const videoRef = storageRef(storage, `videos/${currentUser.uid}/${Date.now()}_${file.name}`);
+    const snap = await uploadBytes(videoRef, file);
+    const url = await getDownloadURL(snap.ref);
+
+    await push(ref(db, 'videos'), {
+      uid: currentUser.uid,
+      video: url, // <-- now saves URL from Storage
+      desc,
+      timestamp: Date.now(),
+      reactions:{},
+      comments:{}
+    });
+    alert("Video posted!")
+  } catch(err){
+    alert("Upload failed: " + err.message)
   }
 }
 
