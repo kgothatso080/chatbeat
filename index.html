@@ -907,7 +907,11 @@ function loadVideos(){
     </div>
 
     <div class="video-action"
-         onclick="openVideoShare('${snap.key}')">
+         window.openVideoShare=(id)=>{
+    currentVideoId=id;
+    shareLink=window.location.origin+"#video-"+id;
+    document.getElementById("share-popup").classList.add("show");
+}
         ↗
         <span>${Object.keys(v.shares || {}).length}</span>
     </div>
