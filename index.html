@@ -177,6 +177,75 @@
 /* FRIENDS LIST */
 .friends-list { padding:10px }
 .friend-item { display:flex; justify-content:space-between; align-items:center; padding:12px; background:#202c33; border-radius:12px; margin:8px 0 }
+.video-sidebar{
+position:absolute;
+right:10px;
+bottom:90px;
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:18px;
+z-index:20;
+}
+
+.profile-wrap{
+position:relative;
+}
+
+.side-profile{
+width:52px;
+height:52px;
+border-radius:50%;
+border:2px solid white;
+object-fit:cover;
+}
+
+.plus-badge{
+position:absolute;
+bottom:-5px;
+left:50%;
+transform:translateX(-50%);
+background:#ff0050;
+color:white;
+width:18px;
+height:18px;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+font-weight:bold;
+}
+
+.video-action{
+display:flex;
+flex-direction:column;
+align-items:center;
+font-size:30px;
+cursor:pointer;
+color:white;
+}
+
+.video-action span{
+font-size:12px;
+margin-top:4px;
+}
+
+.music-disc{
+width:48px;
+height:48px;
+border-radius:50%;
+background:#111;
+display:flex;
+align-items:center;
+justify-content:center;
+animation:spin 3s linear infinite;
+font-size:22px;
+}
+
+@keyframes spin{
+from{transform:rotate(0deg);}
+to{transform:rotate(360deg);}
+}  
   </style>
 </head>
 <body>
