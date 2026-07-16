@@ -875,7 +875,7 @@ function loadVideos(){
         <span class="plus-badge">+</span>
     </div>
 
-    <div class="video-action">
+    <div class="video-action" onclick="likeVideo('${snap.key}')">
         ❤️
         <span>${Object.keys(v.likes || {}).length}</span>
     </div>
