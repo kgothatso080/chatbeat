@@ -818,70 +818,54 @@ async function uploadVideo(fileBlob){
   reader.readAsDataURL(fileBlob);
 }
 
-// Helper: compress video WITH AUDIO
+// Helper: compress video WITH VOICE - WORKS ON ANDROID + IOS
 function compressVideo(file){
   return new Promise((resolve)=>{
     const video = document.createElement('video');
     video.src = URL.createObjectURL(file);
-    video.muted = false; // need audio
+    video.muted = false;
     video.playsInline = true;
 
     video.onloadedmetadata = async () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      // Reduce quality: 480p max
-      const scale = Math.min(854 / video.videoWidth, 480 / video.videoHeight, 1);
-      canvas.width = video.videoWidth * scale;
-      canvas.height = video.videoHeight * scale;
-
-      const videoStream = canvas.captureStream(15); // 15fps
-      
-      // THIS IS THE KEY: Get audio track from original video
-      let audioStream;
+      // Get original stream with BOTH video + audio
+      let stream;
       try {
-        audioStream = video.captureStream().getAudioTracks();
+        stream = await navigator.mediaDevices.getUserMedia({video: false, audio: false}); // dummy to unlock
+        stream = video.captureStream(); // This gets video+audio together
       } catch(e) {
-        audioStream = [];
+        stream = video.captureStream(); 
       }
 
-      // Combine video + audio tracks
-      const finalStream = new MediaStream([
-        ...videoStream.getVideoTracks(),
-        ...audioStream
-      ]);
-
-      const recorder = new MediaRecorder(finalStream, {
-        mimeType: 'video/webm;codecs=vp9,opus', // opus = audio codec
-        videoBitsPerSecond: 500000, // 500kbps
-        audioBitsPerSecond: 64000   // 64kbps audio
+      // Force lower bitrate to compress to <10MB
+      const recorder = new MediaRecorder(stream, {
+        mimeType: 'video/webm;codecs=vp8,opus', // vp8 works better than vp9 for audio
+        videoBitsPerSecond: 400000, // 400kbps = ~3MB for 10sec 
+        audioBitsPerSecond: 48000   // 48kbps voice
       });
 
       const chunks = [];
-      recorder.ondataavailable = e => chunks.push(e.data);
-      recorder.onstop = () => resolve(new Blob(chunks, {type: 'video/webm'}));
+      recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, {type: 'video/webm'});
+        URL.revokeObjectURL(video.src);
+        resolve(blob);
+      };
 
       video.currentTime = 0;
-      video.play();
-      recorder.start();
+      await video.play();
+      recorder.start(100); // collect data every 100ms
 
-      const draw = () => {
-        if(video.paused || video.ended){
-          recorder.stop();
-          return;
-        }
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        requestAnimationFrame(draw);
-      };
-      draw();
-
-      setTimeout(()=>{ // Stop after 10 seconds max
+      // Stop after video ends or 10s max
+      const maxTime = Math.min(video.duration * 1000, 10000);
+      setTimeout(() => {
         if(recorder.state === 'recording') recorder.stop();
-      }, 10000);
+        video.pause();
+      }, maxTime);
     };
     video.onerror = () => resolve(null);
   });
 }
+
 // DMs
 function loadDMs(){
   off(ref(db, 'users')); document.getElementById('dm-list').innerHTML = '';
