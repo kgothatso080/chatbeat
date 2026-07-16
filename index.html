@@ -167,6 +167,11 @@
 .video-info { position:absolute; bottom:80px; left:10px; right:70px }
 .video-info h4 { margin:5px 0; color:#fff; text-shadow:0 0 5px #000 }
 .follow-btn { background:#00C896; padding:4px 10px; border-radius:15px; font-size:12px; border:none; color:white }
+.video-side-actions { position: absolute; right: 10px; bottom: 120px; display: flex; flex-direction: column; gap: 20px; align-items: center; z-index: 10 }
+.video-action-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; background: transparent; border: none; color: white; cursor: pointer }
+.video-action-btn span.icon { font-size: 32px; filter: drop-shadow(0 0 3px #000) }
+.video-action-btn span.count { font-size: 12px; font-weight: 700; text-shadow: 0 0 3px #000 }
+.video-action-btn.liked span.icon { color: #FF0050 }
 .add-video-btn { position:fixed; bottom:80px; right:15px; width:50px; height:50px; border-radius:50%; font-size:24px; z-index:20 }
 
 /* DM LIST */
@@ -288,6 +293,7 @@
   <button onclick="shareTo('whatsapp')">📱 WhatsApp</button>
   <button onclick="shareTo('facebook')">📘 Facebook</button>
   <button onclick="shareTo('copy')">🔗 Copy Link</button>
+  <button id="delete-video-btn" onclick="deleteCurrentVideo()" style="background:red; display:none">🗑️ Delete Video</button>
   <button onclick="closeShare()" style="background:#555">Cancel</button>
 </div>
   
@@ -332,6 +338,7 @@ let allMessagesCache = {};
 let replyToMsg = null;
 let dragging = null;
 let shareLink = '';
+let currentVideoKey = '';
 const DRAG_THRESHOLD = 70;
 const REACTIONS = ['❤️','😂','😮','😢','😡','👎'];
 const LONG_PRESS = 500;
@@ -745,13 +752,32 @@ window.shareTo = (type) => {
   if(type==='copy'){ navigator.clipboard.writeText(shareLink); alert("Link copied!") }
   closeShare();
 }
+window.openVideoShare = (link, key, isOwner) => {
+  shareLink = link;
+  currentVideoKey = key;
+  document.getElementById('delete-video-btn').style.display = isOwner? 'block' : 'none';
+  document.getElementById('share-popup').classList.add('show');
+}
+window.deleteCurrentVideo = async () => {
+  if(confirm("Delete this video?")) {
+    await remove(ref(db, 'videos/' + currentVideoKey));
+    const el = document.getElementById('video-' + currentVideoKey);
+    if(el) el.remove();
+    closeShare();
+  }
+}
 
 // VIDEOS TIKTOK STYLE
 function loadVideos(){
   off(ref(db, 'videos')); document.getElementById('video-feed').innerHTML = '';
   onChildAdded(query(ref(db, 'videos'), orderByChild('timestamp'), limitToLast(20)), async (snap) => {
-    const v = snap.val(); const u = await getUser(v.uid);
-    const div = document.createElement('div'); div.className = 'video-card';
+    const v = snap.val(); const videoKey = snap.key; const u = await getUser(v.uid);
+    const isOwner = v.uid === currentUser.uid;
+    const userReact = v.reactions?.[currentUser.uid] || null;
+    const likeCount = Object.keys(v.reactions||{}).length;
+    const commentCount = Object.keys(v.comments||{}).length;
+
+    const div = document.createElement('div'); div.className = 'video-card'; div.id = 'video-' + videoKey;
     div.innerHTML = `
       <video src="${v.video}" loop playsinline onclick="this.paused?this.play():this.pause()"></video>
       <div class="video-info">
@@ -759,17 +785,75 @@ function loadVideos(){
         <p>${v.desc||''}</p>
         <button class="follow-btn" onclick="toggleFollow('${v.uid}')">Follow</button>
       </div>
+      <div class="video-side-actions">
+        <button class="video-action-btn ${userReact? 'liked' : ''}" onclick="reactToVideo('${videoKey}')">
+          <span class="icon">${userReact || '❤️'}</span>
+          <span class="count" id="video-like-${videoKey}">${likeCount}</span>
+        </button>
+        <button class="video-action-btn" onclick="toggleVideoComments('${videoKey}')">
+          <span class="icon">💬</span>
+          <span class="count" id="video-comment-${videoKey}">${commentCount}</span>
+        </button>
+        <button class="video-action-btn" onclick="openVideoShare('${window.location.origin}#video-${videoKey}','${videoKey}',${isOwner})">
+          <span class="icon">↗️</span>
+          <span class="count">Share</span>
+        </button>
+      </div>
+      <div class="comments-section" id="video-comments-${videoKey}" style="position:absolute;bottom:0;left:0;right:0;background:#000c; max-height:50%; overflow-y:auto; display:none; padding:10px">
+        <div id="video-comment-list-${videoKey}"></div>
+        <div class="comment-input-row">
+          <input id="video-comment-input-${videoKey}" placeholder="Add comment...">
+          <button onclick="addVideoComment('${videoKey}')">➤</button>
+        </div>
+      </div>
     `;
     document.getElementById('video-feed').appendChild(div);
+
+    // LIVE UPDATES
+    onValue(ref(db, `videos/${videoKey}/reactions`), (s)=>{
+      const reacts = s.val() || {};
+      document.getElementById(`video-like-${videoKey}`).innerText = Object.keys(reacts).length;
+      const btn = div.querySelector('.video-action-btn');
+      if(reacts[currentUser.uid]){ btn.classList.add('liked'); btn.querySelector('.icon').innerHTML = reacts[currentUser.uid]; }
+      else { btn.classList.remove('liked'); btn.querySelector('.icon').innerHTML = '❤️'; }
+    })
+    onValue(ref(db, `videos/${videoKey}/comments`), (s)=>{
+      document.getElementById(`video-comment-${videoKey}`).innerText = s.size;
+    })
+    loadVideoComments(videoKey);
   })
 }
-document.getElementById('video-upload').onchange = async (e)=>{
+
+window.reactToVideo = async (key) => { await setReaction(`videos/${key}/reactions`, '❤️') }
+window.toggleVideoComments = (key) => document.getElementById(`video-comments-${key}`).classList.toggle('show');
+window.addVideoComment = async (key) => {
+  const input = document.getElementById(`video-comment-input-${key}`);
+  const text = input.value.trim();
+  if(!text) return;
+  await push(ref(db, `videos/${key}/comments`), {uid: currentUser.uid, text, timestamp: Date.now()});
+  input.value = '';
+}
+function loadVideoComments(key){
+  onChildAdded(ref(db, `videos/${key}/comments`), async (snap)=>{
+    const c = snap.val();
+    const u = await getUser(c.uid);
+    const div = document.createElement('div');
+    div.className='comment';
+    div.innerHTML = `<img class="comment-avatar" src="${u.profilePic}">
+    <div class="comment-bubble">
+      <div style="font-weight:700; font-size:12px; color:${u.color}">${u.name}</div>
+      <div style="font-size:14px">${c.text}</div>
+    </div>`;
+    document.getElementById(`video-comment-list-${key}`).appendChild(div);
+  })
+}
+  document.getElementById('video-upload').onchange = async (e)=>{
   const file = e.target.files[0];
   if(file){
     const reader = new FileReader();
     reader.onload = async ()=>{
       const desc = prompt("Add a description:");
-      await push(ref(db, 'videos'), { uid: currentUser.uid, video: reader.result, desc, timestamp: Date.now() });
+      await push(ref(db, 'videos'), { uid: currentUser.uid, video: reader.result, desc, timestamp: Date.now(), reactions:{}, comments:{} });
       alert("Video posted!")
     }
     reader.readAsDataURL(file);
