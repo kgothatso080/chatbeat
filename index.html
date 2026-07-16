@@ -352,18 +352,36 @@ to{transform:rotate(360deg);}
   <img id="profile-popup-img" src="" onclick="event.stopPropagation()">
 </div>
 
+
 <div id="share-popup" class="share-popup">
-  <h3>Share to</h3>
-  <button onclick="shareTo('whatsapp')">📱 WhatsApp</button>
-  <button onclick="shareTo('facebook')">📘 Facebook</button>
-  <button onclick="shareTo('copy')">🔗 Copy Link</button>
-  <button onclick="closeShare()" style="background:#555">Cancel</button>
-</div>
-  
-  <div id="settings-popup" class="share-popup">
-  <h3>Settings</h3>
-  <button onclick="signOut(auth)">🚪 Logout</button>
-  <button onclick="closeSettings()" style="background:#555">Cancel</button>
+
+<h3>Share</h3>
+
+<button onclick="shareTo('whatsapp')">📱 WhatsApp</button>
+
+<button onclick="shareTo('facebook')">📘 Facebook</button>
+
+<button onclick="shareTo('instagram')">📸 Instagram</button>
+
+<button onclick="shareTo('tiktok')">🎵 TikTok</button>
+
+<button onclick="shareTo('twitter')">🐦 Twitter/X</button>
+
+<button onclick="shareTo('copy')">🔗 Copy Link</button>
+
+<button onclick="shareTo('more')">⋯ More</button>
+
+<hr>
+
+<button onclick="deleteVideo(currentVideoId)"
+style="background:#ff3b30">
+🗑 Delete
+</button>
+
+<button onclick="closeShare()">
+Cancel
+</button>
+
 </div>
 
 <script type="module">
