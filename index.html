@@ -864,6 +864,13 @@ window.likeVideo = async (id)=>{
 window.openVideoComments = (id)=>{
     alert("Video comments coming next.");
 }
+window.favoriteVideo = async(id)=>{
+    const r = ref(db,`favorites/${currentUser.uid}/${id}`);
+    const s = await get(r);
+
+    if(s.exists()) await remove(r);
+    else await set(r,true);
+}
 // VIDEOS TIKTOK STYLE
 function loadVideos(){
   off(ref(db, 'videos')); document.getElementById('video-feed').innerHTML = '';
@@ -894,7 +901,7 @@ function loadVideos(){
         <span>${Object.keys(v.comments || {}).length}</span>
     </div>
 
-    <div class="video-action">
+    <div class="video-action" onclick="favoriteVideo('${snap.key}')">
         🔖
         <span>${Object.keys(v.favorites || {}).length}</span>
     </div>
