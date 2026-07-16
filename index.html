@@ -818,14 +818,15 @@ async function uploadVideo(fileBlob){
   reader.readAsDataURL(fileBlob);
 }
 
-// Helper: compress video using MediaRecorder
+// Helper: compress video WITH AUDIO
 function compressVideo(file){
   return new Promise((resolve)=>{
     const video = document.createElement('video');
     video.src = URL.createObjectURL(file);
-    video.muted = true;
+    video.muted = false; // need audio
+    video.playsInline = true;
 
-    video.onloadedmetadata = () => {
+    video.onloadedmetadata = async () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
 
@@ -834,16 +835,33 @@ function compressVideo(file){
       canvas.width = video.videoWidth * scale;
       canvas.height = video.videoHeight * scale;
 
-      const stream = canvas.captureStream(15); // 15fps to reduce size
-      const recorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm;codecs=vp9',
-        videoBitsPerSecond: 500000 // 500kbps = ~3.7MB for 10sec
+      const videoStream = canvas.captureStream(15); // 15fps
+      
+      // THIS IS THE KEY: Get audio track from original video
+      let audioStream;
+      try {
+        audioStream = video.captureStream().getAudioTracks();
+      } catch(e) {
+        audioStream = [];
+      }
+
+      // Combine video + audio tracks
+      const finalStream = new MediaStream([
+        ...videoStream.getVideoTracks(),
+        ...audioStream
+      ]);
+
+      const recorder = new MediaRecorder(finalStream, {
+        mimeType: 'video/webm;codecs=vp9,opus', // opus = audio codec
+        videoBitsPerSecond: 500000, // 500kbps
+        audioBitsPerSecond: 64000   // 64kbps audio
       });
 
       const chunks = [];
       recorder.ondataavailable = e => chunks.push(e.data);
       recorder.onstop = () => resolve(new Blob(chunks, {type: 'video/webm'}));
 
+      video.currentTime = 0;
       video.play();
       recorder.start();
 
@@ -864,7 +882,6 @@ function compressVideo(file){
     video.onerror = () => resolve(null);
   });
 }
-
 // DMs
 function loadDMs(){
   off(ref(db, 'users')); document.getElementById('dm-list').innerHTML = '';
