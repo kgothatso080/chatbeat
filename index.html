@@ -861,7 +861,9 @@ window.likeVideo = async (id)=>{
     if(s.exists()) await remove(r);
     else await set(r,true);
 }
-
+window.openVideoComments = (id)=>{
+    alert("Video comments coming next.");
+}
 // VIDEOS TIKTOK STYLE
 function loadVideos(){
   off(ref(db, 'videos')); document.getElementById('video-feed').innerHTML = '';
