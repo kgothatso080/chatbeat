@@ -818,29 +818,24 @@ async function uploadVideo(fileBlob){
   reader.readAsDataURL(fileBlob);
 }
 
-// Helper: compress video WITH VOICE - WORKS ON ANDROID + IOS
+// Helper: compress video WITH CLEAN VOICE
 function compressVideo(file){
   return new Promise((resolve)=>{
     const video = document.createElement('video');
     video.src = URL.createObjectURL(file);
     video.muted = false;
     video.playsInline = true;
+    video.preload = 'auto';
 
     video.onloadedmetadata = async () => {
-      // Get original stream with BOTH video + audio
-      let stream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({video: false, audio: false}); // dummy to unlock
-        stream = video.captureStream(); // This gets video+audio together
-      } catch(e) {
-        stream = video.captureStream(); 
-      }
+      // Get original stream with video + audio
+      const stream = video.captureStream(); 
 
-      // Force lower bitrate to compress to <10MB
+      // BETTER SETTINGS = LESS SCRATCHING
       const recorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm;codecs=vp8,opus', // vp8 works better than vp9 for audio
-        videoBitsPerSecond: 400000, // 400kbps = ~3MB for 10sec 
-        audioBitsPerSecond: 48000   // 48kbps voice
+        mimeType: 'video/webm;codecs=vp8,opus', 
+        videoBitsPerSecond: 600000, // 600kbps instead of 400kbps - smoother video
+        audioBitsPerSecond: 96000   // 96kbps instead of 48kbps - CLEAN VOICE
       });
 
       const chunks = [];
@@ -853,7 +848,7 @@ function compressVideo(file){
 
       video.currentTime = 0;
       await video.play();
-      recorder.start(100); // collect data every 100ms
+      recorder.start(250); // collect every 250ms = smoother
 
       // Stop after video ends or 10s max
       const maxTime = Math.min(video.duration * 1000, 10000);
@@ -865,7 +860,6 @@ function compressVideo(file){
     video.onerror = () => resolve(null);
   });
 }
-
 // DMs
 function loadDMs(){
   off(ref(db, 'users')); document.getElementById('dm-list').innerHTML = '';
