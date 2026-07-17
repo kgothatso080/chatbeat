@@ -307,10 +307,17 @@ to{transform:rotate(360deg);}
     <input id="video-upload" type="file" accept="video/*" style="display:none">
   </div>
 
-  <div id="dm-section" style="display:none">
-    <div class="chat-header"><button onclick="backToFeed()">← Back</button><h3>Messages</h3></div>
-    <div id="dm-list" class="dm-list"></div>
+<div id="dm-chat-section" style="display:none">
+  <div class="chat-header"><button onclick="openDMs()">← Back</button><h3 id="dm-chat-name">DM</h3></div>
+  <div id="dm-chat"></div>
+  <div class="chat-input-area">
+    <button id="dm-img-btn">📷</button>
+    <input id="dm-file" type="file" accept="image/*" style="display:none">
+    <input id="dm-input" placeholder="Message...">
+    <button id="dm-record-btn">🎤</button>
+    <button id="send-dm">➤</button>
   </div>
+</div>
 
   <div id="friends-section" style="display:none">
     <div class="chat-header"><button onclick="backToFeed()">← Back</button><h3>Friends</h3></div>
@@ -383,6 +390,54 @@ Cancel
 </button>
 
 </div>
+<div id="settings-popup" class="settings-popup" style="max-height:90vh; overflow-y:auto">
+  <h3>⚙️ Settings</h3>
+  
+  <h4 style="text-align:left; margin-top:15px">👤 Account</h4>
+  <button onclick="changeName()">✏️ Change Display Name</button>
+  <button onclick="changeEmail()">📧 Change Email</button>
+  <button onclick="changePassword()">🔒 Change Password</button>
+  <button onclick="removeProfilePhoto()">🖼️ Remove Profile Photo</button>
+  
+  <h4 style="text-align:left; margin-top:15px">🎨 Appearance</h4>
+  <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap">
+    <button onclick="setTheme('#00C896')" style="background:#00C896; width:40px; height:40px; padding:0"></button>
+    <button onclick="setTheme('#0077FF')" style="background:#0077FF; width:40px; height:40px; padding:0"></button>
+    <button onclick="setTheme('#FF69B4')" style="background:#FF69B4; width:40px; height:40px; padding:0"></button>
+    <button onclick="setTheme('#9B59B6')" style="background:#9B59B6; width:40px; height:40px; padding:0"></button>
+    <button onclick="setTheme('#FF6B6B')" style="background:#FF6B6B; width:40px; height:40px; padding:0"></button>
+  </div>
+  <button onclick="toggleLightMode()">🌙 Toggle Dark/Light Mode</button>
+  
+  <h4 style="text-align:left; margin-top:15px">🔗 Linked Accounts</h4>
+  <button onclick="linkAccount('tiktok')">🎵 Link TikTok</button>
+  <button onclick="linkAccount('facebook')">📘 Link Facebook</button>
+  <button onclick="linkAccount('instagram')">📸 Link Instagram</button>
+  <button onclick="linkAccount('x')">🐦 Link X/Twitter</button>
+  <button onclick="linkAccount('google')">🇬 Google</button>
+  <button onclick="linkAccount('phone')">📱 Link Phone</button>
+  
+  <h4 style="text-align:left; margin-top:15px">ℹ️ About ChatBeat</h4>
+  <p style="font-size:12px; text-align:left; opacity:0.8">
+  <b>ChatBeat</b> is where you Connect in Color. Vibe in Sound. 🎵<br><br>
+  <b>Why use ChatBeat?</b><br>
+  1. Promote your business, music, brand, or yourself<br>
+    2. Go viral with TikTok-style videos<br>
+  3. Build real friends and DMs<br>
+  4. Post, React, Comment, Share like Facebook<br><br>
+  <b>How to use:</b><br>
+  Feed = Post updates and photos<br>
+  Videos = Scroll and post 10s videos with music<br>
+  Chat = Global chat for everyone<br>
+  DMs = Private messages with friends<br>
+  Friends = Follow people to grow your audience
+  </p>
+  
+  <hr>
+  <button onclick="signOutUser()">🚪 Logout</button>
+  <button onclick="deleteAccount()" style="background:#ff3b30">🗑 Delete Account</button>
+  <button onclick="closeSettings()">Cancel</button>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
@@ -419,6 +474,9 @@ let allMessagesCache = {};
 let replyToMsg = null;
 let dragging = null;
 let shareLink = '';
+let currentDM = null; 
+let currentVideoId = null;
+let dmIsRecording = false; let dmMediaRecorder; let dmAudioChunks = [];
 const DRAG_THRESHOLD = 70;
 const REACTIONS = ['❤️','😂','😮','😢','😡','👎'];
 const LONG_PRESS = 500;
@@ -1030,20 +1088,55 @@ function compressVideo(file){
 }
 // DMs
 function loadDMs(){
-  off(ref(db, 'users')); document.getElementById('dm-list').innerHTML = '';
-  onValue(ref(db, 'users'), async (snap)=>{
-    document.getElementById('dm-list').innerHTML = '';
-    snap.forEach(uSnap=>{
-      if(uSnap.key!== currentUser.uid){
-        const u = uSnap.val();
-        const div = document.createElement('div'); div.className = 'dm-item';
-        div.innerHTML = `<img src="${u.profilePic}"><div><b>${u.name}</b></div>`;
-        div.onclick = () => alert("Opening DM with " + u.name + " - coming full next update");
-        document.getElementById('dm-list').appendChild(div);
+  off(ref(db, 'dmChats')); document.getElementById('dm-list').innerHTML = '';
+  onValue(ref(db, 'dmChats'), async (snap)=>{
+    document.getElementById('dm-list').innerHTML = ''; let unread = 0;
+    snap.forEach(chatSnap=>{
+      const chatId = chatSnap.key; if(chatId.includes(currentUser.uid)){
+        const chat = chatSnap.val(); const otherUid = Object.keys(chat.members).find(id => id !== currentUser.uid);
+        getUser(otherUid).then(u=>{
+          if(chat.lastTimestamp > lastSeen.dms) unread++;
+          const div = document.createElement('div'); div.className = 'dm-item';
+          div.innerHTML = `<img src="${u.profilePic}"><div><b>${u.name}</b><br><small>${chat.lastMessage || ''}</small></div>`;
+          div.onclick = () => openDM(chatId, otherUid); document.getElementById('dm-list').appendChild(div);
+        })
       }
-    })
+    }); updateBadge('dm-badge', unread);
   })
 }
+// DM CHAT REAL
+window.openDM = async (chatId, otherUid) => {
+  currentDM = {chatId, otherUid};
+  document.getElementById('feed-section').style.display = 'none'; document.getElementById('dm-section').style.display = 'none';
+  document.getElementById('dm-chat-section').style.display = 'block';
+  const u = await getUser(otherUid); document.getElementById('dm-chat-name').innerText = u.name;
+  loadDMChat(chatId);
+}
+function loadDMChat(chatId){
+  off(ref(db, `dmChats/${chatId}/messages`)); document.getElementById('dm-chat').innerHTML = '';
+  onChildAdded(query(ref(db, `dmChats/${chatId}/messages`), orderByChild('timestamp'), limitToLast(50)), async (snap)=>{
+    const msg = snap.val(); const isMe = msg.uid === currentUser.uid;
+    const div = document.createElement('div'); div.className = `bubble-wrapper ${isMe? 'me-wrapper' : 'other-wrapper'}`;
+    let content = msg.text || (msg.image? `<img class="bubble-img" src="${msg.image}">` : `<audio controls src="${msg.audio}"></audio>`);
+    div.innerHTML = `<div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}">${content}</div>`;
+    document.getElementById('dm-chat').appendChild(div); document.getElementById('dm-chat').scrollTop = document.getElementById('dm-chat').scrollHeight;
+    if(msg.uid !== currentUser.uid) set(ref(db, `dmChats/${chatId}/messages/${snap.key}/seen`), true);
+  })
+}
+document.getElementById('send-dm').onclick = async () => {
+  const text = document.getElementById('dm-input').value.trim(); if(!text) return; document.getElementById('dm-input').value = '';
+  await push(ref(db, `dmChats/${currentDM.chatId}/messages`), {uid: currentUser.uid, text, timestamp: Date.now(), seen: false});
+  await set(ref(db, `dmChats/${currentDM.chatId}/lastMessage`), text); await set(ref(db, `dmChats/${currentDM.chatId}/lastTimestamp`), Date.now());
+}
+
+// SETTINGS REAL
+window.openSettings = () => document.getElementById('settings-popup').classList.add('show');
+window.closeSettings = () => document.getElementById('settings-popup').classList.remove('show');
+window.signOutUser = () => { signOut(auth); closeSettings(); }
+window.deleteAccount = async () => { if(confirm("Delete account forever?")){ await remove(ref(db, 'users/'+currentUser.uid)); await deleteUser(currentUser); } }
+
+// VIDEO SHARE REAL
+window.openVideoShare = (id)=>{ currentVideoId=id; shareLink=window.location.origin+"#video-"+id; document.getElementById("share-popup").classList.add("show"); }
 
 // FOLLOWING
 function loadFriends(){
