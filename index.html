@@ -712,7 +712,7 @@ onAuthStateChanged(auth, async (user) => {
      alert("Welcome to ChatBeat! Your name is: " + nameFromEmail)
    }
    document.getElementById('cover').style.display = 'none';
-   document.getElementById('app').style.display = 'block';
+   document.getElementById('app').style.display = 'block'; applyTheme();
    document.getElementById('my-name').innerText = userData.name;
    document.getElementById('profile-pic').src = userData.profilePic || DEFAULT_PIC;
    loadedMessages.clear();
@@ -1373,6 +1373,90 @@ window.deleteMsg = async (key) => {
   }
 }
 window.reactToMsg = async (key, emoji) => { await setReaction(`globalChat/${key}/reactions`, emoji); document.getElementById(`msg-picker-${key}`).classList.remove('show'); }
+
+// THEME SYSTEM
+let currentTheme = localStorage.getItem('chatbeat_theme') || '#00C896';
+let isLightMode = localStorage.getItem('chatbeat_light') === 'true';
+
+window.setTheme = (color) => {
+  currentTheme = color;
+  localStorage.setItem('chatbeat_theme', color);
+  document.documentElement.style.setProperty('--main-color', color);
+  alert("Theme updated!");
+  applyTheme();
+}
+
+window.toggleLightMode = () => {
+  isLightMode = !isLightMode;
+  localStorage.setItem('chatbeat_light', isLightMode);
+  applyTheme();
+}
+
+function applyTheme(){
+  const bg = isLightMode ? '#f0f2f5' : '#0b141a';
+  const card = isLightMode ? '#ffffff' : '#202c33';
+  const text = isLightMode ? '#000' : '#fff';
+  document.body.style.background = bg;
+  document.body.style.color = text;
+  document.querySelectorAll('.card, .post-box, .profile-box').forEach(el=>{
+    el.style.background = card;
+    el.style.color = text;
+  })
+}
+
+// ACCOUNT FUNCTIONS
+window.changeName = async () => {
+  const newName = prompt("Enter new display name:");
+  if(!newName || newName.length < 3) return alert("Name too short");
+  await set(ref(db, 'users/'+currentUser.uid+'/name'), newName);
+  document.getElementById('my-name').innerText = newName;
+  alert("Name updated!");
+}
+
+window.changeEmail = async () => {
+  const newEmail = prompt("Enter new email:");
+  if(!newEmail) return;
+  try {
+    await currentUser.updateEmail(newEmail);
+    await set(ref(db, 'users/'+currentUser.uid+'/email'), newEmail);
+    alert("Email updated! Check inbox to verify");
+  } catch(e){ alert(e.message) }
+}
+
+window.changePassword = async () => {
+  const newPass = prompt("Enter new password:");
+  if(!newPass || newPass.length < 6) return alert("Password must be 6+ chars");
+  try {
+    await currentUser.updatePassword(newPass);
+    alert("Password updated!");
+  } catch(e){ alert("Login again first: "+e.message) }
+}
+
+window.removeProfilePhoto = async () => {
+  if(confirm("Remove profile photo?")){
+    await set(ref(db, 'users/'+currentUser.uid+'/profilePic'), DEFAULT_PIC);
+    document.getElementById('profile-pic').src = DEFAULT_PIC;
+    alert("Photo removed");
+  }
+}
+
+// LINK SOCIAL ACCOUNTS
+window.linkAccount = (type) => {
+  const url = prompt(`Paste your ${type} profile link:`);
+  if(!url) return;
+  set(ref(db, `users/${currentUser.uid}/linked/${type}`), url);
+  alert(`${type} linked!`);
+}
+
+// DELETE ACCOUNT
+window.deleteAccount = async () => { 
+  if(confirm("This will delete ALL your data forever. Are you sure?")){
+    await remove(ref(db, 'users/'+currentUser.uid));
+    await remove(ref(db, 'posts')).then(()=>{});
+    await remove(ref(db, 'videos')).then(()=>{});
+    await deleteUser(currentUser); 
+  }
+}
 
 document.getElementById('chat-icon-btn').onclick = () => {
   document.getElementById('feed-section').style.display = 'none';
