@@ -286,6 +286,7 @@ to{transform:rotate(360deg);}
   <div id="profile-box" class="profile-box">
     <img id="profile-pic" src="https://ui-avatars.com/api/?name=U&background=00C896&color=fff">
     <h3 id="my-name"></h3>
+    <div id="linked-accounts" style="font-size:12px; margin-top:8px"></div>
     <input id="profile-upload" type="file" accept="image/*" style="display:none">
     <button onclick="document.getElementById('profile-upload').click()">Change Profile Photo</button>
     <button onclick="document.getElementById('profile-box').style.display='none'">Close</button>
@@ -738,6 +739,17 @@ document.getElementById('profile-upload').onchange = (e)=>{
     const reader = new FileReader();
     reader.onload = ()=>{
       set(ref(db,'users/'+currentUser.uid+'/profilePic'), reader.result);
+      get(ref(db, 'users/'+user.uid+'/linked')).then(s=>{
+  const links = s.val() || {};
+  let html = '';
+  if(links.tiktok) html += '🎵 ';
+  if(links.facebook) html += '📘 ';
+  if(links.instagram) html += '📸 ';
+  if(links.x) html += '🐦 ';
+  if(links.google) html += '🇬 ';
+  if(links.phone) html += '📱 ';
+  document.getElementById('linked-accounts').innerHTML = html;
+})
       document.getElementById('profile-pic').src = reader.result;
       alert("Profile photo updated!")
     }
