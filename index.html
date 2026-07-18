@@ -633,14 +633,15 @@ function setupNotifications(){
     updateBadge('video-badge', unread);
   })
 
-  // 3. VIDEOS UNREAD
-  onValue(ref(db, 'videos'), (snap)=>{
+// 3. VIDEOS UNREAD
+onValue(ref(db, 'videos'), (snap)=>{
     let unread = 0;
     snap.forEach(child=>{
       if(child.val().timestamp > lastSeen.videos && child.val().uid!== currentUser.uid){
         unread++;
       }
     })
+    updateBadge('video-badge', unread); // ADD THIS LINE
   })
 
   // 4. DMS UNREAD
@@ -868,20 +869,8 @@ window.likeVideo = async (id)=>{
     else await set(r,true);
 }
 window.openVideoComments = (id)=>{ alert("Video comments coming next."); }
-window.favoriteVideo = async(id)=>{
-    const r = ref(db,`favorites/${currentUser.uid}/${id}`);
-    const s = await get(r);
-    if(s.exists()) await remove(r);
-    else await set(r,true);
-}
-window.deleteVideo=async(id)=>{
-    if(confirm("Delete this video?")){
-        await remove(ref(db,"videos/"+id));
-        closeShare();
-    }
-}
 
-// VIDEOS TIKTOK STYLE
+  // VIDEOS TIKTOK STYLE
 function loadVideos(){
   off(ref(db, 'videos')); 
   document.getElementById('video-feed').innerHTML = '';
