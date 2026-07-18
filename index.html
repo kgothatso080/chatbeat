@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; }
+        * { box-sizing: border-box; }
     body { margin:0; font-family: 'Roboto', sans-serif; background: #0b141a; color: white; touch-action: pan-y; }
     .topbar { 
   background: #111b21; 
@@ -160,6 +160,9 @@
 .share-popup.show { display:block }
 .share-popup button { width:100%; margin:8px 0; display:flex; align-items:center; justify-content:center; gap:8px }
 
+.settings-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#202c33; padding:20px; border-radius:15px; z-index:9999; display:none; border:2px solid #00C896; width:90%; max-width:350px; max-height:90vh; overflow-y:auto }
+.settings-popup.show { display:block }
+
 /* VIDEO FEED TIKTOK STYLE */
 #videos-section { display:none; height: calc(100vh - 60px); overflow-y: scroll; scroll-snap-type: y mandatory; background:#000 }
 .video-card { height: 100vh; width:100%; position:relative; scroll-snap-align: start; display:flex; align-items:center; justify-content:center }
@@ -264,12 +267,8 @@ to{transform:rotate(360deg);}
 </div>
   
 <div id="app">
-  <!-- FACEBOOK STYLE HEADER -->
+  <!-- FACEBOOK STYLE HEADER - FIXED: REMOVED DOUBLE TOPBAR -->
   <div class="topbar">
-    <div class="topbar-left">
-    </div>
-
-<div class="topbar">
   <div class="topbar-brand">
     <h2 id="logo-btn">ChatBeat</h2>
   </div>
@@ -310,7 +309,7 @@ to{transform:rotate(360deg);}
 
 <div id="dm-chat-section" style="display:none">
   <div class="chat-header"><button onclick="openDMs()">← Back</button><h3 id="dm-chat-name">DM</h3></div>
-  <div id="dm-chat"></div>
+  <div id="dm-chat" class="dm-list"></div>
   <div class="chat-input-area">
     <button id="dm-img-btn">📷</button>
     <input id="dm-file" type="file" accept="image/*" style="display:none">
@@ -351,7 +350,7 @@ to{transform:rotate(360deg);}
 
   <div class="footer">
     Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.1.1 - FACEBOOK STYLE
+    Version 2.1.2 - FACEBOOK STYLE
   </div>
 </div>
 
@@ -360,38 +359,21 @@ to{transform:rotate(360deg);}
   <img id="profile-popup-img" src="" onclick="event.stopPropagation()">
 </div>
 
-
 <div id="share-popup" class="share-popup">
-
 <h3>Share</h3>
-
 <button onclick="shareTo('whatsapp')">📱 WhatsApp</button>
-
 <button onclick="shareTo('facebook')">📘 Facebook</button>
-
 <button onclick="shareTo('instagram')">📸 Instagram</button>
-
 <button onclick="shareTo('tiktok')">🎵 TikTok</button>
-
 <button onclick="shareTo('twitter')">🐦 Twitter/X</button>
-
 <button onclick="shareTo('copy')">🔗 Copy Link</button>
-
 <button onclick="shareTo('more')">⋯ More</button>
-
 <hr>
-
-<button onclick="deleteVideo(currentVideoId)"
-style="background:#ff3b30">
-🗑 Delete
-</button>
-
-<button onclick="closeShare()">
-Cancel
-</button>
-
+<button onclick="deleteVideo(currentVideoId)" style="background:#ff3b30">🗑 Delete</button>
+<button onclick="closeShare()">Cancel</button>
 </div>
-<div id="settings-popup" class="settings-popup" style="max-height:90vh; overflow-y:auto">
+
+<div id="settings-popup" class="settings-popup">
   <h3>⚙️ Settings</h3>
   
   <h4 style="text-align:left; margin-top:15px">👤 Account</h4>
@@ -423,8 +405,8 @@ Cancel
   <b>ChatBeat</b> is where you Connect in Color. Vibe in Sound. 🎵<br><br>
   <b>Why use ChatBeat?</b><br>
   1. Promote your business, music, brand, or yourself<br>
-    2. Go viral with TikTok-style videos<br>
-  3. Build real friends and DMs<br>
+        2. Go viral with TikTok-style videos<br>
+    3. Build real friends and DMs<br>
   4. Post, React, Comment, Share like Facebook<br><br>
   <b>How to use:</b><br>
   Feed = Post updates and photos<br>
@@ -443,7 +425,7 @@ Cancel
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser, sendPasswordResetEmail, updateEmail, updatePassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 import { getDatabase, ref, set, get, query, orderByChild, equalTo, push, onChildAdded, remove, off, limitToLast, onValue } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
 
 const firebaseConfig = {
@@ -507,8 +489,8 @@ document.getElementById('cancel-reply').onclick = cancelReply;
 async function setReaction(path, emoji){
   const userReactRef = ref(db, path + '/' + currentUser.uid);
   const snap = await get(userReactRef);
-  if(snap.exists() && snap.val() === emoji){ await remove(userReactRef); } // TOGGLE OFF
-  else { await set(userReactRef, emoji); } // TOGGLE ON
+  if(snap.exists() && snap.val() === emoji){ await remove(userReactRef); }
+  else { await set(userReactRef, emoji); }
 }
 
 async function renderReactions(container, reactions, userReact){
@@ -590,7 +572,7 @@ document.getElementById('login-btn').onclick = () => {
 }
 
 document.getElementById('forgot-btn').onclick = () => {
-  const email = document.getElementById('email-input').value.trim();
+    const email = document.getElementById('email-input').value.trim();
   const err = document.getElementById('cover-error');
   err.innerText = '';
   if(!email) { err.innerText = "Type your email first"; return; }
@@ -598,6 +580,7 @@ document.getElementById('forgot-btn').onclick = () => {
 .then(() => { alert("Password reset email sent! Check inbox and spam folder"); })
 .catch((error) => { err.innerText = error.message; });
 }
+
 let lastSeen = {
   posts: 0,
   chat: 0,
@@ -609,7 +592,7 @@ let lastSeen = {
 function updateBadge(id, count){
   const badge = document.getElementById(id);
   if(count > 0){
-    badge.innerText = count > 99 ? '99+' : count;
+    badge.innerText = count > 99? '99+' : count;
     badge.style.display = 'block';
   } else {
     badge.style.display = 'none';
@@ -628,12 +611,12 @@ function saveLastSeen(){
 // REAL NOTIFICATION LISTENERS
 function setupNotifications(){
   loadLastSeen();
-  
+
   // 1. GLOBAL CHAT UNREAD
   onValue(ref(db, 'globalChat'), (snap)=>{
     let unread = 0;
     snap.forEach(child=>{
-      if(child.val().timestamp > lastSeen.chat && child.val().uid !== currentUser.uid){
+      if(child.val().timestamp > lastSeen.chat && child.val().uid!== currentUser.uid){
         unread++;
       }
     })
@@ -644,62 +627,35 @@ function setupNotifications(){
   onValue(ref(db, 'posts'), (snap)=>{
     let unread = 0;
     snap.forEach(child=>{
-      if(child.val().timestamp > lastSeen.posts && child.val().uid !== currentUser.uid){
+      if(child.val().timestamp > lastSeen.posts && child.val().uid!== currentUser.uid){
         unread++;
       }
     })
-    updateBadge('video-badge', unread); // using video icon for new posts for now
+    updateBadge('video-badge', unread);
   })
 
   // 3. VIDEOS UNREAD
   onValue(ref(db, 'videos'), (snap)=>{
     let unread = 0;
     snap.forEach(child=>{
-      if(child.val().timestamp > lastSeen.videos && child.val().uid !== currentUser.uid){
+      if(child.val().timestamp > lastSeen.videos && child.val().uid!== currentUser.uid){
         unread++;
       }
     })
-    // if you want separate badge, add id="video-new-badge"
   })
 
-  // 4. DMS UNREAD - placeholder for now
-  updateBadge('dm-badge', 0);
+  // 4. DMS UNREAD
+  onValue(ref(db, 'dmChats'), (snap)=>{
+    let unread = 0;
+    snap.forEach(child=>{
+      if(child.key.includes(currentUser.uid) && child.val().lastTimestamp > lastSeen.dms && child.val().lastSender!== currentUser.uid){
+        unread++;
+      }
+    })
+    updateBadge('dm-badge', unread);
+  })
 }
 
-// Mark as read when user opens section
-window.openVideos = () => {
-  lastSeen.posts = Date.now(); // mark posts as read
-  lastSeen.videos = Date.now();
-  saveLastSeen();
-  updateBadge('video-badge', 0);
-  // ...your existing code
-  document.getElementById('feed-section').style.display = 'none';
-  document.getElementById('chat-section').style.display = 'none';
-  document.getElementById('videos-section').style.display = 'block';
-  document.getElementById('dm-section').style.display = 'none';
-  document.getElementById('friends-section').style.display = 'none';
-  document.getElementById('profile-box').style.display = 'none';
-}
-
-window.openDMs = () => {
-  lastSeen.dms = Date.now();
-  saveLastSeen();
-  updateBadge('dm-badge', 0);
-  // ...your existing code
-}
-
-document.getElementById('chat-icon-btn').onclick = () => {
-  lastSeen.chat = Date.now();
-  saveLastSeen();
-  updateBadge('chat-badge', 0);
-  // ...your existing code
-  document.getElementById('feed-section').style.display = 'none';
-  document.getElementById('chat-section').style.display = 'block';
-  document.getElementById('profile-box').style.display = 'none';
-  document.getElementById('videos-section').style.display = 'none';
-  document.getElementById('dm-section').style.display = 'none';
-  document.getElementById('friends-section').style.display = 'none';
-}
 onAuthStateChanged(auth, async (user) => {
  if(user) {
    currentUser = user;
@@ -739,7 +695,7 @@ document.getElementById('profile-upload').onchange = (e)=>{
     const reader = new FileReader();
     reader.onload = ()=>{
       set(ref(db,'users/'+currentUser.uid+'/profilePic'), reader.result);
-      get(ref(db, 'users/'+user.uid+'/linked')).then(s=>{
+      get(ref(db, 'users/'+currentUser.uid+'/linked')).then(s=>{
   const links = s.val() || {};
   let html = '';
   if(links.tiktok) html += '🎵 ';
@@ -762,7 +718,7 @@ document.getElementById('profile-icon-btn').onclick = () => {
   document.getElementById('feed-section').style.display = 'none';
   document.getElementById('chat-section').style.display = 'none';
   document.getElementById('videos-section').style.display = 'none';
-  document.getElementById('dm-section').style.display = 'none';
+  document.getElementById('dm-chat-section').style.display = 'none';
   document.getElementById('friends-section').style.display = 'none';
 }
 
@@ -828,7 +784,7 @@ function loadPosts() {
     loadComments(postKey);
     onValue(ref(db, `posts/${postKey}/reactions`), (s)=>{
       const reacts = s.val() || {};
-            renderReactions(document.getElementById(`react-sum-${postKey}`), reacts, reacts[currentUser.uid]);
+      renderReactions(document.getElementById(`react-sum-${postKey}`), reacts, reacts[currentUser.uid]);
       document.getElementById(`react-count-${postKey}`).innerText = `${Object.keys(reacts).length} Reactions`;
       const btn = document.getElementById(`like-btn-${postKey}`);
       if(reacts[currentUser.uid]){ btn.classList.add('active'); btn.innerHTML = reacts[currentUser.uid]; }
@@ -900,44 +856,22 @@ window.shareTo = (type) => {
   if(type==='whatsapp') window.open(`https://wa.me/?text=${encodeURIComponent(shareLink)}`,'_blank');
   if(type==='facebook') window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`,'_blank');
   if(type==='copy'){ navigator.clipboard.writeText(shareLink); alert("Link copied!") }
-  if(type=="instagram"){
-    alert("Instagram sharing coming soon");
-}
-
-if(type=="tiktok"){
-    alert("TikTok sharing coming soon");
-}
-
-if(type=="twitter"){
-    window.open(
-      "https://twitter.com/intent/tweet?url="+encodeURIComponent(shareLink)
-    );
-}
-
-if(type=="more"){
-    if(navigator.share){
-        navigator.share({
-            title:"ChatBeat",
-            url:shareLink
-        });
-    }
-}
+  if(type=="instagram"){ alert("Instagram sharing coming soon"); }
+  if(type=="tiktok"){ alert("TikTok sharing coming soon"); }
+  if(type=="twitter"){ window.open("https://twitter.com/intent/tweet?url="+encodeURIComponent(shareLink)); }
+  if(type=="more"){ if(navigator.share){ navigator.share({ title:"ChatBeat", url:shareLink }); } }
   closeShare();
 }
 window.likeVideo = async (id)=>{
     const r = ref(db, `videos/${id}/likes/${currentUser.uid}`);
     const s = await get(r);
-
     if(s.exists()) await remove(r);
     else await set(r,true);
 }
-window.openVideoComments = (id)=>{
-    alert("Video comments coming next.");
-}
+window.openVideoComments = (id)=>{ alert("Video comments coming next."); }
 window.favoriteVideo = async(id)=>{
     const r = ref(db,`favorites/${currentUser.uid}/${id}`);
     const s = await get(r);
-
     if(s.exists()) await remove(r);
     else await set(r,true);
 }
@@ -947,6 +881,7 @@ window.deleteVideo=async(id)=>{
         closeShare();
     }
 }
+
 // VIDEOS TIKTOK STYLE
 function loadVideos(){
   off(ref(db, 'videos')); document.getElementById('video-feed').innerHTML = '';
@@ -956,170 +891,101 @@ function loadVideos(){
     div.innerHTML = `
       <video src="${v.video}" loop playsinline onclick="this.paused?this.play():this.pause()"></video>
       <div class="video-info">
-    <h4>@${u.name}</h4>
-    <p>${v.desc || ""}</p>
-</div>
-
-<div class="video-sidebar">
-
-    <div class="profile-wrap">
-        <img class="side-profile" src="${u.profilePic}">
-        <span class="plus-badge">+</span>
-    </div>
-
-    <div class="video-action" onclick="likeVideo('${snap.key}')">
-        ❤️
-        <span>${Object.keys(v.likes || {}).length}</span>
-    </div>
-
-    <div class="video-action" onclick="openVideoComments('${snap.key}')">
-        💬
-        <span>${Object.keys(v.comments || {}).length}</span>
-    </div>
-
-    <div class="video-action" onclick="favoriteVideo('${snap.key}')">
-        🔖
-        <span>${Object.keys(v.favorites || {}).length}</span>
-    </div>
-
-    <div class="video-action"
-         window.openVideoShare=(id)=>{
-    currentVideoId=id;
-    shareLink=window.location.origin+"#video-"+id;
-    document.getElementById("share-popup").classList.add("show");
-}
-        ↗
-        <span>${Object.keys(v.shares || {}).length}</span>
-    </div>
-
-    <div class="music-disc">
-        🎵
-    </div>
-
-</div>
+        <h4>@${u.name}</h4>
+        <p>${v.desc || ""}</p>
+      </div>
+      <div class="video-sidebar">
+        <div class="profile-wrap">
+            <img class="side-profile" src="${u.profilePic}">
+            <span class="plus-badge">+</span>
+        </div>
+        <div class="video-action" onclick="likeVideo('${snap.key}')">❤️<span>${Object.keys(v.likes || {}).length}</span></div>
+        <div class="video-action" onclick="openVideoComments('${snap.key}')">💬<span>${Object.keys(v.comments || {}).length}</span></div>
+        <div class="video-action" onclick="favoriteVideo('${snap.key}')">🔖<span>${Object.keys(v.favorites || {}).length}</span></div>
+        <div class="video-action" onclick="openVideoShare('${snap.key}')">↗<span>${Object.keys(v.shares || {}).length}</span></div>
+        <div class="music-disc">🎵</div>
+      </div>
     `;
     document.getElementById('video-feed').appendChild(div);
   })
 }
-// VIDEO UPLOAD WITH AUTO COMPRESSION + 10MB ALERT
+
+// VIDEO UPLOAD
 document.getElementById('video-upload').onchange = async (e)=>{
   const file = e.target.files[0];
   if(!file) return;
-
   alert("Checking video size...");
-
-  // Step 1: If already under 9MB, just upload
-  if(file.size <= 9000000){
-    uploadVideo(file);
-    return;
-  }
-
-  // Step 2: If over 10MB, alert and try compress
+  if(file.size <= 9000000){ uploadVideo(file); return; }
   if(file.size > 10000000){
     alert(`Video is ${(file.size/1024/1024).toFixed(1)}MB. Max is 10MB. I will try to compress it now...`);
   } else {
     alert(`Video is ${(file.size/1024/1024).toFixed(1)}MB. Compressing to fit...`);
   }
-
-  // Step 3: Compress using canvas
   const compressedBlob = await compressVideo(file);
-
-  if(!compressedBlob){
-    alert("Compression failed. Please record a shorter video or use 480p");
-    return;
-  }
-
-  if(compressedBlob.size > 10000000){
-    alert(`Still too big: ${(compressedBlob.size/1024/1024).toFixed(1)}MB. Please make it under 10 seconds.`);
-    return;
-  }
-
+  if(!compressedBlob){ alert("Compression failed. Please record a shorter video or use 480p"); return; }
+  if(compressedBlob.size > 10000000){ alert(`Still too big: ${(compressedBlob.size/1024/1024).toFixed(1)}MB. Please make it under 10 seconds.`); return; }
   uploadVideo(compressedBlob);
 }
 
-// Helper: upload function
 async function uploadVideo(fileBlob){
   alert("Uploading video...");
   const reader = new FileReader();
   reader.onload = async ()=>{
     const desc = prompt("Add a description:");
     await push(ref(db, 'videos'), {
-      uid: currentUser.uid,
-      video: reader.result, // base64
-      desc,
-      timestamp: Date.now(),
-      reactions:{},
-      comments:{}
+      uid: currentUser.uid, video: reader.result, desc, timestamp: Date.now(),
+      reactions:{}, comments:{}, likes:{}, favorites:{}, shares:{}
     });
     alert("Video posted!")
   }
   reader.readAsDataURL(fileBlob);
 }
 
-// Helper: compress video WITH CLEAN VOICE
 function compressVideo(file){
   return new Promise((resolve)=>{
     const video = document.createElement('video');
     video.src = URL.createObjectURL(file);
-    video.muted = false;
-    video.playsInline = true;
-    video.preload = 'auto';
-
+    video.muted = false; video.playsInline = true; video.preload = 'auto';
     video.onloadedmetadata = async () => {
-      // Get original stream with video + audio
-      const stream = video.captureStream(); 
-
-      // BETTER SETTINGS = LESS SCRATCHING
+      const stream = video.captureStream();
       const recorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm;codecs=vp8,opus', 
-        videoBitsPerSecond: 600000, // 600kbps instead of 400kbps - smoother video
-        audioBitsPerSecond: 96000   // 96kbps instead of 48kbps - CLEAN VOICE
+        mimeType: 'video/webm;codecs=vp8,opus',
+        videoBitsPerSecond: 600000, audioBitsPerSecond: 96000
       });
-
       const chunks = [];
       recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
-      recorder.onstop = () => {
-        const blob = new Blob(chunks, {type: 'video/webm'});
-        URL.revokeObjectURL(video.src);
-        resolve(blob);
-      };
-
-      video.currentTime = 0;
-      await video.play();
-      recorder.start(250); // collect every 250ms = smoother
-
-      // Stop after video ends or 10s max
+      recorder.onstop = () => { const blob = new Blob(chunks, {type: 'video/webm'}); URL.revokeObjectURL(video.src); resolve(blob); };
+      video.currentTime = 0; await video.play();
+      recorder.start(250);
       const maxTime = Math.min(video.duration * 1000, 10000);
-      setTimeout(() => {
-        if(recorder.state === 'recording') recorder.stop();
-        video.pause();
-      }, maxTime);
+      setTimeout(() => { if(recorder.state === 'recording') recorder.stop(); video.pause(); }, maxTime);
     };
     video.onerror = () => resolve(null);
   });
 }
+
 // DMs
 function loadDMs(){
-  off(ref(db, 'dmChats')); document.getElementById('dm-list').innerHTML = '';
+  off(ref(db, 'dmChats')); document.getElementById('dm-chat').innerHTML = '';
   onValue(ref(db, 'dmChats'), async (snap)=>{
-    document.getElementById('dm-list').innerHTML = ''; let unread = 0;
+    document.getElementById('dm-chat').innerHTML = ''; let unread = 0;
     snap.forEach(chatSnap=>{
       const chatId = chatSnap.key; if(chatId.includes(currentUser.uid)){
-        const chat = chatSnap.val(); const otherUid = Object.keys(chat.members).find(id => id !== currentUser.uid);
+        const chat = chatSnap.val(); const otherUid = Object.keys(chat.members).find(id => id!== currentUser.uid);
         getUser(otherUid).then(u=>{
           if(chat.lastTimestamp > lastSeen.dms) unread++;
           const div = document.createElement('div'); div.className = 'dm-item';
           div.innerHTML = `<img src="${u.profilePic}"><div><b>${u.name}</b><br><small>${chat.lastMessage || ''}</small></div>`;
-          div.onclick = () => openDM(chatId, otherUid); document.getElementById('dm-list').appendChild(div);
+          div.onclick = () => openDM(chatId, otherUid); document.getElementById('dm-chat').appendChild(div);
         })
       }
     }); updateBadge('dm-badge', unread);
   })
 }
-// DM CHAT REAL
+
 window.openDM = async (chatId, otherUid) => {
   currentDM = {chatId, otherUid};
-  document.getElementById('feed-section').style.display = 'none'; document.getElementById('dm-section').style.display = 'none';
+  document.getElementById('feed-section').style.display = 'none';
   document.getElementById('dm-chat-section').style.display = 'block';
   const u = await getUser(otherUid); document.getElementById('dm-chat-name').innerText = u.name;
   loadDMChat(chatId);
@@ -1132,22 +998,24 @@ function loadDMChat(chatId){
     let content = msg.text || (msg.image? `<img class="bubble-img" src="${msg.image}">` : `<audio controls src="${msg.audio}"></audio>`);
     div.innerHTML = `<div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}">${content}</div>`;
     document.getElementById('dm-chat').appendChild(div); document.getElementById('dm-chat').scrollTop = document.getElementById('dm-chat').scrollHeight;
-    if(msg.uid !== currentUser.uid) set(ref(db, `dmChats/${chatId}/messages/${snap.key}/seen`), true);
+    if(msg.uid!== currentUser.uid) set(ref(db, `dmChats/${chatId}/messages/${snap.key}/seen`), true);
   })
 }
 document.getElementById('send-dm').onclick = async () => {
   const text = document.getElementById('dm-input').value.trim(); if(!text) return; document.getElementById('dm-input').value = '';
   await push(ref(db, `dmChats/${currentDM.chatId}/messages`), {uid: currentUser.uid, text, timestamp: Date.now(), seen: false});
-  await set(ref(db, `dmChats/${currentDM.chatId}/lastMessage`), text); await set(ref(db, `dmChats/${currentDM.chatId}/lastTimestamp`), Date.now());
+  await set(ref(db, `dmChats/${currentDM.chatId}/lastMessage`), text);
+  await set(ref(db, `dmChats/${currentDM.chatId}/lastSender`), currentUser.uid);
+  await set(ref(db, `dmChats/${currentDM.chatId}/lastTimestamp`), Date.now());
 }
 
-// SETTINGS REAL
+// SETTINGS
 window.openSettings = () => document.getElementById('settings-popup').classList.add('show');
 window.closeSettings = () => document.getElementById('settings-popup').classList.remove('show');
 window.signOutUser = () => { signOut(auth); closeSettings(); }
 window.deleteAccount = async () => { if(confirm("Delete account forever?")){ await remove(ref(db, 'users/'+currentUser.uid)); await deleteUser(currentUser); } }
 
-// VIDEO SHARE REAL
+// VIDEO SHARE
 window.openVideoShare = (id)=>{ currentVideoId=id; shareLink=window.location.origin+"#video-"+id; document.getElementById("share-popup").classList.add("show"); }
 
 // FOLLOWING
@@ -1169,32 +1037,35 @@ function loadFriends(){
 window.toggleFollow = async (uid) => {
   const followRef = ref(db, `friends/${currentUser.uid}/${uid}`);
   const snap = await get(followRef);
-  if(snap.exists()){ await remove(followRef); alert("Unfollowed"); }
-  else { await set(followRef, true); alert("Following!"); }
+  if(snap.exists()){ await remove(followRef); alert("Unfollowed"); document.getElementById(`follow-${uid}`).innerText = "Follow"; }
+  else { await set(followRef, true); alert("Following!"); document.getElementById(`follow-${uid}`).innerText = "Following"; }
 }
 
-// NAVIGATION
+// NAVIGATION - SINGLE COPY ONLY
 window.openVideos = () => {
+  lastSeen.posts = Date.now(); lastSeen.videos = Date.now(); saveLastSeen(); updateBadge('video-badge', 0);
   document.getElementById('feed-section').style.display = 'none';
   document.getElementById('chat-section').style.display = 'none';
   document.getElementById('videos-section').style.display = 'block';
-  document.getElementById('dm-section').style.display = 'none';
+  document.getElementById('dm-chat-section').style.display = 'none';
   document.getElementById('friends-section').style.display = 'none';
   document.getElementById('profile-box').style.display = 'none';
 }
 window.openDMs = () => {
+  lastSeen.dms = Date.now(); saveLastSeen(); updateBadge('dm-badge', 0);
   document.getElementById('feed-section').style.display = 'none';
   document.getElementById('chat-section').style.display = 'none';
   document.getElementById('videos-section').style.display = 'none';
-  document.getElementById('dm-section').style.display = 'block';
+  document.getElementById('dm-chat-section').style.display = 'block';
   document.getElementById('friends-section').style.display = 'none';
   document.getElementById('profile-box').style.display = 'none';
+  loadDMs();
 }
 window.openFriends = () => {
   document.getElementById('feed-section').style.display = 'none';
   document.getElementById('chat-section').style.display = 'none';
   document.getElementById('videos-section').style.display = 'none';
-  document.getElementById('dm-section').style.display = 'none';
+  document.getElementById('dm-chat-section').style.display = 'none';
   document.getElementById('friends-section').style.display = 'block';
   document.getElementById('profile-box').style.display = 'none';
 }
@@ -1202,12 +1073,10 @@ window.backToFeed = () => {
   document.getElementById('feed-section').style.display = 'block';
   document.getElementById('chat-section').style.display = 'none';
   document.getElementById('videos-section').style.display = 'none';
-  document.getElementById('dm-section').style.display = 'none';
+  document.getElementById('dm-chat-section').style.display = 'none';
   document.getElementById('friends-section').style.display = 'none';
   document.getElementById('profile-box').style.display = 'none';
 }
-window.openSettings = () => document.getElementById('settings-popup').classList.add('show');
-window.closeSettings = () => document.getElementById('settings-popup').classList.remove('show');
 
 document.getElementById('chat-img-btn').onclick = () => document.getElementById('chat-file').click();
 document.getElementById('chat-file').onchange = async (e)=>{
@@ -1217,8 +1086,7 @@ document.getElementById('chat-file').onchange = async (e)=>{
     reader.onload = async ()=>{
       chatImageData = reader.result;
       await push(ref(db, 'globalChat'), { uid: currentUser.uid, image: chatImageData, replyTo: replyToMsg?.key || null, timestamp: Date.now(), reactions:{} });
-      chatImageData = null;
-      cancelReply();
+      chatImageData = null; cancelReply();
     }
     reader.readAsDataURL(file);
   }
@@ -1250,24 +1118,16 @@ recordBtn.onclick = async () => {
         }
       }
       mediaRecorder.start();
-      recordBtn.innerText = "⏹️";
-      recordBtn.classList.add('record-btn');
-      isRecording = true;
-    } catch(e) {
-      alert("Mic blocked. Allow microphone permission.");
-    }
+      recordBtn.innerText = "⏹️"; recordBtn.classList.add('record-btn'); isRecording = true;
+    } catch(e) { alert("Mic blocked. Allow microphone permission."); }
   } else {
     mediaRecorder.stop();
-    recordBtn.innerText = "🎤";
-    recordBtn.classList.remove('record-btn');
-    isRecording = false;
+    recordBtn.innerText = "🎤"; recordBtn.classList.remove('record-btn'); isRecording = false;
   }
 }
 
 function getX(e){ return e.touches? e.touches[0].clientX : e.clientX; }
-function startDrag(e, msgKey){
-  dragging = { id: msgKey, startX: getX(e), x: 0 };
-}
+function startDrag(e, msgKey){ dragging = { id: msgKey, startX: getX(e), x: 0 }; }
 function moveDrag(e){
   if(!dragging) return;
   dragging.x = getX(e) - dragging.startX;
@@ -1296,7 +1156,6 @@ function loadChat() {
     snapshot.forEach((snap) => { promises.push(renderMessage(snap, false)); })
     await Promise.all(promises);
     document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
-
     onChildAdded(query(ref(db, 'globalChat'), orderByChild('timestamp'), limitToLast(1)), (snap) => {
       if(!loadedMessages.has(snap.key)){ renderMessage(snap, true); }
     });
@@ -1304,45 +1163,24 @@ function loadChat() {
 }
 
 async function renderMessage(snap, scroll){
-  const msg = snap.val();
-  const msgKey = snap.key;
+  const msg = snap.val(); const msgKey = snap.key;
   if(loadedMessages.has(msgKey)) return;
-  loadedMessages.add(msgKey);
-  allMessagesCache[msgKey] = msg;
-
-  const user = await getUser(msg.uid);
-  const userPic = user.profilePic || DEFAULT_PIC;
-  const isMe = msg.uid === currentUser.uid;
-  const userReact = msg.reactions?.[currentUser.uid] || null;
-  msg.name = user.name;
-
+  loadedMessages.add(msgKey); allMessagesCache[msgKey] = msg;
+  const user = await getUser(msg.uid); const userPic = user.profilePic || DEFAULT_PIC;
+  const isMe = msg.uid === currentUser.uid; const userReact = msg.reactions?.[currentUser.uid] || null; msg.name = user.name;
   const wrapper = document.createElement('div');
-  wrapper.className = `bubble-wrapper ${isMe? 'me-wrapper' : 'other-wrapper'}`;
-  wrapper.id = 'wrapper-' + msgKey;
-
+  wrapper.className = `bubble-wrapper ${isMe? 'me-wrapper' : 'other-wrapper'}`; wrapper.id = 'wrapper-' + msgKey;
   let delBtn = isMe? `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>` : '';
-
   let replyHtml = '';
   if(msg.replyTo && allMessagesCache[msg.replyTo]){
-    const repliedMsg = allMessagesCache[msg.replyTo];
-    const repliedUser = await getUser(repliedMsg.uid);
-    replyHtml = `<div class="reply-quote">
-      <div class="reply-quote-name">${repliedUser.name}</div>
-      <div class="reply-quote-text">${repliedMsg.text || 'Media'}</div>
-    </div>`;
+    const repliedMsg = allMessagesCache[msg.replyTo]; const repliedUser = await getUser(repliedMsg.uid);
+    replyHtml = `<div class="reply-quote"><div class="reply-quote-name">${repliedUser.name}</div><div class="reply-quote-text">${repliedMsg.text || 'Media'}</div></div>`;
   }
-
   let content = '';
-  if(msg.image) {
-    content = `${replyHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<img class="bubble-img" src="${msg.image}" onclick="openProfilePopup('${msg.image}')">`;
-  } else if(msg.audio) {
-    content = `${replyHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`;
-  } else {
-    content = `${replyHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`;
-  }
-
+  if(msg.image) { content = `${replyHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<img class="bubble-img" src="${msg.image}" onclick="openProfilePopup('${msg.image}')">`; }
+  else if(msg.audio) { content = `${replyHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`; }
+  else { content = `${replyHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`; }
   wrapper.innerHTML = `<div class="reply-hint">↩️</div><div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}" id="bubble-${msgKey}">${content}<div class="bubble-reactions" id="msg-react-${msgKey}"></div></div><div class="react-picker" id="msg-picker-${msgKey}">${REACTIONS.map(r=>`<span onclick="reactToMsg('${msgKey}','${r}')">${r}</span>`).join('')}</div>`;
-
   wrapper.addEventListener('touchstart', e => startDrag(e, msgKey), {passive: true});
   wrapper.addEventListener('touchmove', e => moveDrag(e), {passive: false});
   wrapper.addEventListener('touchend', e => endDrag(e, msg, msgKey));
@@ -1350,28 +1188,14 @@ async function renderMessage(snap, scroll){
   wrapper.addEventListener('mousemove', e => moveDrag(e));
   wrapper.addEventListener('mouseup', e => endDrag(e, msg, msgKey));
   wrapper.addEventListener('mouseleave', e => endDrag(e, msg, msgKey));
-
   const reactSum = wrapper.querySelector(`#msg-react-${msgKey}`);
   const picker = wrapper.querySelector(`#msg-picker-${msgKey}`);
-  let timer;
-  let longPressTriggered = false;
-
-  reactSum.onmousedown = reactSum.ontouchstart = (e) => {
-    e.stopPropagation();
-    longPressTriggered = false;
-    timer = setTimeout(()=>{ picker.classList.add('show'); longPressTriggered = true; }, LONG_PRESS);
-  }
-  reactSum.onmouseup = reactSum.ontouchend = reactSum.onmouseleave = () => {
-    clearTimeout(timer);
-    if(!longPressTriggered){ setReaction(`globalChat/${msgKey}/reactions`, '👍') }
-  }
-
+  let timer; let longPressTriggered = false;
+  reactSum.onmousedown = reactSum.ontouchstart = (e) => { e.stopPropagation(); longPressTriggered = false; timer = setTimeout(()=>{ picker.classList.add('show'); longPressTriggered = true; }, LONG_PRESS); }
+  reactSum.onmouseup = reactSum.ontouchend = reactSum.onmouseleave = () => { clearTimeout(timer); if(!longPressTriggered){ setReaction(`globalChat/${msgKey}/reactions`, '👍') } }
   document.getElementById('global-chat').appendChild(wrapper);
   renderReactions(document.getElementById(`msg-react-${msgKey}`), msg.reactions, userReact);
-  onValue(ref(db, `globalChat/${msgKey}/reactions`), (s)=>{
-    const reacts = s.val() || {};
-    renderReactions(document.getElementById(`msg-react-${msgKey}`), reacts, reacts[currentUser.uid]);
-  });
+  onValue(ref(db, `globalChat/${msgKey}/reactions`), (s)=>{ const reacts = s.val() || {}; renderReactions(document.getElementById(`msg-react-${msgKey}`), reacts, reacts[currentUser.uid]); });
   if(scroll) document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
 }
 
@@ -1380,8 +1204,7 @@ window.deleteMsg = async (key) => {
     await remove(ref(db, 'globalChat/' + key));
     const el = document.getElementById('wrapper-' + key);
     if(el) el.remove();
-    loadedMessages.delete(key);
-    delete allMessagesCache[key];
+    loadedMessages.delete(key); delete allMessagesCache[key];
   }
 }
 window.reactToMsg = async (key, emoji) => { await setReaction(`globalChat/${key}/reactions`, emoji); document.getElementById(`msg-picker-${key}`).classList.remove('show'); }
@@ -1410,7 +1233,7 @@ function applyTheme(){
   const text = isLightMode ? '#000' : '#fff';
   document.body.style.background = bg;
   document.body.style.color = text;
-  document.querySelectorAll('.card, .post-box, .profile-box').forEach(el=>{
+  document.querySelectorAll('.card, .post-box, .profile-box, .settings-popup, .share-popup').forEach(el=>{
     el.style.background = card;
     el.style.color = text;
   })
@@ -1429,7 +1252,7 @@ window.changeEmail = async () => {
   const newEmail = prompt("Enter new email:");
   if(!newEmail) return;
   try {
-    await currentUser.updateEmail(newEmail);
+    await updateEmail(currentUser, newEmail);
     await set(ref(db, 'users/'+currentUser.uid+'/email'), newEmail);
     alert("Email updated! Check inbox to verify");
   } catch(e){ alert(e.message) }
@@ -1439,7 +1262,7 @@ window.changePassword = async () => {
   const newPass = prompt("Enter new password:");
   if(!newPass || newPass.length < 6) return alert("Password must be 6+ chars");
   try {
-    await currentUser.updatePassword(newPass);
+    await updatePassword(currentUser, newPass);
     alert("Password updated!");
   } catch(e){ alert("Login again first: "+e.message) }
 }
@@ -1460,24 +1283,29 @@ window.linkAccount = (type) => {
   alert(`${type} linked!`);
 }
 
-// DELETE ACCOUNT
+// DELETE ACCOUNT FULL WIPE
 window.deleteAccount = async () => { 
   if(confirm("This will delete ALL your data forever. Are you sure?")){
     await remove(ref(db, 'users/'+currentUser.uid));
     await remove(ref(db, 'posts')).then(()=>{});
     await remove(ref(db, 'videos')).then(()=>{});
+    await remove(ref(db, 'dmChats')).then(()=>{});
     await deleteUser(currentUser); 
   }
 }
 
 document.getElementById('chat-icon-btn').onclick = () => {
+  lastSeen.chat = Date.now();
+  saveLastSeen();
+  updateBadge('chat-badge', 0);
   document.getElementById('feed-section').style.display = 'none';
   document.getElementById('chat-section').style.display = 'block';
   document.getElementById('profile-box').style.display = 'none';
   document.getElementById('videos-section').style.display = 'none';
-  document.getElementById('dm-section').style.display = 'none';
+  document.getElementById('dm-chat-section').style.display = 'none';
   document.getElementById('friends-section').style.display = 'none';
 }
+
 document.getElementById('back-to-feed').onclick = backToFeed;
 document.getElementById('logo-btn').onclick = backToFeed;
 
@@ -1485,6 +1313,7 @@ document.addEventListener('click', () => {
   document.querySelectorAll('.react-picker').forEach(p => p.classList.remove('show'));
   document.querySelectorAll('.react-names-tooltip').forEach(t => t.style.display = 'none');
 });
+
 </script>
 </body>
 </html>
