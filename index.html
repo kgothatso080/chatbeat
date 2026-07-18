@@ -884,10 +884,21 @@ window.deleteVideo=async(id)=>{
 
 // VIDEOS TIKTOK STYLE
 function loadVideos(){
-  off(ref(db, 'videos')); document.getElementById('video-feed').innerHTML = '';
+  off(ref(db, 'videos')); 
+  document.getElementById('video-feed').innerHTML = '';
+
+  // ADD THIS: remove from DOM when deleted in DB
+  onChildRemoved(ref(db, 'videos'), (snap) => {
+    const videoCard = document.querySelector(`.video-card[data-id="${snap.key}"]`);
+    if(videoCard) videoCard.remove();
+  });
+
   onChildAdded(query(ref(db, 'videos'), orderByChild('timestamp'), limitToLast(20)), async (snap) => {
-    const v = snap.val(); const u = await getUser(v.uid);
-    const div = document.createElement('div'); div.className = 'video-card';
+    const v = snap.val(); 
+    const u = await getUser(v.uid);
+    const div = document.createElement('div'); 
+    div.className = 'video-card';
+    div.setAttribute('data-id', snap.key); // ADD THIS so we can find it to delete
     div.innerHTML = `
       <video src="${v.video}" loop playsinline onclick="this.paused?this.play():this.pause()"></video>
       <div class="video-info">
@@ -1292,6 +1303,26 @@ window.deleteAccount = async () => {
     await remove(ref(db, 'dmChats')).then(()=>{});
     await deleteUser(currentUser); 
   }
+}
+window.favoriteVideo = async(id)=>{
+    const r = ref(db,`favorites/${currentUser.uid}/${id}`);
+    const s = await get(r);
+    if(s.exists()) await remove(r);
+    else await set(r,true);
+}
+
+// ADD IT HERE 👇
+window.deleteVideo = async (id)=>{
+    const snap = await get(ref(db,"videos/"+id));
+    if(!snap.exists()) return;
+    if(snap.val().uid !== currentUser.uid){
+      alert("You can only delete your own videos");
+      return;
+    }
+    if(confirm("Delete this video?")){
+        await remove(ref(db,"videos/"+id));
+        closeShare();
+    }
 }
 
 document.getElementById('chat-icon-btn').onclick = () => {
