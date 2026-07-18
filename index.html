@@ -426,8 +426,7 @@ to{transform:rotate(360deg);}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser, sendPasswordResetEmail, updateEmail, updatePassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-import { getDatabase, ref, set, get, query, orderByChild, equalTo, push, onChildAdded, remove, off, limitToLast, onValue } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
-
+import { getDatabase, ref, set, get, query, orderByChild, equalTo, push, onChildAdded, onChildRemoved, remove, off, limitToLast, onValue } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
 const firebaseConfig = {
   apiKey: "AIzaSyD97-el91-ISWGkOhxWy4V_wXyOK6MJl0k",
   authDomain: "chatbeat-71f80.firebaseapp.com",
