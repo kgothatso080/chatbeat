@@ -868,37 +868,9 @@ window.likeVideo = async (id)=>{
     if(s.exists()) await remove(r);
     else await set(r,true);
 }
-window.openVideoComments = (id) => {
-window.openVideoComments = (id) => {
-  const postCard = document.querySelector(`[data-postid="${id}"]`);
-  if(!postCard) return;
-  
-  // Only allow on posts with a video
-  const hasVideo = postCard.querySelector('video');
-  if(!hasVideo){
-    alert("Comments are only available on videos");
-    return;
-  }
 
-  let commentBox = document.getElementById('comments-box-' + id);
+window.openVideoComments = (id)=>{ alert("Video comments coming next."); }
   
-  if(!commentBox){
-    commentBox = document.createElement('div');
-    commentBox.id = 'comments-box-' + id;
-    commentBox.className = 'comments-section';
-    commentBox.innerHTML = `
-      <div class="comments-list" id="comments-list-${id}"></div>
-      <div class="comment-input">
-        <input type="text" id="comment-input-${id}" placeholder="Add a comment...">
-        <button onclick="addComment('${id}')">Send</button>
-      </div>
-    `;
-    postCard.appendChild(commentBox);
-    loadComments(id);
-  } else {
-    commentBox.style.display = commentBox.style.display === 'none' ? 'block' : 'none';
-  }
-  }
 function loadComments(postId) {
   const commentsRef = firebase.database().ref('comments/' + postId);
   commentsRef.on('value', (snap) => {
