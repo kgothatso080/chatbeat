@@ -869,13 +869,20 @@ window.likeVideo = async (id)=>{
     else await set(r,true);
 }
 window.openVideoComments = (id) => {
-  // Create comment box if it doesn't exist
+window.openVideoComments = (id) => {
+  const postCard = document.querySelector(`[data-postid="${id}"]`);
+  if(!postCard) return;
+  
+  // Only allow on posts with a video
+  const hasVideo = postCard.querySelector('video');
+  if(!hasVideo){
+    alert("Comments are only available on videos");
+    return;
+  }
+
   let commentBox = document.getElementById('comments-box-' + id);
   
   if(!commentBox){
-    const postCard = document.querySelector(`[data-postid="${id}"]`);
-    if(!postCard) return;
-    
     commentBox = document.createElement('div');
     commentBox.id = 'comments-box-' + id;
     commentBox.className = 'comments-section';
@@ -889,11 +896,9 @@ window.openVideoComments = (id) => {
     postCard.appendChild(commentBox);
     loadComments(id);
   } else {
-    // Toggle hide/show
     commentBox.style.display = commentBox.style.display === 'none' ? 'block' : 'none';
   }
-}
-
+  }
 function loadComments(postId) {
   const commentsRef = firebase.database().ref('comments/' + postId);
   commentsRef.on('value', (snap) => {
