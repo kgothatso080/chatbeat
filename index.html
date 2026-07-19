@@ -166,13 +166,13 @@
 /* VIDEO FEED TIKTOK STYLE */
 #videos-section { 
   display:none; 
-  height: 100dvh; /* fits actual screen */
+  height: 100vh; /* back to normal vh */
   overflow-y: scroll; 
   scroll-snap-type: y mandatory; 
   background:#000 
 }
 .video-card { 
-  height: 100dvh; 
+  height: 100vh; 
   width:100%; 
   position:relative; 
   scroll-snap-align: start; 
@@ -186,13 +186,12 @@
 .video-card video { 
   width:100%; 
   height:100%; 
-  object-fit:contain; /* shrinks to fit instead of cropping */
+  object-fit:contain; /* key fix: shrink to fit */
   background:#000;
-  max-height: calc(100dvh - 140px);
 }
 .video-info { 
   position:absolute; 
-  bottom:90px; /* moved up so it's not under buttons */
+  bottom:90px; 
   left:10px; 
   right:70px;
   z-index: 10;
@@ -201,7 +200,7 @@
 .follow-btn { background:#00C896; padding:4px 10px; border-radius:15px; font-size:12px; border:none; color:white }
 .add-video-btn { 
   position:fixed; 
-  bottom:90px; /* moved up a bit */
+  bottom:90px; 
   right:15px; 
   width:50px; 
   height:50px; 
