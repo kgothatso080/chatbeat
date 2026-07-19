@@ -528,6 +528,7 @@ to{transform:rotate(360deg);}
   </div>
 
 <div id="view-profile-popup" class="settings-popup" style="max-height:90vh; overflow-y:auto">
+<div id="view-profile-popup" class="settings-popup" style="max-height:90vh; overflow-y:auto">
   <img id="view-profile-pic" src="" style="width:90px; height:90px; border-radius:50%; margin-bottom:10px">
   <h3 id="view-profile-name"></h3>
   <p id="view-profile-bio" style="font-size:13px; opacity:0.8"></p>
@@ -535,19 +536,21 @@ to{transform:rotate(360deg);}
   
   <div style="display:flex; gap:10px; justify-content:center; margin:10px 0">
     <button onclick="showTab('about')" id="tab-about-btn">About</button>
-    <button onclick="showTab('following')" id="tab-following-btn">Following</button>
-    <button onclick="showTab('followers')" id="tab-followers-btn">Followers</button>
+    <button onclick="showTab('posts')" id="tab-posts-btn">Posts</button>
+    <button onclick="showTab('photos')" id="tab-photos-btn">Photos</button>
+    <button onclick="showTab('videos')" id="tab-videos-btn">Videos</button>
   </div>
 
   <div id="view-profile-about"></div>
+  <div id="view-profile-posts" style="display:none"></div>
+  <div id="view-profile-photos" style="display:none"></div>
+  <div id="view-profile-videos" style="display:none"></div>
   <div id="view-profile-following" style="display:none"></div>
   <div id="view-profile-followers" style="display:none"></div>
-  <button onclick="showTab('mutuals')" id="tab-mutuals-btn">Mutuals</button>
   <div id="view-profile-mutuals" style="display:none"></div>
   
   <button onclick="closeViewProfile()">Close</button>
 </div>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
@@ -593,6 +596,9 @@ window.openProfilePopup = (imgSrc) => {
   if(!imgSrc) return;
   document.getElementById('profile-popup-img').src = imgSrc;
   document.getElementById('profile-popup').classList.add('show');
+  get(ref(db, 'users/'+uid)).then(snap=>{
+  loadAboutTab(snap.val(), uid);
+})
 }
 window.closeProfilePopup = () => {
   document.getElementById('profile-popup').classList.remove('show');
@@ -1185,6 +1191,34 @@ function loadFriends(){
     })
   })
 }
+let currentViewProfileUid = null; // track whose profile we are viewing
+
+window.viewUserProfile = async (uid) => {
+  currentViewProfileUid = uid;
+  document.getElementById('view-profile-popup').style.display = 'block'; // show popup
+  
+  const userSnap = await get(ref(db, 'users/'+uid));
+  const u = userSnap.val();
+  
+  // HEADER
+  document.getElementById('view-profile-pic').src = u.profilePic || DEFAULT_PIC;
+  document.getElementById('view-profile-name').innerText = u.name;
+  document.getElementById('view-profile-bio').innerText = u.bio || '';
+  const location = [u.town, u.city, u.province, u.country].filter(Boolean).join(', ');
+  document.getElementById('view-profile-location').innerText = location;
+
+  // LOAD TABS
+  loadAboutTab(u, uid); // About tab
+  loadProfilePosts(uid); // Posts tab
+  loadProfileMedia(uid, 'image'); // Photos tab
+  loadProfileMedia(uid, 'video'); // Videos tab
+  
+  showTab('about'); // default to About tab
+}
+
+window.closeViewProfile = () => {
+  document.getElementById('view-profile-popup').style.display = 'none';
+}
 function loadAboutTab(u, profileUid){
   const isMyProfile = currentUser && currentUser.uid === profileUid;
   const isPrivate = u.isPrivate === true;
@@ -1757,7 +1791,20 @@ window.viewUserProfile = async (uid) => {
   showTab('about');
   document.getElementById('view-profile-popup').classList.add('show');
 }
+window.showTab = (tab) => {
+  // hide all
+  document.getElementById('view-profile-about').style.display = 'none';
+  document.getElementById('view-profile-posts').style.display = 'none';
+  document.getElementById('view-profile-photos').style.display = 'none';
+  document.getElementById('view-profile-videos').style.display = 'none';
 
+  // show selected
+  document.getElementById('view-profile-'+tab).style.display = 'block';
+
+  // button active style
+  document.querySelectorAll('#view-profile-popup button[id^="tab-"]').forEach(b=>b.style.background='#2a3942');
+  document.getElementById('tab-'+tab+'-btn').style.background='#00C896';
+  }
 async function loadMutuals(uid){
   const followingSnap = await get(ref(db, 'following/'+uid));
   const followersSnap = await get(ref(db, 'followers/'+uid));
@@ -1771,6 +1818,44 @@ async function loadUserItem(id, target){
   const u = (await get(ref(db, 'users/'+id))).val();
   if(!u) return;
   target.innerHTML += `<div class="friend-item"><div onclick="viewUserProfile('${id}')" style="cursor:pointer"><img style="width:35px;height:35px;border-radius:50%" src="${u.profilePic}"> ${u.name}</div></div>`;
+}
+async function loadProfilePosts(uid){
+  const feedDiv = document.getElementById('view-profile-posts');
+  if(!feedDiv) { // create it if it doesn't exist
+    const newDiv = document.createElement('div');
+    newDiv.id = 'view-profile-posts';
+    newDiv.style.display = 'none';
+    document.getElementById('view-profile-popup').insertBefore(newDiv, document.getElementById('view-profile-about'));
+  }
+  document.getElementById('view-profile-posts').innerHTML = '<div class="loader">Loading Posts</div>';
+  
+  const snap = await get(query(ref(db, 'posts'), orderByChild('uid'), equalTo(uid)));
+  let html = '';
+  snap.forEach(s=>{
+    const p = s.val();
+    html += `<div class="card"><p>${p.text}</p>${p.image?`<img class="card-post-img" src="${p.image}">`:''}</div>`;
+  })
+  document.getElementById('view-profile-posts').innerHTML = html || '<p style="text-align:center; opacity:0.7">No posts yet</p>';
+}
+
+async function loadProfileMedia(uid, type){
+  const divId = type==='image'? 'view-profile-photos' : 'view-profile-videos';
+  if(!document.getElementById(divId)){
+    const newDiv = document.createElement('div');
+    newDiv.id = divId;
+    newDiv.style.display = 'none';
+    document.getElementById('view-profile-popup').insertBefore(newDiv, document.getElementById('view-profile-about'));
+  }
+  
+  const snap = await get(query(ref(db, 'posts'), orderByChild('uid'), equalTo(uid)));
+  let html = '<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; padding:10px">';
+  snap.forEach(s=>{
+    const p = s.val();
+    if(type==='image' && p.image) html += `<img src="${p.image}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:4px">`;
+    if(type==='video' && p.video) html += `<video src="${p.video}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:4px" muted></video>`;
+  })
+  html += '</div>';
+  document.getElementById(divId).innerHTML = html || `<p style="text-align:center; opacity:0.7">No ${type}s yet</p>`;
 }
 
 </script>
