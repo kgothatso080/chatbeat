@@ -164,13 +164,51 @@
 .settings-popup.show { display:block }
 
 /* VIDEO FEED TIKTOK STYLE */
-#videos-section { display:none; height: calc(100vh - 60px); overflow-y: scroll; scroll-snap-type: y mandatory; background:#000 }
-.video-card { height: 100vh; width:100%; position:relative; scroll-snap-align: start; display:flex; align-items:center; justify-content:center }
-.video-card video { width:100%; height:100%; object-fit:cover }
-.video-info { position:absolute; bottom:80px; left:10px; right:70px }
+#videos-section { 
+  display:none; 
+  height: 100dvh; /* fits actual screen */
+  overflow-y: scroll; 
+  scroll-snap-type: y mandatory; 
+  background:#000 
+}
+.video-card { 
+  height: 100dvh; 
+  width:100%; 
+  position:relative; 
+  scroll-snap-align: start; 
+  display:flex; 
+  align-items:center; 
+  justify-content:center;
+  padding-top: 60px;  /* space for topbar */
+  padding-bottom: 80px; /* space for buttons */
+  box-sizing: border-box;
+}
+.video-card video { 
+  width:100%; 
+  height:100%; 
+  object-fit:contain; /* shrinks to fit instead of cropping */
+  background:#000;
+  max-height: calc(100dvh - 140px);
+}
+.video-info { 
+  position:absolute; 
+  bottom:90px; /* moved up so it's not under buttons */
+  left:10px; 
+  right:70px;
+  z-index: 10;
+}
 .video-info h4 { margin:5px 0; color:#fff; text-shadow:0 0 5px #000 }
 .follow-btn { background:#00C896; padding:4px 10px; border-radius:15px; font-size:12px; border:none; color:white }
-.add-video-btn { position:fixed; bottom:80px; right:15px; width:50px; height:50px; border-radius:50%; font-size:24px; z-index:20 }
+.add-video-btn { 
+  position:fixed; 
+  bottom:90px; /* moved up a bit */
+  right:15px; 
+  width:50px; 
+  height:50px; 
+  border-radius:50%; 
+  font-size:24px; 
+  z-index:20 
+}
 
 /* DM LIST */
 .dm-list { padding:10px }
