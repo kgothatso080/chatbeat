@@ -799,7 +799,7 @@ onAuthStateChanged(auth, async (user) => {
      alert("Welcome to ChatBeat! Your name is: " + nameFromEmail)
    }
    document.getElementById('cover').style.display = 'none';
-   document.getElementById('app').style.display = 'block'; applyTheme();
+   document.getElementById('app').style.display = 'block';
    document.getElementById('my-name').innerText = userData.name;
    document.getElementById('profile-pic').src = userData.profilePic || DEFAULT_PIC;
    loadedMessages.clear();
