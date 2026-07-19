@@ -804,14 +804,13 @@ async function getUser(uid){
 }
 
 function loadPosts() {
-  off(ref(db, 'posts')); document.getElementById('feed').innerHTML = '<div class="loader">Loading Posts</div>'; 
-  onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(40)), async (snap) => { 
-    if(document.querySelector('#feed .loader')) document.getElementById('feed').innerHTML = ''; 
+  off(ref(db, 'posts')); document.getElementById('feed').innerHTML = '';
+  onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50)), async (snap) => {
     const post = snap.val(); const postKey = snap.key; const user = await getUser(post.uid); const userPic = user.profilePic || DEFAULT_PIC;
     const userReact = post.reactions?.[currentUser.uid] || null;
     const postDiv = document.createElement('div'); postDiv.className = 'card'; postDiv.id = 'post-' + postKey;
-    let delBtn = post.uid === currentUser.uid? `<button class="del-btn" onclick="deletePost('${postKey}')">×</button>` : '';
-    let imgHtml = post.image? `<img class="card-post-img" src="${post.image}" onclick="openProfilePopup('${post.image}')">` : '';
+    let delBtn = post.uid === currentUser.uid?  <button class="del-btn" onclick="deletePost('${postKey}')">×</button>  : '';
+    let imgHtml = post.image?  <img class="card-post-img" src="${post.image}" onclick="openProfilePopup('${post.image}')">  : '';
     const reactCount = Object.keys(post.reactions||{}).length;
     const commentCount = Object.keys(post.comments||{}).length;
 
@@ -835,22 +834,22 @@ function loadPosts() {
     <div class="comments-section" id="comments-${postKey}"><div id="comment-list-${postKey}"></div><div class="comment-input-row"><input id="comment-input-${postKey}" placeholder="Write a comment..."><button onclick="addComment('${postKey}')">➤</button></div></div>`;
     document.getElementById('feed').prepend(postDiv);
 
-    renderReactions(document.getElementById(`react-sum-${postKey}`), post.reactions, userReact);
+    renderReactions(document.getElementById( react-sum-${postKey} ), post.reactions, userReact);
     loadComments(postKey);
-    onValue(ref(db, `posts/${postKey}/reactions`), (s)=>{
+    onValue(ref(db,  posts/${postKey}/reactions ), (s)=>{
       const reacts = s.val() || {};
-      renderReactions(document.getElementById(`react-sum-${postKey}`), reacts, reacts[currentUser.uid]);
-      document.getElementById(`react-count-${postKey}`).innerText = `${Object.keys(reacts).length} Reactions`;
-      const btn = document.getElementById(`like-btn-${postKey}`);
+      renderReactions(document.getElementById( react-sum-${postKey} ), reacts, reacts[currentUser.uid]);
+      document.getElementById( react-count-${postKey} ).innerText =  ${Object.keys(reacts).length} Reactions ;
+      const btn = document.getElementById( like-btn-${postKey} );
       if(reacts[currentUser.uid]){ btn.classList.add('active'); btn.innerHTML = reacts[currentUser.uid]; }
       else { btn.classList.remove('active'); btn.innerHTML = '👍'; }
     });
-    onValue(ref(db, `posts/${postKey}/comments`), (s)=>{
-      document.getElementById(`comment-count-${postKey}`).innerText = `${s.size} Comments`;
+    onValue(ref(db,  posts/${postKey}/comments ), (s)=>{
+      document.getElementById( comment-count-${postKey} ).innerText =  ${s.size} Comments ;
     })
 
-    const likeBtn = document.getElementById(`like-btn-${postKey}`);
-    const picker = document.getElementById(`picker-${postKey}`);
+    const likeBtn = document.getElementById( like-btn-${postKey} );
+    const picker = document.getElementById( picker-${postKey} );
     let timer;
     let longPressTriggered = false;
 
@@ -862,7 +861,7 @@ function loadPosts() {
     likeBtn.onmouseup = likeBtn.ontouchend = likeBtn.onmouseleave = () => {
       clearTimeout(timer);
       if(!longPressTriggered){
-        setReaction(`posts/${postKey}/reactions`, '👍')
+        setReaction( posts/${postKey}/reactions , '👍')
       }
     }
   });
