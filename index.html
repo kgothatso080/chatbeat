@@ -287,6 +287,21 @@ font-size:22px;
 from{transform:rotate(0deg);}
 to{transform:rotate(360deg);}
 }  
+.loader {
+  text-align:center; 
+  padding:50px 20px; 
+  color:#00C896;
+  font-size:16px;
+}
+.loader:after {
+  content: '...';
+  animation: dots 1.5s steps(5, end) infinite;
+}
+@keyframes dots {
+ 0%, 20% { content: '.'; }
+ 40% { content: '..'; }
+  60%, 100% { content: '...'; }
+}
   </style>
 </head>
 <body>
@@ -788,8 +803,9 @@ async function getUser(uid){
 }
 
 function loadPosts() {
-  off(ref(db, 'posts')); document.getElementById('feed').innerHTML = '';
-  onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50)), async (snap) => {
+  off(ref(db, 'posts')); document.getElementById('feed').innerHTML = '<div class="loader">Loading Posts</div>'; 
+  onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(40)), async (snap) => { 
+    if(document.querySelector('#feed .loader')) document.getElementById('feed').innerHTML = ''; 
     const post = snap.val(); const postKey = snap.key; const user = await getUser(post.uid); const userPic = user.profilePic || DEFAULT_PIC;
     const userReact = post.reactions?.[currentUser.uid] || null;
     const postDiv = document.createElement('div'); postDiv.className = 'card'; postDiv.id = 'post-' + postKey;
@@ -911,15 +927,15 @@ window.openVideoComments = (id)=>{ alert("Video comments coming next."); }
 // VIDEOS TIKTOK STYLE
 function loadVideos(){
   off(ref(db, 'videos')); 
-  document.getElementById('video-feed').innerHTML = '';
+  document.getElementById('video-feed').innerHTML = '<div class="loader">Loading Videos</div>'; 
 
-  // ADD THIS: remove from DOM when deleted in DB
   onChildRemoved(ref(db, 'videos'), (snap) => {
     const videoCard = document.querySelector(`.video-card[data-id="${snap.key}"]`);
     if(videoCard) videoCard.remove();
   });
 
-  onChildAdded(query(ref(db, 'videos'), orderByChild('timestamp'), limitToLast(20)), async (snap) => {
+  onChildAdded(query(ref(db, 'videos'), orderByChild('timestamp'), limitToLast(30)), async (snap) => { 
+    if(document.querySelector('#video-feed .loader')) document.getElementById('video-feed').innerHTML = ''; 
     const v = snap.val(); 
     const u = await getUser(v.uid);
     const div = document.createElement('div'); 
@@ -1185,7 +1201,7 @@ function endDrag(e, msgData, msgKey){
 
 function loadChat() {
   off(ref(db, 'globalChat'));
-  document.getElementById('global-chat').innerHTML = '<p style="text-align:center; opacity:0.6">Loading messages...</p>';
+  document.getElementById('global-chat').innerHTML = '<div class="loader">Loading Chat</div>'; // CHANGED
   loadedMessages.clear();
   get(query(ref(db, 'globalChat'), orderByChild('timestamp'), limitToLast(50))).then(async (snapshot) => {
     document.getElementById('global-chat').innerHTML = '';
