@@ -280,6 +280,7 @@ display:flex;
 align-items:center;
 justify-content:center;
 animation:spin 3s linear infinite;
+animation-play-state: paused;
 font-size:22px;
 }
 
@@ -932,11 +933,16 @@ function loadVideos(){
     if(document.querySelector('#video-feed .loader')) document.getElementById('video-feed').innerHTML = ''; 
     const v = snap.val(); 
     const u = await getUser(v.uid);
+    const likeCount = Object.keys(v.likes || {}).length;
+    const commentCount = Object.keys(v.comments || {}).length;
+    const favCount = Object.keys(v.favorites || {}).length;
+    const shareCount = Object.keys(v.shares || {}).length;
+    
     const div = document.createElement('div'); 
     div.className = 'video-card';
-    div.setAttribute('data-id', snap.key); // ADD THIS so we can find it to delete
+    div.setAttribute('data-id', snap.key);
     div.innerHTML = `
-      <video src="${v.video}" loop playsinline onclick="this.paused?this.play():this.pause()"></video>
+      <video src="${v.video}" loop playsinline muted></video>  <!-- REMOVED onclick, ADDED muted -->
       <div class="video-info">
         <h4>@${u.name}</h4>
         <p>${v.desc || ""}</p>
@@ -946,14 +952,38 @@ function loadVideos(){
             <img class="side-profile" src="${u.profilePic}">
             <span class="plus-badge">+</span>
         </div>
-        <div class="video-action" onclick="likeVideo('${snap.key}')">❤️<span>${Object.keys(v.likes || {}).length}</span></div>
-        <div class="video-action" onclick="openVideoComments('${snap.key}')">💬<span>${Object.keys(v.comments || {}).length}</span></div>
-        <div class="video-action" onclick="favoriteVideo('${snap.key}')">🔖<span>${Object.keys(v.favorites || {}).length}</span></div>
-        <div class="video-action" onclick="openVideoShare('${snap.key}')">↗<span>${Object.keys(v.shares || {}).length}</span></div>
+        <div class="video-action" onclick="likeVideo('${snap.key}')">❤️<span>${likeCount}</span></div>
+        <div class="video-action" onclick="openVideoComments('${snap.key}')">💬<span>${commentCount}</span></div>
+        <div class="video-action" onclick="favoriteVideo('${snap.key}')">🔖<span>${favCount}</span></div>
+        <div class="video-action" onclick="openVideoShare('${snap.key}')">↗<span>${shareCount}</span></div>
         <div class="music-disc">🎵</div>
       </div>
     `;
     document.getElementById('video-feed').appendChild(div);
+    
+    const video = div.querySelector('video');
+    const musicDisc = div.querySelector('.music-disc');
+    
+    // TIKTOK AUTOPLAY: PLAY WHEN 70% VISIBLE
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if(entry.isIntersecting){
+          video.muted = false; // try unmute
+          video.play().catch(()=>{ 
+            // if browser blocks sound, play muted
+            video.muted = true;
+            video.play();
+          });
+          musicDisc.style.animationPlayState = 'running';
+        } else {
+          video.pause();
+          video.muted = true;
+          musicDisc.style.animationPlayState = 'paused';
+        }
+      })
+    }, { threshold: 0.7 }); // 70% of video must be on screen
+    
+    observer.observe(video);
   })
 }
 
@@ -1117,6 +1147,7 @@ window.openFriends = () => {
   document.getElementById('profile-box').style.display = 'none';
 }
 window.backToFeed = () => {
+  document.querySelectorAll('#video-feed video').forEach(v => { v.pause(); v.muted = true; });
   document.getElementById('feed-section').style.display = 'block';
   document.getElementById('chat-section').style.display = 'none';
   document.getElementById('videos-section').style.display = 'none';
