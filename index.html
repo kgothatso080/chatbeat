@@ -165,39 +165,42 @@
 
 /* VIDEO FEED TIKTOK STYLE */
 #videos-section { 
-  display:none; 
-  height: 100vh; /* back to normal vh */
+  display: block; /* was none. This was hiding everything */
+  height: 100dvh;
   overflow-y: scroll; 
   scroll-snap-type: y mandatory; 
-  background:#000 
+  background:#000;
+  padding-top: 60px; /* for your topbar */
 }
+
 .video-card { 
-  height: 100vh; 
+  height: calc(100dvh - 60px); /* minus topbar */
   width:100%; 
   position:relative; 
   scroll-snap-align: start; 
   display:flex; 
   align-items:center; 
   justify-content:center;
-  padding-top: 60px;  /* space for topbar */
-  padding-bottom: 80px; /* space for buttons */
-  box-sizing: border-box;
+  background:#000;
 }
+
 .video-card video { 
   width:100%; 
   height:100%; 
-  object-fit:contain; /* key fix: shrink to fit */
+  object-fit:contain; /* no crop */
   background:#000;
 }
+
 .video-info { 
   position:absolute; 
-  bottom:90px; 
+  bottom:80px; 
   left:10px; 
   right:70px;
   z-index: 10;
 }
+
 .video-info h4 { margin:5px 0; color:#fff; text-shadow:0 0 5px #000 }
-.follow-btn { background:#00C896; padding:4px 10px; border-radius:15px; font-size:12px; border:none; color:white }
+
 .add-video-btn { 
   position:fixed; 
   bottom:90px; 
