@@ -339,16 +339,12 @@ to{transform:rotate(360deg);}
   <div id="profile-box" class="profile-box">
     <img id="profile-pic" src="https://ui-avatars.com/api/?name=U&background=00C896&color=fff">
     <h3 id="my-name"></h3>
-    <p id="my-bio" style="font-size:13px; opacity:0.8; margin:4px 0"></p>
-    <p id="my-location" style="font-size:12px; opacity:0.7"></p>
     <div id="linked-accounts" style="font-size:12px; margin-top:8px"></div>
-
     <input id="profile-upload" type="file" accept="image/*" style="display:none">
     <button onclick="document.getElementById('profile-upload').click()">Change Profile Photo</button>
-    <button onclick="openEditProfile()">✏️ Edit Profile</button>
     <button onclick="document.getElementById('profile-box').style.display='none'">Close</button>
-</div>
-  
+  </div>
+
   <div id="feed-section">
     <div class="post-box">
       <textarea id="post-text" placeholder="What's on your mind?"></textarea>
@@ -449,11 +445,6 @@ to{transform:rotate(360deg);}
     <button onclick="setTheme('#FF6B6B')" style="background:#FF6B6B; width:40px; height:40px; padding:0"></button>
   </div>
   <button onclick="toggleLightMode()">🌙 Toggle Dark/Light Mode</button>
-  <h4 style="text-align:left; margin-top:15px">🔒 Privacy</h4>
-<label style="display:flex; align-items:center; gap:10px; justify-content:center">
-  <input type="checkbox" id="private-toggle" onchange="togglePrivate()">
-  Make Account Private
-</label>
   
   <h4 style="text-align:left; margin-top:15px">🔗 Linked Accounts</h4>
   <button onclick="linkAccount('tiktok')">🎵 Link TikTok</button>
@@ -485,72 +476,6 @@ to{transform:rotate(360deg);}
   <button onclick="closeSettings()">Cancel</button>
 </div>
 
-<div id="edit-profile-popup" class="settings-popup">
-  <h3>✏️ Edit Profile</h3>
-  
-  <h4>About Me</h4>
-  <textarea id="bio-input" placeholder="Write your bio..." style="height:60px"></textarea>
-  
-  <h4>Location</h4>
-  <input id="country-input" placeholder="Country">
-  <input id="province-input" placeholder="Province">
-  <input id="city-input" placeholder="City">
-  <input id="town-input" placeholder="Town/Village">
-
-  <h4>School Details</h4>
-  <input id="school-input" placeholder="School">
-  <input id="grade-input" placeholder="Grade">
-  <input id="fav-subject-input" placeholder="Favorite Subject">
-  <input id="fav-teacher-input" placeholder="Favorite Teacher">
-  <input id="fav-book-input" placeholder="Favorite Book">
-
-  <h4>What I Like</h4>
-  <input id="hobbies-input" placeholder="Hobbies: Soccer, Music...">
-  <input id="fav-foods-input" placeholder="Top 5 Foods: 1. Pizza, 2. Rice...">
-  <input id="fav-music-input" placeholder="Top 5 Songs/Artists">
-  <input id="fav-games-input" placeholder="Favorite Games">
-  <input id="fav-color-input" placeholder="Favorite Color">
-  <input id="fav-person-input" placeholder="Favorite Person">
-  
-  <h4>Status + Contact</h4>
-  <select id="relationship-input" style="width:80%; padding:12px; border-radius:25px; background:#2a3942; color:white; border:none">
-    <option value="">Relationship</option>
-    <option value="Single">Single</option>
-    <option value="Taken">Taken</option>
-  </select>
-  <input id="phone-input" placeholder="Phone Number">
-  <input id="instagram-input" placeholder="Instagram">
-  <input id="tiktok-input" placeholder="TikTok">
-  <input id="facebook-input" placeholder="Facebook">
-  
-  <button onclick="saveProfile()">💾 Save Profile</button>
-  <button onclick="closeEditProfile()">Cancel</button>
-  </div>
-
-<div id="view-profile-popup" class="settings-popup" style="max-height:90vh; overflow-y:auto">
-  <img id="view-profile-pic" src="" style="width:90px; height:90px; border-radius:50%; margin-bottom:10px">
-  <h3 id="view-profile-name"></h3>
-  <p id="view-profile-bio" style="font-size:13px; opacity:0.8"></p>
-  <p id="view-profile-location" style="font-size:12px; opacity:0.7"></p>
-  
-  <div style="display:flex; gap:10px; justify-content:center; margin:10px 0">
-    <button onclick="showTab('about')" id="tab-about-btn">About</button>
-    <button onclick="showTab('posts')" id="tab-posts-btn">Posts</button>
-    <button onclick="showTab('photos')" id="tab-photos-btn">Photos</button>
-    <button onclick="showTab('videos')" id="tab-videos-btn">Videos</button>
-  </div>
-
-  <div id="view-profile-about"></div>
-  <div id="view-profile-posts" style="display:none"></div>
-  <div id="view-profile-photos" style="display:none"></div>
-  <div id="view-profile-videos" style="display:none"></div>
-  <div id="view-profile-following" style="display:none"></div>
-  <div id="view-profile-followers" style="display:none"></div>
-  <div id="view-profile-mutuals" style="display:none"></div>
-  
-  <button onclick="closeViewProfile()">Close</button>
-</div>
-</div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
@@ -798,7 +723,7 @@ onAuthStateChanged(auth, async (user) => {
      alert("Welcome to ChatBeat! Your name is: " + nameFromEmail)
    }
    document.getElementById('cover').style.display = 'none';
-   document.getElementById('app').style.display = 'block';
+   document.getElementById('app').style.display = 'block'; applyTheme();
    document.getElementById('my-name').innerText = userData.name;
    document.getElementById('profile-pic').src = userData.profilePic || DEFAULT_PIC;
    loadedMessages.clear();
@@ -812,7 +737,6 @@ onAuthStateChanged(auth, async (user) => {
    loadDMs();
    loadFriends();
    setupNotifications();
-   loadMyProfile();
  } else {
    document.getElementById('cover').style.display = 'flex';
    document.getElementById('app').style.display = 'none';
@@ -893,8 +817,8 @@ function loadPosts() {
 
     postDiv.innerHTML = `${delBtn}
     <div class="card-header">
-    <img class="card-avatar" src="${userPic}" onclick="viewUserProfile('${post.uid}')">
-<div class="name" style="color:${user.color}; cursor:pointer" onclick="viewUserProfile('${post.uid}')">${user.name}</div>
+      <img class="card-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">
+      <div class="name" style="color:${user.color}">${user.name}</div>
     </div>
     <div>${post.text||''}</div>${imgHtml}
     <div class="post-stats" onclick="toggleComments('${postKey}')">
@@ -1057,7 +981,7 @@ function loadVideos(){
           musicDisc.style.animationPlayState = 'paused';
         }
       })
-    }, { threshold: 0.7 }); // 70% of video must be on screen
+    }, { threshold: 0.8 });
     
     observer.observe(video);
   })
@@ -1179,110 +1103,19 @@ function loadFriends(){
     snap.forEach(uSnap=>{
       if(uSnap.key!== currentUser.uid){
         const u = uSnap.val();
-        if(u.isPrivate && uSnap.key !== currentUser.uid) return; // HIDE PRIVATE USERS FROM LIST
         const div = document.createElement('div'); div.className = 'friend-item';
-        div.innerHTML = `<div onclick="viewUserProfile('${uSnap.key}')" style="cursor:pointer"><img style="width:40px;height:40px;border-radius:50%" src="${u.profilePic}"> ${u.name}</div>
+        div.innerHTML = `<div><img style="width:40px;height:40px;border-radius:50%" src="${u.profilePic}"> ${u.name}</div>
         <button class="follow-btn" id="follow-${uSnap.key}" onclick="toggleFollow('${uSnap.key}')">Follow</button>`;
         document.getElementById('friends-list').appendChild(div);
       }
     })
   })
 }
-let currentViewProfileUid = null; // track whose profile we are viewing
-
-window.viewUserProfile = async (uid) => {
-  currentViewProfileUid = uid;
-  document.getElementById('view-profile-popup').style.display = 'block'; // show popup
-  
-  const userSnap = await get(ref(db, 'users/'+uid));
-  const u = userSnap.val();
-  
-  // HEADER
-  document.getElementById('view-profile-pic').src = u.profilePic || DEFAULT_PIC;
-  document.getElementById('view-profile-name').innerText = u.name;
-  document.getElementById('view-profile-bio').innerText = u.bio || '';
-  const location = [u.town, u.city, u.province, u.country].filter(Boolean).join(', ');
-  document.getElementById('view-profile-location').innerText = location;
-
-  // LOAD TABS
-  loadAboutTab(u, uid); // About tab
-  loadProfilePosts(uid); // Posts tab
-  loadProfileMedia(uid, 'image'); // Photos tab
-  loadProfileMedia(uid, 'video'); // Videos tab
-  
-  showTab('about'); // default to About tab
-}
-
-window.closeViewProfile = () => {
-  document.getElementById('view-profile-popup').style.display = 'none';
-}
-function loadAboutTab(u, profileUid){
-  const isMyProfile = currentUser && currentUser.uid === profileUid;
-  const isPrivate = u.isPrivate === true;
-  const isFollowing = u.followers && u.followers[currentUser.uid]; // check if you follow them
-  
-  const location = [u.town, u.city, u.province, u.country].filter(Boolean).join(', ');
-  
-  let html = `<div style="padding:10px; text-align:left">`;
-
-  // IF PRIVATE AND NOT ME AND NOT FOLLOWING
-  if(isPrivate && !isMyProfile && !isFollowing){
-    html += `<p>🔒 This account is private</p>
-             <p style="font-size:12px; opacity:0.7">Follow to see ${u.name}'s details</p>`;
-    document.getElementById('view-profile-about').innerHTML = html + `</div>`;
-    return;
-  }
-
-  // ELSE SHOW EVERYTHING - only fields you filled
-  if(u.bio) html += `<p><b>Bio:</b> ${u.bio}</p>`;
-  if(location) html += `<p><b>Location:</b> ${location}</p>`;
-
-  // School Details
-  if(u.school || u.grade || u.favSubject || u.favTeacher || u.favBook){
-    html += `<h4>School Details</h4>`;
-    if(u.school) html += `<p><b>School:</b> ${u.school}</p>`;
-    if(u.grade) html += `<p><b>Grade:</b> ${u.grade}</p>`;
-    if(u.favSubject) html += `<p><b>Favorite Subject:</b> ${u.favSubject}</p>`;
-    if(u.favTeacher) html += `<p><b>Favorite Teacher:</b> ${u.favTeacher}</p>`;
-    if(u.favBook) html += `<p><b>Favorite Book:</b> ${u.favBook}</p>`;
-  }
-
-  // What I Like
-  if(u.hobbies || u.topFoods || u.topSongs || u.favGames || u.favColor || u.favPerson){
-    html += `<h4>What I Like</h4>`;
-    if(u.hobbies) html += `<p><b>Hobbies:</b> ${u.hobbies}</p>`;
-    if(u.topFoods) html += `<p><b>Top 5 Foods:</b> ${u.topFoods}</p>`;
-    if(u.topSongs) html += `<p><b>Top 5 Songs/Artists:</b> ${u.topSongs}</p>`;
-    if(u.favGames) html += `<p><b>Favorite Games:</b> ${u.favGames}</p>`;
-    if(u.favColor) html += `<p><b>Favorite Color:</b> ${u.favColor}</p>`;
-    if(u.favPerson) html += `<p><b>Favorite Person:</b> ${u.favPerson}</p>`;
-  }
-
-  // Status + Contact
-  if(u.relationship || u.phone || u.instagram || u.tiktok || u.facebook){
-    html += `<h4>Status + Contact</h4>`;
-    if(u.relationship) html += `<p><b>Relationship:</b> ${u.relationship}</p>`;
-    if(u.phone) html += `<p><b>Phone:</b> ${u.phone}</p>`;
-    if(u.instagram) html += `<p><b>Instagram:</b> @${u.instagram}</p>`;
-    if(u.tiktok) html += `<p><b>TikTok:</b> @${u.tiktok}</p>`;
-    if(u.facebook) html += `<p><b>Facebook:</b> ${u.facebook}</p>`;
-  }
-
-  html += `</div>`;
-  document.getElementById('view-profile-about').innerHTML = html;
-}
 window.toggleFollow = async (uid) => {
-  const btn = document.getElementById(`follow-${uid}`);
-  const isFollowing = btn.innerText === 'Following';
-  if(isFollowing){
-    await set(ref(db, `following/${currentUser.uid}/${uid}`), null);
-    await set(ref(db, `followers/${uid}/${currentUser.uid}`), null);
-    btn.innerText = 'Follow';
-  } else {
-    await set(ref(db, `following/${currentUser.uid}/${uid}`), true);
-    await set(ref(db, `followers/${uid}/${currentUser.uid}`), true);
-    btn.innerText = 'Following';
-  }
+  const followRef = ref(db, `friends/${currentUser.uid}/${uid}`);
+  const snap = await get(followRef);
+  if(snap.exists()){ await remove(followRef); alert("Unfollowed"); document.getElementById(`follow-${uid}`).innerText = "Follow"; }
+  else { await set(followRef, true); alert("Following!"); document.getElementById(`follow-${uid}`).innerText = "Following"; }
 }
 
 // NAVIGATION - SINGLE COPY ONLY
@@ -1314,13 +1147,13 @@ window.openFriends = () => {
   document.getElementById('profile-box').style.display = 'none';
 }
 window.backToFeed = () => {
-  document.querySelectorAll('#video-feed video').forEach(v => { v.pause(); v.muted = true; });
   document.getElementById('feed-section').style.display = 'block';
   document.getElementById('chat-section').style.display = 'none';
   document.getElementById('videos-section').style.display = 'none';
   document.getElementById('dm-chat-section').style.display = 'none';
   document.getElementById('friends-section').style.display = 'none';
   document.getElementById('profile-box').style.display = 'none';
+  document.querySelectorAll('#video-feed video').forEach(v => { v.pause(); v.muted = true; });
 }
 
 document.getElementById('chat-img-btn').onclick = () => document.getElementById('chat-file').click();
@@ -1578,282 +1411,6 @@ document.addEventListener('click', () => {
   document.querySelectorAll('.react-picker').forEach(p => p.classList.remove('show'));
   document.querySelectorAll('.react-names-tooltip').forEach(t => t.style.display = 'none');
 });
-
-// OPEN EDIT PROFILE AND LOAD DATA
-window.openEditProfile = async () => {
-  document.getElementById('profile-box').style.display = 'none';
-  document.getElementById('edit-profile-popup').classList.add('show');
-  
-  const snap = await get(ref(db, 'users/'+currentUser.uid));
-  const data = snap.val() || {};
-  
-  // Fill inputs
-  document.getElementById('bio-input').value = data.bio || '';
-  document.getElementById('country-input').value = data.country || '';
-  document.getElementById('province-input').value = data.province || '';
-  document.getElementById('city-input').value = data.city || '';
-  document.getElementById('town-input').value = data.town || '';
-  document.getElementById('school-input').value = data.school || '';
-  document.getElementById('grade-input').value = data.grade || '';
-  document.getElementById('fav-subject-input').value = data.favSubject || '';
-  document.getElementById('fav-teacher-input').value = data.favTeacher || '';
-  document.getElementById('fav-book-input').value = data.favBook || '';
-  document.getElementById('hobbies-input').value = data.hobbies || '';
-  document.getElementById('fav-foods-input').value = data.favFoods || '';
-  document.getElementById('fav-music-input').value = data.favMusic || '';
-  document.getElementById('fav-games-input').value = data.favGames || '';
-  document.getElementById('fav-color-input').value = data.favColor || '';
-  document.getElementById('fav-person-input').value = data.favPerson || '';
-  document.getElementById('relationship-input').value = data.relationship || '';
-  document.getElementById('phone-input').value = data.phone || '';
-  document.getElementById('instagram-input').value = data.instagram || '';
-  document.getElementById('tiktok-input').value = data.tiktok || '';
-  document.getElementById('facebook-input').value = data.facebook || '';
-  document.getElementById('private-toggle').checked = data.isPrivate || false;
-}
-
-window.closeEditProfile = () => {
-  document.getElementById('edit-profile-popup').classList.remove('show');
-  document.getElementById('profile-box').style.display = 'block';
-}
-
-// SAVE PROFILE
-window.saveProfile = async () => {
-  const profileData = {
-    bio: document.getElementById('bio-input').value.trim(),
-    country: document.getElementById('country-input').value.trim(),
-    province: document.getElementById('province-input').value.trim(),
-    city: document.getElementById('city-input').value.trim(),
-    town: document.getElementById('town-input').value.trim(),
-    school: document.getElementById('school-input').value.trim(),
-    grade: document.getElementById('grade-input').value.trim(),
-    favSubject: document.getElementById('fav-subject-input').value.trim(),
-    favTeacher: document.getElementById('fav-teacher-input').value.trim(),
-    favBook: document.getElementById('fav-book-input').value.trim(),
-    hobbies: document.getElementById('hobbies-input').value.trim(),
-    favFoods: document.getElementById('fav-foods-input').value.trim(),
-    favMusic: document.getElementById('fav-music-input').value.trim(),
-    favGames: document.getElementById('fav-games-input').value.trim(),
-    favColor: document.getElementById('fav-color-input').value.trim(),
-    favPerson: document.getElementById('fav-person-input').value.trim(),
-    relationship: document.getElementById('relationship-input').value,
-    phone: document.getElementById('phone-input').value.trim(),
-    instagram: document.getElementById('instagram-input').value.trim(),
-    tiktok: document.getElementById('tiktok-input').value.trim(),
-    facebook: document.getElementById('facebook-input').value.trim(),
-  };
-  await set(ref(db, 'users/'+currentUser.uid), {...(await get(ref(db, 'users/'+currentUser.uid))).val(), ...profileData});
-  alert("Profile Saved!");
-  closeEditProfile();
-  loadMyProfile();
-}
-
-// SHOW PROFILE DATA
-async function loadMyProfile(){
-  const snap = await get(ref(db, 'users/'+currentUser.uid));
-  const data = snap.val() || {};
-  document.getElementById('my-bio').innerText = data.bio || '';
-  let loc = [data.city, data.province, data.country].filter(Boolean).join(', ');
-  document.getElementById('my-location').innerText = loc;
-}
-
-// PRIVACY TOGGLE
-window.togglePrivate = async () => {
-  const isPrivate = document.getElementById('private-toggle').checked;
-  await set(ref(db, 'users/'+currentUser.uid+'/isPrivate'), isPrivate);
-  alert(isPrivate? "Account is now Private" : "Account is now Public");
-}
-
-// CALL THIS ON LOGIN
-onAuthStateChanged(auth, async (user) => {
- if(user) {
-   // ... your existing code ...
-   loadMyProfile(); // ADD THIS LINE
- }
-});
-
-window.viewUserProfile = async (uid) => {
-  const snap = await get(ref(db, 'users/'+uid));
-  const data = snap.val() || {};
-  const isPrivate = data.isPrivate;
-  const isFriend = document.getElementById(`follow-${uid}`)?.innerText === 'Following';
-  
-  // PRIVACY RULE: if private and not friend, hide details
-  const canSeeDetails = !isPrivate || isFriend || uid === currentUser.uid;
-  
-  document.getElementById('view-profile-pic').src = data.profilePic;
-  document.getElementById('view-profile-name').innerText = data.name;
-  document.getElementById('view-profile-bio').innerText = canSeeDetails ? (data.bio || '') : 'This account is private';
-  document.getElementById('view-profile-location').innerText = canSeeDetails ? [data.city, data.province, data.country].filter(Boolean).join(', ') : '';
-  
-  let details = '';
-  if(canSeeDetails){
-    details += data.school ? `<b>School:</b> ${data.school} - Grade ${data.grade}<br>` : '';
-    details += data.favSubject ? `<b>Fav Subject:</b> ${data.favSubject}<br>` : '';
-    details += data.hobbies ? `<b>Hobbies:</b> ${data.hobbies}<br>` : '';
-    details += data.favFoods ? `<b>Top Foods:</b> ${data.favFoods}<br>` : '';
-    details += data.relationship ? `<b>Status:</b> ${data.relationship}<br>` : '';
-  } else {
-    details = '<i>Follow them to see more details</i>';
-  }
-  document.getElementById('view-profile-details').innerHTML = details;
-  
-  let socials = '';
-  if(canSeeDetails){
-    if(data.instagram) socials += `📸 ${data.instagram}<br>`;
-    if(data.tiktok) socials += `🎵 ${data.tiktok}<br>`;
-    if(data.phone) socials += `📞 ${data.phone}<br>`;
-  }
-  document.getElementById('view-profile-socials').innerHTML = socials;
-  
-  document.getElementById('view-profile-popup').classList.add('show');
-}
-
-window.closeViewProfile = () => {
-  document.getElementById('view-profile-popup').classList.remove('show');
-}
-
-let currentViewUid = '';
-
-window.showTab = async (tab) => {
-  ['about','following','followers','mutuals'].forEach(t=>{ // <- added 'mutuals' here
-    document.getElementById('view-profile-'+t).style.display = t===tab?'block':'none';
-    document.getElementById('tab-'+t+'-btn').style.background = t===tab?'var(--accent)':'#2a3942';
-  })
-  if(tab==='following') loadUserList(currentViewUid, 'following', 'view-profile-following');
-  if(tab==='followers') loadUserList(currentViewUid, 'followers', 'view-profile-followers');
-  if(tab==='mutuals') loadMutuals(currentViewUid); // <- ADD THIS LINE
-  }
-
-async function loadUserList(uid, type, targetId){
-  const snap = await get(ref(db, type+'/'+uid));
-  const list = snap.val() || {};
-  const target = document.getElementById(targetId);
-  target.innerHTML = '';
-  
-  if(Object.keys(list).length === 0){ target.innerHTML = '<i>No users</i>'; return; }
-  
-  for(let id of Object.keys(list)){
-    const uSnap = await get(ref(db, 'users/'+id));
-    const u = uSnap.val();
-    if(!u) continue;
-    target.innerHTML += `
-      <div class="friend-item">
-        <div onclick="viewUserProfile('${id}')" style="cursor:pointer">
-          <img style="width:35px;height:35px;border-radius:50%" src="${u.profilePic}"> ${u.name}
-        </div>
-      </div>`;
-  }
-}
-
-// UPDATE viewUserProfile to store uid and load counts
-window.viewUserProfile = async (uid) => {
-  currentViewUid = uid;
-  const snap = await get(ref(db, 'users/'+uid));
-  const data = snap.val() || {};
-  const isPrivate = data.isPrivate;
-  const isFriend = document.getElementById(`follow-${uid}`)?.innerText === 'Following';
-  const canSeeDetails = !isPrivate || isFriend || uid === currentUser.uid;
-  
-  document.getElementById('view-profile-pic').src = data.profilePic;
-  document.getElementById('view-profile-name').innerText = data.name;
-  document.getElementById('tab-mutuals-btn').style.display = canSeeDetails? 'inline-block' : 'none';
-  
-  // About Tab
-  let about = '';
-  about += `<p>${canSeeDetails ? (data.bio || '') : 'This account is private'}</p>`;
-  about += `<p>${canSeeDetails ? [data.city, data.province, data.country].filter(Boolean).join(', ') : ''}</p>`;
-  if(canSeeDetails){
-    about += data.school ? `<b>School:</b> ${data.school}<br>` : '';
-    about += data.hobbies ? `<b>Hobbies:</b> ${data.hobbies}<br>` : '';
-    about += data.relationship ? `<b>Status:</b> ${data.relationship}<br>` : '';
-  }
-  document.getElementById('view-profile-about').innerHTML = about;
-  
-  // Load counts
-  const followingSnap = await get(ref(db, 'following/'+uid));
-  const followersSnap = await get(ref(db, 'followers/'+uid));
-  document.getElementById('tab-following-btn').innerText = `Following ${Object.keys(followingSnap.val()||{}).length}`;
-  document.getElementById('tab-followers-btn').innerText = `Followers ${Object.keys(followersSnap.val()||{}).length}`;
-  
-  // Hide tabs if private and not friend
-  if(!canSeeDetails){
-    document.getElementById('tab-following-btn').style.display = 'none';
-    document.getElementById('tab-followers-btn').style.display = 'none';
-  } else {
-    document.getElementById('tab-following-btn').style.display = 'inline-block';
-    document.getElementById('tab-followers-btn').style.display = 'inline-block';
-  }
-  
-  showTab('about');
-  document.getElementById('view-profile-popup').classList.add('show');
-}
-window.showTab = (tab) => {
-  // hide all
-  document.getElementById('view-profile-about').style.display = 'none';
-  document.getElementById('view-profile-posts').style.display = 'none';
-  document.getElementById('view-profile-photos').style.display = 'none';
-  document.getElementById('view-profile-videos').style.display = 'none';
-
-  // show selected
-  document.getElementById('view-profile-'+tab).style.display = 'block';
-
-  // button active style
-  document.querySelectorAll('#view-profile-popup button[id^="tab-"]').forEach(b=>b.style.background='#2a3942');
-  document.getElementById('tab-'+tab+'-btn').style.background='#00C896';
-  }
-async function loadMutuals(uid){
-  const followingSnap = await get(ref(db, 'following/'+uid));
-  const followersSnap = await get(ref(db, 'followers/'+uid));
-  const following = Object.keys(followingSnap.val()||{});
-  const mutuals = following.filter(id => followersSnap.val()?.[id]); // <- people you both follow
-  const target = document.getElementById('view-profile-mutuals');
-  target.innerHTML = mutuals.length? '' : '<i>No mutuals</i>';
-  for(let id of mutuals) loadUserItem(id, target); // reuse list loader
-}
-async function loadUserItem(id, target){
-  const u = (await get(ref(db, 'users/'+id))).val();
-  if(!u) return;
-  target.innerHTML += `<div class="friend-item"><div onclick="viewUserProfile('${id}')" style="cursor:pointer"><img style="width:35px;height:35px;border-radius:50%" src="${u.profilePic}"> ${u.name}</div></div>`;
-}
-async function loadProfilePosts(uid){
-  const feedDiv = document.getElementById('view-profile-posts');
-  if(!feedDiv) { // create it if it doesn't exist
-    const newDiv = document.createElement('div');
-    newDiv.id = 'view-profile-posts';
-    newDiv.style.display = 'none';
-    document.getElementById('view-profile-popup').insertBefore(newDiv, document.getElementById('view-profile-about'));
-  }
-  document.getElementById('view-profile-posts').innerHTML = '<div class="loader">Loading Posts</div>';
-  
-  const snap = await get(query(ref(db, 'posts'), orderByChild('uid'), equalTo(uid)));
-  let html = '';
-  snap.forEach(s=>{
-    const p = s.val();
-    html += `<div class="card"><p>${p.text}</p>${p.image?`<img class="card-post-img" src="${p.image}">`:''}</div>`;
-  })
-  document.getElementById('view-profile-posts').innerHTML = html || '<p style="text-align:center; opacity:0.7">No posts yet</p>';
-}
-
-async function loadProfileMedia(uid, type){
-  const divId = type==='image'? 'view-profile-photos' : 'view-profile-videos';
-  if(!document.getElementById(divId)){
-    const newDiv = document.createElement('div');
-    newDiv.id = divId;
-    newDiv.style.display = 'none';
-    document.getElementById('view-profile-popup').insertBefore(newDiv, document.getElementById('view-profile-about'));
-  }
-  
-  const snap = await get(query(ref(db, 'posts'), orderByChild('uid'), equalTo(uid)));
-  let html = '<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; padding:10px">';
-  snap.forEach(s=>{
-    const p = s.val();
-    if(type==='image' && p.image) html += `<img src="${p.image}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:4px">`;
-    if(type==='video' && p.video) html += `<video src="${p.video}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:4px" muted></video>`;
-  })
-  html += '</div>';
-  document.getElementById(divId).innerHTML = html || `<p style="text-align:center; opacity:0.7">No ${type}s yet</p>`;
-}
 
 </script>
 </body>
