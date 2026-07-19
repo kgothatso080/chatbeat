@@ -866,13 +866,7 @@ function loadPosts() {
     }
   });
 }
-window.deletePost = async (key) => {
-  if(confirm("Delete this post?")) {
-    await remove(ref(db, 'posts/' + key));
-    const el = document.getElementById('post-' + key);
-    if(el) el.remove();
-  }
-}
+  
 window.reactToPost = async (key, emoji) => { await setReaction(`posts/${key}/reactions`, emoji); document.getElementById(`picker-${key}`).classList.remove('show'); }
 window.toggleComments = (key) => document.getElementById(`comments-${key}`).classList.toggle('show');
 window.addComment = async (key) => { const input = document.getElementById(`comment-input-${key}`); const text = input.value.trim(); if(!text) return; await push(ref(db, `posts/${key}/comments`), {uid: currentUser.uid, text, timestamp: Date.now()}); input.value = ''; }
