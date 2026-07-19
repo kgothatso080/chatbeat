@@ -1185,6 +1185,61 @@ function loadFriends(){
     })
   })
 }
+function loadAboutTab(u, profileUid){
+  const isMyProfile = currentUser && currentUser.uid === profileUid;
+  const isPrivate = u.isPrivate === true;
+  const isFollowing = u.followers && u.followers[currentUser.uid]; // check if you follow them
+  
+  const location = [u.town, u.city, u.province, u.country].filter(Boolean).join(', ');
+  
+  let html = `<div style="padding:10px; text-align:left">`;
+
+  // IF PRIVATE AND NOT ME AND NOT FOLLOWING
+  if(isPrivate && !isMyProfile && !isFollowing){
+    html += `<p>🔒 This account is private</p>
+             <p style="font-size:12px; opacity:0.7">Follow to see ${u.name}'s details</p>`;
+    document.getElementById('view-profile-about').innerHTML = html + `</div>`;
+    return;
+  }
+
+  // ELSE SHOW EVERYTHING - only fields you filled
+  if(u.bio) html += `<p><b>Bio:</b> ${u.bio}</p>`;
+  if(location) html += `<p><b>Location:</b> ${location}</p>`;
+
+  // School Details
+  if(u.school || u.grade || u.favSubject || u.favTeacher || u.favBook){
+    html += `<h4>School Details</h4>`;
+    if(u.school) html += `<p><b>School:</b> ${u.school}</p>`;
+    if(u.grade) html += `<p><b>Grade:</b> ${u.grade}</p>`;
+    if(u.favSubject) html += `<p><b>Favorite Subject:</b> ${u.favSubject}</p>`;
+    if(u.favTeacher) html += `<p><b>Favorite Teacher:</b> ${u.favTeacher}</p>`;
+    if(u.favBook) html += `<p><b>Favorite Book:</b> ${u.favBook}</p>`;
+  }
+
+  // What I Like
+  if(u.hobbies || u.topFoods || u.topSongs || u.favGames || u.favColor || u.favPerson){
+    html += `<h4>What I Like</h4>`;
+    if(u.hobbies) html += `<p><b>Hobbies:</b> ${u.hobbies}</p>`;
+    if(u.topFoods) html += `<p><b>Top 5 Foods:</b> ${u.topFoods}</p>`;
+    if(u.topSongs) html += `<p><b>Top 5 Songs/Artists:</b> ${u.topSongs}</p>`;
+    if(u.favGames) html += `<p><b>Favorite Games:</b> ${u.favGames}</p>`;
+    if(u.favColor) html += `<p><b>Favorite Color:</b> ${u.favColor}</p>`;
+    if(u.favPerson) html += `<p><b>Favorite Person:</b> ${u.favPerson}</p>`;
+  }
+
+  // Status + Contact
+  if(u.relationship || u.phone || u.instagram || u.tiktok || u.facebook){
+    html += `<h4>Status + Contact</h4>`;
+    if(u.relationship) html += `<p><b>Relationship:</b> ${u.relationship}</p>`;
+    if(u.phone) html += `<p><b>Phone:</b> ${u.phone}</p>`;
+    if(u.instagram) html += `<p><b>Instagram:</b> @${u.instagram}</p>`;
+    if(u.tiktok) html += `<p><b>TikTok:</b> @${u.tiktok}</p>`;
+    if(u.facebook) html += `<p><b>Facebook:</b> ${u.facebook}</p>`;
+  }
+
+  html += `</div>`;
+  document.getElementById('view-profile-about').innerHTML = html;
+}
 window.toggleFollow = async (uid) => {
   const btn = document.getElementById(`follow-${uid}`);
   const isFollowing = btn.innerText === 'Following';
