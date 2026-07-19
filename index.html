@@ -164,51 +164,13 @@
 .settings-popup.show { display:block }
 
 /* VIDEO FEED TIKTOK STYLE */
-#videos-section { 
-  display:none; 
-  height: 100dvh; /* fits actual screen */
-  overflow-y: scroll; 
-  scroll-snap-type: y mandatory; 
-  background:#000 
-}
-.video-card { 
-  height: 100dvh; 
-  width:100%; 
-  position:relative; 
-  scroll-snap-align: start; 
-  display:flex; 
-  align-items:center; 
-  justify-content:center;
-  padding-top: 60px;  /* space for topbar */
-  padding-bottom: 80px; /* space for buttons */
-  box-sizing: border-box;
-}
-.video-card video { 
-  width:100%; 
-  height:100%; 
-  object-fit:contain; /* shrinks to fit instead of cropping */
-  background:#000;
-  max-height: calc(100dvh - 140px);
-}
-.video-info { 
-  position:absolute; 
-  bottom:90px; /* moved up so it's not under buttons */
-  left:10px; 
-  right:70px;
-  z-index: 10;
-}
+#videos-section { display:none; height: calc(100vh - 60px); overflow-y: scroll; scroll-snap-type: y mandatory; background:#000 }
+.video-card { height: 100vh; width:100%; position:relative; scroll-snap-align: start; display:flex; align-items:center; justify-content:center }
+.video-card video { width:100%; height:100%; object-fit:cover }
+.video-info { position:absolute; bottom:80px; left:10px; right:70px }
 .video-info h4 { margin:5px 0; color:#fff; text-shadow:0 0 5px #000 }
 .follow-btn { background:#00C896; padding:4px 10px; border-radius:15px; font-size:12px; border:none; color:white }
-.add-video-btn { 
-  position:fixed; 
-  bottom:90px; /* moved up a bit */
-  right:15px; 
-  width:50px; 
-  height:50px; 
-  border-radius:50%; 
-  font-size:24px; 
-  z-index:20 
-}
+.add-video-btn { position:fixed; bottom:80px; right:15px; width:50px; height:50px; border-radius:50%; font-size:24px; z-index:20 }
 
 /* DM LIST */
 .dm-list { padding:10px }
@@ -280,7 +242,6 @@ display:flex;
 align-items:center;
 justify-content:center;
 animation:spin 3s linear infinite;
-animation-play-state: paused;
 font-size:22px;
 }
 
@@ -288,21 +249,6 @@ font-size:22px;
 from{transform:rotate(0deg);}
 to{transform:rotate(360deg);}
 }  
-.loader {
-  text-align:center; 
-  padding:50px 20px; 
-  color:#00C896;
-  font-size:16px;
-}
-.loader:after {
-  content: '...';
-  animation: dots 1.5s steps(5, end) infinite;
-}
-@keyframes dots {
- 0%, 20% { content: '.'; }
- 40% { content: '..'; }
-  60%, 100% { content: '...'; }
-}
   </style>
 </head>
 <body>
@@ -688,14 +634,13 @@ function setupNotifications(){
   })
 
   // 3. VIDEOS UNREAD
-onValue(ref(db, 'videos'), (snap)=>{
+  onValue(ref(db, 'videos'), (snap)=>{
     let unread = 0;
     snap.forEach(child=>{
       if(child.val().timestamp > lastSeen.videos && child.val().uid!== currentUser.uid){
         unread++;
       }
     })
-    updateBadge('video-badge', unread); // ADD THIS LINE
   })
 
   // 4. DMS UNREAD
@@ -809,8 +754,8 @@ function loadPosts() {
     const post = snap.val(); const postKey = snap.key; const user = await getUser(post.uid); const userPic = user.profilePic || DEFAULT_PIC;
     const userReact = post.reactions?.[currentUser.uid] || null;
     const postDiv = document.createElement('div'); postDiv.className = 'card'; postDiv.id = 'post-' + postKey;
-    let delBtn = post.uid === currentUser.uid?  <button class="del-btn" onclick="deletePost('${postKey}')">×</button>  : '';
-    let imgHtml = post.image?  <img class="card-post-img" src="${post.image}" onclick="openProfilePopup('${post.image}')">  : '';
+    let delBtn = post.uid === currentUser.uid? `<button class="del-btn" onclick="deletePost('${postKey}')">×</button>` : '';
+    let imgHtml = post.image? `<img class="card-post-img" src="${post.image}" onclick="openProfilePopup('${post.image}')">` : '';
     const reactCount = Object.keys(post.reactions||{}).length;
     const commentCount = Object.keys(post.comments||{}).length;
 
@@ -834,22 +779,22 @@ function loadPosts() {
     <div class="comments-section" id="comments-${postKey}"><div id="comment-list-${postKey}"></div><div class="comment-input-row"><input id="comment-input-${postKey}" placeholder="Write a comment..."><button onclick="addComment('${postKey}')">➤</button></div></div>`;
     document.getElementById('feed').prepend(postDiv);
 
-    renderReactions(document.getElementById( react-sum-${postKey} ), post.reactions, userReact);
+    renderReactions(document.getElementById(`react-sum-${postKey}`), post.reactions, userReact);
     loadComments(postKey);
-    onValue(ref(db,  posts/${postKey}/reactions ), (s)=>{
+    onValue(ref(db, `posts/${postKey}/reactions`), (s)=>{
       const reacts = s.val() || {};
-      renderReactions(document.getElementById( react-sum-${postKey} ), reacts, reacts[currentUser.uid]);
-      document.getElementById( react-count-${postKey} ).innerText =  ${Object.keys(reacts).length} Reactions ;
-      const btn = document.getElementById( like-btn-${postKey} );
+      renderReactions(document.getElementById(`react-sum-${postKey}`), reacts, reacts[currentUser.uid]);
+      document.getElementById(`react-count-${postKey}`).innerText = `${Object.keys(reacts).length} Reactions`;
+      const btn = document.getElementById(`like-btn-${postKey}`);
       if(reacts[currentUser.uid]){ btn.classList.add('active'); btn.innerHTML = reacts[currentUser.uid]; }
       else { btn.classList.remove('active'); btn.innerHTML = '👍'; }
     });
-    onValue(ref(db,  posts/${postKey}/comments ), (s)=>{
-      document.getElementById( comment-count-${postKey} ).innerText =  ${s.size} Comments ;
+    onValue(ref(db, `posts/${postKey}/comments`), (s)=>{
+      document.getElementById(`comment-count-${postKey}`).innerText = `${s.size} Comments`;
     })
 
-    const likeBtn = document.getElementById( like-btn-${postKey} );
-    const picker = document.getElementById( picker-${postKey} );
+    const likeBtn = document.getElementById(`like-btn-${postKey}`);
+    const picker = document.getElementById(`picker-${postKey}`);
     let timer;
     let longPressTriggered = false;
 
@@ -861,12 +806,18 @@ function loadPosts() {
     likeBtn.onmouseup = likeBtn.ontouchend = likeBtn.onmouseleave = () => {
       clearTimeout(timer);
       if(!longPressTriggered){
-        setReaction( posts/${postKey}/reactions , '👍')
+        setReaction(`posts/${postKey}/reactions`, '👍')
       }
-  }
+    }
   });
 }
-  
+window.deletePost = async (key) => {
+  if(confirm("Delete this post?")) {
+    await remove(ref(db, 'posts/' + key));
+    const el = document.getElementById('post-' + key);
+    if(el) el.remove();
+  }
+}
 window.reactToPost = async (key, emoji) => { await setReaction(`posts/${key}/reactions`, emoji); document.getElementById(`picker-${key}`).classList.remove('show'); }
 window.toggleComments = (key) => document.getElementById(`comments-${key}`).classList.toggle('show');
 window.addComment = async (key) => { const input = document.getElementById(`comment-input-${key}`); const text = input.value.trim(); if(!text) return; await push(ref(db, `posts/${key}/comments`), {uid: currentUser.uid, text, timestamp: Date.now()}); input.value = ''; }
@@ -916,32 +867,84 @@ window.likeVideo = async (id)=>{
     if(s.exists()) await remove(r);
     else await set(r,true);
 }
-window.openVideoComments = (id)=>{ alert("Video comments coming next."); }
+window.openVideoComments = (id) => {
+  // Create comment box if it doesn't exist
+  let commentBox = document.getElementById('comments-box-' + id);
+  
+  if(!commentBox){
+    const postCard = document.querySelector(`[data-postid="${id}"]`);
+    if(!postCard) return;
+    
+    commentBox = document.createElement('div');
+    commentBox.id = 'comments-box-' + id;
+    commentBox.className = 'comments-section';
+    commentBox.innerHTML = `
+      <div class="comments-list" id="comments-list-${id}"></div>
+      <div class="comment-input">
+        <input type="text" id="comment-input-${id}" placeholder="Add a comment...">
+        <button onclick="addComment('${id}')">Send</button>
+      </div>
+    `;
+    postCard.appendChild(commentBox);
+    loadComments(id);
+  } else {
+    // Toggle hide/show
+    commentBox.style.display = commentBox.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+function loadComments(postId) {
+  const commentsRef = firebase.database().ref('comments/' + postId);
+  commentsRef.on('value', (snap) => {
+    const commentsDiv = document.getElementById('comments-list-' + postId);
+    if(!commentsDiv) return;
+    commentsDiv.innerHTML = '';
+    snap.forEach(child => {
+      const c = child.val();
+      commentsDiv.innerHTML += `
+        <div class="comment">
+          <b>${c.username}</b>: ${c.text}
+        </div>
+      `;
+    });
+    commentsDiv.scrollTop = commentsDiv.scrollHeight;
+  });
+}
+
+function addComment(postId) {
+  const input = document.getElementById('comment-input-' + postId);
+  const text = input.value.trim();
+  if(text === '' || !currentUser) return;
+  
+  firebase.database().ref('comments/' + postId).push({
+    text: text,
+    username: currentUser.displayName || 'User',
+    uid: currentUser.uid,
+    timestamp: Date.now()
+  });
+  
+  input.value = '';
+}
 
 // VIDEOS TIKTOK STYLE
 function loadVideos(){
   off(ref(db, 'videos')); 
-  document.getElementById('video-feed').innerHTML = '<div class="loader">Loading Videos</div>'; 
+  document.getElementById('video-feed').innerHTML = '';
 
+  // ADD THIS: remove from DOM when deleted in DB
   onChildRemoved(ref(db, 'videos'), (snap) => {
     const videoCard = document.querySelector(`.video-card[data-id="${snap.key}"]`);
     if(videoCard) videoCard.remove();
   });
 
-  onChildAdded(query(ref(db, 'videos'), orderByChild('timestamp'), limitToLast(30)), async (snap) => { 
-    if(document.querySelector('#video-feed .loader')) document.getElementById('video-feed').innerHTML = ''; 
+  onChildAdded(query(ref(db, 'videos'), orderByChild('timestamp'), limitToLast(20)), async (snap) => {
     const v = snap.val(); 
     const u = await getUser(v.uid);
-    const likeCount = Object.keys(v.likes || {}).length;
-    const commentCount = Object.keys(v.comments || {}).length;
-    const favCount = Object.keys(v.favorites || {}).length;
-    const shareCount = Object.keys(v.shares || {}).length;
-    
     const div = document.createElement('div'); 
     div.className = 'video-card';
-    div.setAttribute('data-id', snap.key);
+    div.setAttribute('data-id', snap.key); // ADD THIS so we can find it to delete
     div.innerHTML = `
-      <video src="${v.video}" loop playsinline muted></video>  <!-- REMOVED onclick, ADDED muted -->
+      <video src="${v.video}" loop playsinline onclick="this.paused?this.play():this.pause()"></video>
       <div class="video-info">
         <h4>@${u.name}</h4>
         <p>${v.desc || ""}</p>
@@ -951,38 +954,14 @@ function loadVideos(){
             <img class="side-profile" src="${u.profilePic}">
             <span class="plus-badge">+</span>
         </div>
-        <div class="video-action" onclick="likeVideo('${snap.key}')">❤️<span>${likeCount}</span></div>
-        <div class="video-action" onclick="openVideoComments('${snap.key}')">💬<span>${commentCount}</span></div>
-        <div class="video-action" onclick="favoriteVideo('${snap.key}')">🔖<span>${favCount}</span></div>
-        <div class="video-action" onclick="openVideoShare('${snap.key}')">↗<span>${shareCount}</span></div>
+        <div class="video-action" onclick="likeVideo('${snap.key}')">❤️<span>${Object.keys(v.likes || {}).length}</span></div>
+        <div class="video-action" onclick="openVideoComments('${snap.key}')">💬<span>${Object.keys(v.comments || {}).length}</span></div>
+        <div class="video-action" onclick="favoriteVideo('${snap.key}')">🔖<span>${Object.keys(v.favorites || {}).length}</span></div>
+        <div class="video-action" onclick="openVideoShare('${snap.key}')">↗<span>${Object.keys(v.shares || {}).length}</span></div>
         <div class="music-disc">🎵</div>
       </div>
     `;
     document.getElementById('video-feed').appendChild(div);
-    
-    const video = div.querySelector('video');
-    const musicDisc = div.querySelector('.music-disc');
-    
-    // TIKTOK AUTOPLAY: PLAY WHEN 70% VISIBLE
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if(entry.isIntersecting){
-          video.muted = false; // try unmute
-          video.play().catch(()=>{ 
-            // if browser blocks sound, play muted
-            video.muted = true;
-            video.play();
-          });
-          musicDisc.style.animationPlayState = 'running';
-        } else {
-          video.pause();
-          video.muted = true;
-          musicDisc.style.animationPlayState = 'paused';
-        }
-      })
-    }, { threshold: 0.8 });
-    
-    observer.observe(video);
   })
 }
 
@@ -1152,7 +1131,6 @@ window.backToFeed = () => {
   document.getElementById('dm-chat-section').style.display = 'none';
   document.getElementById('friends-section').style.display = 'none';
   document.getElementById('profile-box').style.display = 'none';
-  document.querySelectorAll('#video-feed video').forEach(v => { v.pause(); v.muted = true; });
 }
 
 document.getElementById('chat-img-btn').onclick = () => document.getElementById('chat-file').click();
@@ -1225,7 +1203,7 @@ function endDrag(e, msgData, msgKey){
 
 function loadChat() {
   off(ref(db, 'globalChat'));
-  document.getElementById('global-chat').innerHTML = '<div class="loader">Loading Chat</div>'; // CHANGED
+  document.getElementById('global-chat').innerHTML = '<p style="text-align:center; opacity:0.6">Loading messages...</p>';
   loadedMessages.clear();
   get(query(ref(db, 'globalChat'), orderByChild('timestamp'), limitToLast(50))).then(async (snapshot) => {
     document.getElementById('global-chat').innerHTML = '';
