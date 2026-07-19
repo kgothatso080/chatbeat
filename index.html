@@ -633,14 +633,15 @@ function setupNotifications(){
     updateBadge('video-badge', unread);
   })
 
-  // 3. VIDEOS UNREAD
-  onValue(ref(db, 'videos'), (snap)=>{
+ // 3. VIDEOS UNREAD
+onValue(ref(db, 'videos'), (snap)=>{
     let unread = 0;
     snap.forEach(child=>{
       if(child.val().timestamp > lastSeen.videos && child.val().uid!== currentUser.uid){
         unread++;
       }
     })
+    updateBadge('video-badge', unread); // ADD THIS LINE
   })
 
   // 4. DMS UNREAD
