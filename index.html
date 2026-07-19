@@ -633,7 +633,7 @@ function setupNotifications(){
     updateBadge('video-badge', unread);
   })
 
- // 3. VIDEOS UNREAD
+// 3. VIDEOS UNREAD
 onValue(ref(db, 'videos'), (snap)=>{
     let unread = 0;
     snap.forEach(child=>{
@@ -868,41 +868,7 @@ window.likeVideo = async (id)=>{
     if(s.exists()) await remove(r);
     else await set(r,true);
 }
-
 window.openVideoComments = (id)=>{ alert("Video comments coming next."); }
-  
-function loadComments(postId) {
-  const commentsRef = firebase.database().ref('comments/' + postId);
-  commentsRef.on('value', (snap) => {
-    const commentsDiv = document.getElementById('comments-list-' + postId);
-    if(!commentsDiv) return;
-    commentsDiv.innerHTML = '';
-    snap.forEach(child => {
-      const c = child.val();
-      commentsDiv.innerHTML += `
-        <div class="comment">
-          <b>${c.username}</b>: ${c.text}
-        </div>
-      `;
-    });
-    commentsDiv.scrollTop = commentsDiv.scrollHeight;
-  });
-}
-
-function addComment(postId) {
-  const input = document.getElementById('comment-input-' + postId);
-  const text = input.value.trim();
-  if(text === '' || !currentUser) return;
-  
-  firebase.database().ref('comments/' + postId).push({
-    text: text,
-    username: currentUser.displayName || 'User',
-    uid: currentUser.uid,
-    timestamp: Date.now()
-  });
-  
-  input.value = '';
-}
 
 // VIDEOS TIKTOK STYLE
 function loadVideos(){
