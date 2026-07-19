@@ -1645,7 +1645,7 @@ window.saveProfile = async () => {
   await set(ref(db, 'users/'+currentUser.uid), {...(await get(ref(db, 'users/'+currentUser.uid))).val(), ...profileData});
   alert("Profile Saved!");
   closeEditProfile();
-  loadMyProfile(); // refresh display
+  loadMyProfile();
 }
 
 // SHOW PROFILE DATA
