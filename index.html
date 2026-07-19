@@ -528,7 +528,6 @@ to{transform:rotate(360deg);}
   </div>
 
 <div id="view-profile-popup" class="settings-popup" style="max-height:90vh; overflow-y:auto">
-<div id="view-profile-popup" class="settings-popup" style="max-height:90vh; overflow-y:auto">
   <img id="view-profile-pic" src="" style="width:90px; height:90px; border-radius:50%; margin-bottom:10px">
   <h3 id="view-profile-name"></h3>
   <p id="view-profile-bio" style="font-size:13px; opacity:0.8"></p>
@@ -596,8 +595,6 @@ window.openProfilePopup = (imgSrc) => {
   if(!imgSrc) return;
   document.getElementById('profile-popup-img').src = imgSrc;
   document.getElementById('profile-popup').classList.add('show');
-  get(ref(db, 'users/'+uid)).then(snap=>{
-  loadAboutTab(snap.val(), uid);
 })
 }
 window.closeProfilePopup = () => {
@@ -896,8 +893,8 @@ function loadPosts() {
 
     postDiv.innerHTML = `${delBtn}
     <div class="card-header">
-      <img class="card-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">
-      <div class="name" style="color:${user.color}">${user.name}</div>
+    <img class="card-avatar" src="${userPic}" onclick="viewUserProfile('${post.uid}')">
+<div class="name" style="color:${user.color}; cursor:pointer" onclick="viewUserProfile('${post.uid}')">${user.name}</div>
     </div>
     <div>${post.text||''}</div>${imgHtml}
     <div class="post-stats" onclick="toggleComments('${postKey}')">
