@@ -321,6 +321,7 @@ to{transform:rotate(360deg);}
     <div id="linked-accounts" style="font-size:12px; margin-top:8px"></div>
     <input id="profile-upload" type="file" accept="image/*" style="display:none">
     <button onclick="document.getElementById('profile-upload').click()">Change Profile Photo</button>
+    <div id="profile-info">
     <button onclick="document.getElementById('profile-box').style.display='none'">Close</button>
   </div>
 
@@ -710,7 +711,7 @@ onAuthStateChanged(auth, async (user) => {
    document.getElementById('app').style.display = 'block'; applyTheme();
    document.getElementById('my-name').innerText = userData.name;
    document.getElementById('profile-pic').src = userData.profilePic || DEFAULT_PIC;
-   document.getElementById('profile').innerHTML = `
+   document.getElementById('profile-info').innerHTML = `
   <div class="profile-name">${userData.name} ${userData.surname || ''}</div>
   <div class="profile-bio">${userData.bio || ''}</div>
 
