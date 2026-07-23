@@ -243,7 +243,57 @@ font-size:22px;
 @keyframes spin{
 from{transform:rotate(0deg);}
 to{transform:rotate(360deg);}
-}  
+} 
+body { 
+  font-family: Arial, sans-serif; 
+  background: #fff; 
+  margin: 0; 
+  padding: 0;
+}
+
+.cancel-btn {
+  background: red; 
+  color: white; 
+  border: none; 
+  padding: 8px 12px; 
+  border-radius: 5px; 
+  cursor: pointer; 
+  float: right; 
+  margin: 10px;
+  font-size: 14px;
+}
+
+.profile-container {
+  padding: 20px; 
+  max-width: 600px; 
+  margin: auto; 
+  clear: both;
+}
+
+.profile-name {
+  font-size: 24px; 
+  font-weight: bold;
+}
+
+.profile-bio {
+  font-size: 14px; 
+  color: gray; 
+  margin-bottom: 15px;
+}
+
+.profile-section {
+  margin-bottom: 15px;
+  line-height: 1.6;
+}
+
+.profile-label {
+  font-weight: bold;
+}
+
+.profile-link {
+  color: blue; 
+  text-decoration: underline;
+}
   </style>
 </head>
 <body>
@@ -353,6 +403,10 @@ to{transform:rotate(360deg);}
   <span class="profile-popup-close" onclick="closeProfilePopup()">×</span>
   <img id="profile-popup-img" src="" onclick="event.stopPropagation()">
 </div>
+
+<button class="cancel-btn" onclick="history.back()">X Cancel</button>
+
+<div class="profile-container" id="profile"></div>
 
 <div id="share-popup" class="share-popup">
 <h3>Share</h3>
@@ -1327,6 +1381,50 @@ document.addEventListener('click', () => {
   document.querySelectorAll('.react-picker').forEach(p => p.classList.remove('show'));
   document.querySelectorAll('.react-names-tooltip').forEach(t => t.style.display = 'none');
 });
+
+document.getElementById('profile').innerHTML = `
+  <div class="profile-name">${user.name} ${user.surname}</div>
+  <div class="profile-bio">${user.bio}</div>
+
+  <div class="profile-section">
+    <span class="profile-label">Location:</span><br>
+    ${user.country}; ${user.province}; ${user.city}; ${user.town}; ${user.village}; ${user.street}
+  </div>
+
+  <div class="profile-section">
+    <span class="profile-label">Age:</span> ${user.age} <br>
+    <span class="profile-label">Birth date:</span> ${user.birthDate} <br>
+    <span class="profile-label">Gender:</span> ${user.gender}
+  </div>
+
+  <div class="profile-section">
+    <span class="profile-label">Best friends:</span> ${user.bestFriends} <br>
+    <span class="profile-label">Fav teachers:</span> ${user.favTeachers} <br>
+    <span class="profile-label">School:</span> ${user.school}
+  </div>
+
+  <div class="profile-section">
+    <span class="profile-label">Contact info:</span> 
+    <a class="profile-link" href="tel:${user.contact}">${user.contact}</a>
+  </div>
+
+  <div class="profile-section">
+    <span class="profile-label">Socials:</span> <br>
+    TikTok: ${user.tiktok} <br>
+    Instagram: ${user.instagram} <br>
+    Twitter: ${user.twitter} <br>
+    Facebook: ${user.facebook} <br>
+    WhatsApp: ${user.whatsapp}
+  </div>
+
+  <div class="profile-section">
+    <span class="profile-label">Name of pet:</span> ${user.petName} <br>
+    <span class="profile-label">Hobbies:</span> ${user.hobbies} <br>
+    <span class="profile-label">Dream job:</span> ${user.dreamJob} <br>
+    <span class="profile-label">Dream car:</span> ${user.dreamCar} <br>
+    <span class="profile-label">Girlfriend:</span> ${user.girlfriend}
+  </div>
+`;
 
 </script>
 </body>
