@@ -679,6 +679,7 @@ function setupNotifications(){
         unread++;
       }
     })
+    updateBadge('video-badge',unread);
   })
 
   // 4. DMS UNREAD
@@ -709,6 +710,49 @@ onAuthStateChanged(auth, async (user) => {
    document.getElementById('app').style.display = 'block'; applyTheme();
    document.getElementById('my-name').innerText = userData.name;
    document.getElementById('profile-pic').src = userData.profilePic || DEFAULT_PIC;
+   document.getElementById('profile').innerHTML = `
+  <div class="profile-name">${userData.name} ${userData.surname || ''}</div>
+  <div class="profile-bio">${userData.bio || ''}</div>
+
+  <div class="profile-section">
+    <span class="profile-label">Location:</span><br>
+    ${userData.country || ''}; ${userData.province || ''}; ${userData.city || ''}; ${userData.town || ''}; ${userData.village || ''}; ${userData.street || ''}
+  </div>
+
+  <div class="profile-section">
+    <span class="profile-label">Age:</span> ${userData.age || ''} <br>
+    <span class="profile-label">Birth date:</span> ${userData.birthDate || ''} <br>
+    <span class="profile-label">Gender:</span> ${userData.gender || ''}
+  </div>
+
+  <div class="profile-section">
+    <span class="profile-label">Best friends:</span> ${userData.bestFriends || ''} <br>
+    <span class="profile-label">Fav teachers:</span> ${userData.favTeachers || ''} <br>
+    <span class="profile-label">School:</span> ${userData.school || ''}
+  </div>
+
+  <div class="profile-section">
+    <span class="profile-label">Contact info:</span> 
+    <a class="profile-link" href="tel:${userData.contact || ''}">${userData.contact || ''}</a>
+  </div>
+
+  <div class="profile-section">
+    <span class="profile-label">Socials:</span> <br>
+    TikTok: ${userData.tiktok || ''} <br>
+    Instagram: ${userData.instagram || ''} <br>
+    Twitter: ${userData.twitter || ''} <br>
+    Facebook: ${userData.facebook || ''} <br>
+    WhatsApp: ${userData.whatsapp || ''}
+  </div>
+
+  <div class="profile-section">
+    <span class="profile-label">Name of pet:</span> ${userData.petName || ''} <br>
+    <span class="profile-label">Hobbies:</span> ${userData.hobbies || ''} <br>
+    <span class="profile-label">Dream job:</span> ${userData.dreamJob || ''} <br>
+    <span class="profile-label">Dream car:</span> ${userData.dreamCar || ''} <br>
+    <span class="profile-label">Girlfriend:</span> ${userData.girlfriend || ''}
+  </div>
+`;
    loadedMessages.clear();
    allMessagesCache = {};
    document.getElementById('feed').innerHTML = '';
@@ -851,8 +895,7 @@ function loadPosts() {
 }
 window.deletePost = async (key) => {
   if(confirm("Delete this post?")) {
-    await remove(ref(db, 'posts/' + key));
-    const el = document.getElementById('post-' + key);
+    const userPosts = query(ref(db, 'posts'), orderByChild('uid'), equalTo(currentUser.uid));
     if(el) el.remove();
   }
 }
@@ -1345,8 +1388,7 @@ window.deleteVideo = async (id)=>{
       return;
     }
     if(confirm("Delete this video?")){
-        await remove(ref(db,"videos/"+id));
-        closeShare();
+        const userVideos = query(ref(db, 'videos'), orderByChild('uid'), equalTo(currentUser.uid));
     }
 }
 
@@ -1369,50 +1411,6 @@ document.addEventListener('click', () => {
   document.querySelectorAll('.react-picker').forEach(p => p.classList.remove('show'));
   document.querySelectorAll('.react-names-tooltip').forEach(t => t.style.display = 'none');
 });
-
-document.getElementById('profile').innerHTML = `
-  <div class="profile-name">${user.name} ${user.surname}</div>
-  <div class="profile-bio">${user.bio}</div>
-
-  <div class="profile-section">
-    <span class="profile-label">Location:</span><br>
-    ${user.country}; ${user.province}; ${user.city}; ${user.town}; ${user.village}; ${user.street}
-  </div>
-
-  <div class="profile-section">
-    <span class="profile-label">Age:</span> ${user.age} <br>
-    <span class="profile-label">Birth date:</span> ${user.birthDate} <br>
-    <span class="profile-label">Gender:</span> ${user.gender}
-  </div>
-
-  <div class="profile-section">
-    <span class="profile-label">Best friends:</span> ${user.bestFriends} <br>
-    <span class="profile-label">Fav teachers:</span> ${user.favTeachers} <br>
-    <span class="profile-label">School:</span> ${user.school}
-  </div>
-
-  <div class="profile-section">
-    <span class="profile-label">Contact info:</span> 
-    <a class="profile-link" href="tel:${user.contact}">${user.contact}</a>
-  </div>
-
-  <div class="profile-section">
-    <span class="profile-label">Socials:</span> <br>
-    TikTok: ${user.tiktok} <br>
-    Instagram: ${user.instagram} <br>
-    Twitter: ${user.twitter} <br>
-    Facebook: ${user.facebook} <br>
-    WhatsApp: ${user.whatsapp}
-  </div>
-
-  <div class="profile-section">
-    <span class="profile-label">Name of pet:</span> ${user.petName} <br>
-    <span class="profile-label">Hobbies:</span> ${user.hobbies} <br>
-    <span class="profile-label">Dream job:</span> ${user.dreamJob} <br>
-    <span class="profile-label">Dream car:</span> ${user.dreamCar} <br>
-    <span class="profile-label">Girlfriend:</span> ${user.girlfriend}
-  </div>
-`;
 
 </script>
 </body>
