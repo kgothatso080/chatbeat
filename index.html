@@ -899,48 +899,7 @@ window.deleteComment = async (postKey, commentKey) => {
     if(el) el.remove();
   }
 }
-function loadVideoComments(videoId){
-  const list = document.getElementById(`v-comment-list-${videoId}`);
-  list.innerHTML = '';
 
-  onChildAdded(ref(db, `videos/${videoId}/comments`), async (snap)=>{
-    const c = snap.val();
-    const u = await getUser(c.uid);
-    const commentId = snap.key;
-
-    const div = document.createElement('div');
-    div.className = 'comment-as-post'; // SAME CLASS AS POSTS
-    div.id = 'v-comment-' + commentId;
-    let delBtn = c.uid === currentUser.uid? `<button class="del-btn" onclick="deleteVideoComment('${videoId}','${commentId}')">×</button>` : '';
-
-    div.innerHTML = `
-      <div class="post-header">
-        <img class="avatar" src="${u.profilePic}" onclick="openProfilePopup('${u.profilePic}')">
-        <div>
-          <div class="name" style="color:${u.color}" onclick="viewUserProfile('${c.uid}')">${u.name}</div>
-          <div class="time">${timeAgo(c.ts)}</div>
-        </div>
-        ${delBtn}
-      </div>
-      <div class="post-text">${c.text}</div>
-      <div class="post-actions">
-        <button onclick="likeVideoComment('${videoId}','${commentId}', this)">❤️ <span>0</span></button>
-      </div>
-    `;
-    list.appendChild(div);
-
-    // load likes for this video comment
-    onValue(ref(db, `videos/${videoId}/comments/${commentId}/likes`), s=>{
-      const span = div.querySelector('.post-actions span');
-      if(span) span.innerText = s.size;
-    })
-  })
-
-  onChildRemoved(ref(db, `videos/${videoId}/comments`), (snap)=>{
-    const el = document.getElementById('v-comment-' + snap.key);
-    if(el) el.remove();
-  })
-}
 window.openShare = (link) => { shareLink = link; document.getElementById('share-popup').classList.add('show'); }
 window.closeShare = () => document.getElementById('share-popup').classList.remove('show');
 window.shareTo = (type) => {
@@ -963,70 +922,6 @@ window.likeVideo = async (id, el)=>{
     const countSpan = el.querySelector('span');
     let count = parseInt(countSpan.innerText) || 0;
     countSpan.innerText = s.exists() ? count - 1 : count + 1;
-}
-window.toggleVideoComments = (videoId) => {
-  document.getElementById(`v-comments-${videoId}`).classList.toggle('show');
-}
-
-window.sendVideoComment = (videoId) => {
-  const inp = document.getElementById(`v-comment-input-${videoId}`);
-  if(!inp.value.trim()) return;
-  push(ref(db, `videos/${videoId}/comments`), {
-    uid: currentUser.uid,
-    text: inp.value,
-  timestamp: Date.now()
-  });
-  inp.value = '';
-}
-
-// VIDEOS TIKTOK STYLE
-function loadVideos(){
-  off(ref(db, 'videos')); 
-  document.getElementById('video-feed').innerHTML = '';
-
-  // ADD THIS: remove from DOM when deleted in DB
-  onChildRemoved(ref(db, 'videos'), (snap) => {
-    const videoCard = document.querySelector(`.video-card[data-id="${snap.key}"]`);
-    if(videoCard) videoCard.remove();
-  });
-
-  onChildAdded(query(ref(db, 'videos'), orderByChild('timestamp'), limitToLast(20)), async (snap) => {
-    const v = snap.val(); 
-    const u = await getUser(v.uid);
-    const div = document.createElement('div'); 
-    div.className = 'video-card';
-    div.setAttribute('data-id', snap.key); // ADD THIS so we can find it to delete
-    div.innerHTML = `
-  <video src="${v.video}" loop playsinline onclick="this.paused?this.play():this.pause()"></video>
-  <div class="video-info">
-    <h4>@${u.name}</h4>
-    <p>${v.desc || ""}</p>
-  </div>
-  <div class="video-sidebar">
-    <div class="profile-wrap">
-        <img class="side-profile" src="${u.profilePic}">
-        <span class="plus-badge">+</span>
-    </div>
-    <div class="video-action" onclick="likeVideo('${snap.key}', this)">❤️<span>${Object.keys(v.likes || {}).length}</span></div>
-    <div class="video-action" onclick="toggleVideoComments('${snap.key}')">💬<span>${Object.keys(v.comments || {}).length}</span></div>
-    <div class="video-action" onclick="favoriteVideo('${snap.key}', this)">🔖<span>${Object.keys(v.favorites || {}).length}</span></div>
-    <div class="video-action" onclick="openVideoShare('${snap.key}')">↗<span>${Object.keys(v.shares || {}).length}</span></div>
-    <div class="music-disc">🎵</div>
-  </div>
-  
-  <!-- THIS WAS MISSING -->
-  <div class="video-comments-section" id="v-comments-${snap.key}">
-    <div id="v-comment-list-${snap.key}" class="video-comment-list"></div> 
-    <div class="video-comment-input-row">
-      <input id="v-comment-input-${snap.key}" placeholder="Add comment...">
-      <button onclick="sendVideoComment('${snap.key}')">➤</button>
-    </div>
-  </div>
-`;
-    document.getElementById('video-feed').appendChild(div);
-videoObserver.observe(div);
-loadVideoComments(snap.key);
-  })
 }
 
 // VIDEO UPLOAD
@@ -1459,18 +1354,7 @@ window.deleteAccount = async () => {
     await deleteUser(currentUser); 
   }
 }
-window.favoriteVideo = async(id, el)=>{
-    const r = ref(db,`favorites/${currentUser.uid}/${id}`);
-    const s = await get(r);
-    if(s.exists()){ 
-      await remove(r);
-      el.style.color = 'white';
-    }
-    else { 
-      await set(r,true);
-      el.style.color = '#00C896'; // highlight when favorited
-    }
-}
+
 
 window.deleteVideo = async (id)=>{
     const snap = await get(ref(db,"videos/"+id));
@@ -1596,26 +1480,118 @@ onAuthStateChanged(auth, async (user) => {
    loadMyProfile(); // ADD THIS LINE
  }
 });
+// ADD THIS IF IT'S MISSING
+const videoObserver = new IntersectionObserver((entries)=>{
+  entries.forEach(entry=>{
+    const video = entry.target.querySelector('video');
+    if(entry.isIntersecting){ video.play(); }
+    else { video.pause(); }
+  })
+}, { threshold: 0.6 });
 
+// TOGGLE THE COMMENT BOX
+window.toggleVideoComments = (videoId) => {
+  document.getElementById(`v-comments-${videoId}`).classList.toggle('show');
+}
 
-// LIKE VIDEO COMMENT
-window.likeVideoComment = async(videoId, commentId, btn) => {
-  const r = ref(db, `videos/${videoId}/comments/${commentId}/likes/${currentUser.uid}`);
+// SEND COMMENT
+window.sendVideoComment = (videoId) => {
+  const inp = document.getElementById(`v-comment-input-${videoId}`);
+  if(!inp.value.trim()) return;
+  push(ref(db, `videos/${videoId}/comments`), {
+    uid: currentUser.uid,
+    text: inp.value,
+    timestamp: Date.now() // MUST BE timestamp NOT ts
+  });
+  inp.value = '';
+}
+
+// LOAD COMMENTS LIST
+function loadVideoComments(videoId){
+  const list = document.getElementById(`v-comment-list-${videoId}`);
+  if(!list) return;
+  list.innerHTML = '';
+
+  onChildAdded(ref(db, `videos/${videoId}/comments`), async (snap)=>{
+    const c = snap.val();
+    const u = await getUser(c.uid);
+    const div = document.createElement('div');
+    div.className = 'video-comment';
+    div.innerHTML = `
+      <img class="video-comment-avatar" src="${u.profilePic}" onclick="openProfilePopup('${u.profilePic}')">
+      <div class="video-comment-bubble">
+        <b style="color:${u.color}" onclick="viewUserProfile('${c.uid}')">${u.name}</b><br>
+        ${c.text}
+      </div>
+    `;
+    list.appendChild(div);
+  })
+  
+  onChildRemoved(ref(db, `videos/${videoId}/comments`), (snap)=>{
+    list.innerHTML = ''; // simple refresh
+    loadVideoComments(videoId);
+  })
+}
+
+// FAVORITE FIX
+window.favoriteVideo = async(id, el)=>{
+  const r = ref(db,`videos/${id}/favorites/${currentUser.uid}`); // SAVE INSIDE VIDEO
   const s = await get(r);
-  if(s.exists()){
+  if(s.exists()){ 
     await remove(r);
-    btn.style.color = '#aaa';
-  } else {
-    await set(r, true);
-    btn.style.color = '#ff3b30';
+    el.style.color = 'white';
+  }
+  else { 
+    await set(r,true);
+    el.style.color = '#00C896';
   }
 }
 
-// DELETE VIDEO COMMENT
-window.deleteVideoComment = async(videoId, commentId) => {
-  if(confirm("Delete comment?")){
-    await remove(ref(db, `videos/${videoId}/comments/${commentId}`));
-  }
+// LOAD VIDEOS - WITH CORRECT BUTTON
+function loadVideos(){
+  off(ref(db, 'videos')); 
+  document.getElementById('video-feed').innerHTML = '';
+
+  onChildRemoved(ref(db, 'videos'), (snap) => {
+    document.querySelector(`.video-card[data-id="${snap.key}"]`)?.remove();
+  });
+
+  onChildAdded(query(ref(db, 'videos'), orderByChild('timestamp'), limitToLast(20)), async (snap) => {
+    const v = snap.val(); 
+    const u = await getUser(v.uid);
+    const div = document.createElement('div'); 
+    div.className = 'video-card';
+    div.setAttribute('data-id', snap.key);
+    div.innerHTML = `
+      <video src="${v.video}" loop playsinline onclick="this.paused?this.play():this.pause()"></video>
+      <div class="video-info">
+        <h4>@${u.name}</h4>
+        <p>${v.desc || ""}</p>
+      </div>
+      <div class="video-sidebar">
+        <div class="profile-wrap">
+          <img class="side-profile" src="${u.profilePic}">
+          <span class="plus-badge">+</span>
+        </div>
+        <div class="video-action" onclick="likeVideo('${snap.key}', this)">❤️<span>${Object.keys(v.likes || {}).length}</span></div>
+        <div class="video-action" onclick="toggleVideoComments('${snap.key}')">💬<span>${Object.keys(v.comments || {}).length}</span></div> <!-- FIXED -->
+        <div class="video-action" onclick="favoriteVideo('${snap.key}', this)">🔖<span>${Object.keys(v.favorites || {}).length}</span></div>
+        <div class="video-action" onclick="openVideoShare('${snap.key}')">↗<span>${Object.keys(v.shares || {}).length}</span></div>
+        <div class="music-disc">🎵</div>
+      </div>
+      
+      <div class="video-comments-section" id="v-comments-${snap.key}">
+        <div id="v-comment-list-${snap.key}"></div> 
+        <div class="video-comment-input-row">
+          <input id="v-comment-input-${snap.key}" placeholder="Add comment...">
+          <button onclick="sendVideoComment('${snap.key}')">➤</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('video-feed').appendChild(div);
+    loadVideoComments(snap.key);
+    videoObserver.observe(div);
+  })
 }
 
 </script>
