@@ -974,7 +974,7 @@ window.sendVideoComment = (videoId) => {
   push(ref(db, `videos/${videoId}/comments`), {
     uid: currentUser.uid,
     text: inp.value,
-    ts: Date.now()
+  timestamp: Date.now()
   });
   inp.value = '';
 }
@@ -1597,18 +1597,6 @@ onAuthStateChanged(auth, async (user) => {
  }
 });
 
-// SEND VIDEO COMMENT
-window.sendVideoComment = (videoId) => {
-  const inp = document.getElementById(`v-comment-input-${videoId}`);
-  if(!inp.value.trim()) return;
-  const newRef = push(ref(db, `videos/${videoId}/comments`));
-  set(newRef, {
-    uid: currentUser.uid,
-    text: inp.value,
-    ts: Date.now()
-  });
-  inp.value = '';
-}
 
 // LIKE VIDEO COMMENT
 window.likeVideoComment = async(videoId, commentId, btn) => {
