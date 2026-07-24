@@ -154,6 +154,26 @@
 .comment-input-row { display:flex; gap:6px; margin-top:6px; align-items:center }
 .comment-input-row input { flex:1; background:#2a3942; color:white; border-radius:20px; padding:8px 12px }
 .comment-input-row button { width:40px; height:40px; border-radius:50%; padding:0; font-size:16px; min-width:40px }
+.video-comments-section { 
+  position: absolute; 
+  bottom: 80px; 
+  left: 10px; 
+  right: 70px; 
+  background: rgba(0,0,0,0.85); 
+  border-radius: 12px; 
+  padding: 10px; 
+  display: none; 
+  max-height: 40vh; 
+  overflow-y: auto; 
+  z-index: 30;
+}
+.video-comments-section.show { display: block }
+.video-comment { display:flex; gap:8px; margin:6px 0; font-size:14px; }
+.video-comment-avatar {width:28px; height:28px; border-radius:50%;}
+.video-comment-bubble { background:#2a3942; padding:6px 10px; border-radius:18px; flex:1 }
+.video-comment-input-row { display:flex; gap:6px; margin-top:6px; align-items:center }
+.video-comment-input-row input { flex:1; background:#2a3942; color:white; border-radius:20px; padding:8px 12px }
+.video-comment-input-row button { width:40px; height:40px; border-radius:50%; padding:0; font-size:16px; min-width:40px }
 .bubble-reactions { display:flex; gap:2px; margin-top:3px; font-size:11px; position:absolute; bottom:-10px; left:10px; background:#3a3b3c; border-radius:12px; padding:2px 4px; cursor:pointer; z-index:2 }
 .share-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#202c33; padding:20px; border-radius:15px; z-index:9999; display:none; border:2px solid #00C896; width:90%; max-width:300px }
 
@@ -918,12 +938,23 @@ window.shareTo = (type) => {
   if(type=="more"){ if(navigator.share){ navigator.share({ title:"ChatBeat", url:shareLink }); } }
   closeShare();
 }
-window.likeVideo = async (id)=>{
+window.likeVideo = async (id, el)=>{
     const r = ref(db, `videos/${id}/likes/${currentUser.uid}`);
-    const s = await get(r); if(s.exists()) await remove(r);
+    const s = await get(r); 
+    if(s.exists()) await remove(r);
     else await set(r,true);
+    
+    // Update the number in the sidebar
+    const countSpan = el.querySelector('span');
+    let count = parseInt(countSpan.innerText) || 0;
+    countSpan.innerText = s.exists() ? count - 1 : count + 1;
 }
-window.openVideoComments = (id)=>{ alert("Video comments coming next."); }
+window.openVideoComments = (id)=>{
+  const comment = prompt("Add a comment:");
+  if(comment){
+    push(ref(db, `videos/${id}/comments`), {uid: currentUser.uid, text: comment, timestamp: Date.now()});
+  }
+}
 
 // VIDEOS TIKTOK STYLE
 function loadVideos(){
@@ -955,7 +986,7 @@ function loadVideos(){
         </div>
         <div class="video-action" onclick="likeVideo('${snap.key}')">❤️<span>${Object.keys(v.likes || {}).length}</span></div>
         <div class="video-action" onclick="openVideoComments('${snap.key}')">💬<span>${Object.keys(v.comments || {}).length}</span></div>
-        <div class="video-action" onclick="favoriteVideo('${snap.key}')">🔖<span>${Object.keys(v.favorites || {}).length}</span></div>
+        <div class="video-action" onclick="favoriteVideo('${snap.key}', this)">🔖<span>${Object.keys(v.favorites || {}).length}</span></div>
         <div class="video-action" onclick="openVideoShare('${snap.key}')">↗<span>${Object.keys(v.shares || {}).length}</span></div>
         <div class="music-disc">🎵</div>
       </div>
@@ -1379,14 +1410,19 @@ window.deleteAccount = async () => {
     await deleteUser(currentUser); 
   }
 }
-window.favoriteVideo = async(id)=>{
+window.favoriteVideo = async(id, el)=>{
     const r = ref(db,`favorites/${currentUser.uid}/${id}`);
     const s = await get(r);
-    if(s.exists()) await remove(r);
-    else await set(r,true);
+    if(s.exists()){ 
+      await remove(r);
+      el.style.color = 'white';
+    }
+    else { 
+      await set(r,true);
+      el.style.color = '#00C896'; // highlight when favorited
+    }
 }
 
-// ADD IT HERE 👇
 window.deleteVideo = async (id)=>{
     const snap = await get(ref(db,"videos/"+id));
     if(!snap.exists()) return;
@@ -1395,7 +1431,8 @@ window.deleteVideo = async (id)=>{
       return;
     }
     if(confirm("Delete this video?")){
-        const userVideos = query(ref(db, 'videos'), orderByChild('uid'), equalTo(currentUser.uid));
+      await remove(ref(db, "videos/"+id)); 
+      closeShare();
     }
 }
 
