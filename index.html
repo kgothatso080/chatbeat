@@ -906,30 +906,44 @@ window.deleteComment = async (postKey, commentKey) => {
     if(el) el.remove();
   }
 }
-function loadVideoComments(id){
-  const list = document.getElementById(`v-comment-list-${id}`);
-  list.innerHTML = ''; // clear so we don't duplicate on reload
-  
-  onChildAdded(ref(db, `videos/${id}/comments`), async (snap)=>{
+function loadVideoComments(videoId){
+  const list = document.getElementById(`v-comment-list-${videoId}`);
+  list.innerHTML = '';
+
+  onChildAdded(ref(db, `videos/${videoId}/comments`), async (snap)=>{
     const c = snap.val();
     const u = await getUser(c.uid);
+    const commentId = snap.key;
+
     const div = document.createElement('div');
-    div.className='video-comment';
-    div.id = 'v-comment-' + snap.key;
-    let delBtn = c.uid === currentUser.uid? `<button onclick="deleteVideoComment('${id}','${snap.key}')" style="background:rgba(0,0,0,0.4);border:none;border-radius:50%;color:white;font-size:10px;width:16px;height:16px;line-height:16px;text-align:center;cursor:pointer;margin-left:4px">×</button>` : '';
-    div.innerHTML = `<img class="video-comment-avatar" src="${u.profilePic}" onclick="openProfilePopup('${u.profilePic}')">
-    <div class="video-comment-bubble">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="font-weight:700; font-size:12px; color:${u.color}" onclick="viewUserProfile('${c.uid}')">${u.name}</div>
+    div.className = 'comment-as-post'; // SAME CLASS AS POSTS
+    div.id = 'v-comment-' + commentId;
+    let delBtn = c.uid === currentUser.uid? `<button class="del-btn" onclick="deleteVideoComment('${videoId}','${commentId}')">×</button>` : '';
+
+    div.innerHTML = `
+      <div class="post-header">
+        <img class="avatar" src="${u.profilePic}" onclick="openProfilePopup('${u.profilePic}')">
+        <div>
+          <div class="name" style="color:${u.color}" onclick="viewUserProfile('${c.uid}')">${u.name}</div>
+          <div class="time">${timeAgo(c.ts)}</div>
+        </div>
         ${delBtn}
       </div>
-      <div style="font-size:14px">${c.text}</div>
-    </div>`;
+      <div class="post-text">${c.text}</div>
+      <div class="post-actions">
+        <button onclick="likeVideoComment('${videoId}','${commentId}', this)">❤️ <span>0</span></button>
+      </div>
+    `;
     list.appendChild(div);
-    list.scrollTop = list.scrollHeight; // auto scroll to bottom
+
+    // load likes for this video comment
+    onValue(ref(db, `videos/${videoId}/comments/${commentId}/likes`), s=>{
+      const span = div.querySelector('.post-actions span');
+      if(span) span.innerText = s.size;
+    })
   })
 
-  onChildRemoved(ref(db, `videos/${id}/comments`), (snap)=>{
+  onChildRemoved(ref(db, `videos/${videoId}/comments`), (snap)=>{
     const el = document.getElementById('v-comment-' + snap.key);
     if(el) el.remove();
   })
