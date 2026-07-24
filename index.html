@@ -761,6 +761,7 @@ onAuthStateChanged(auth, async (user) => {
    loadFriends();
    setupNotifications();
    loadMyProfile(); 
+   loadVideoComments(videoId);
  } else {
    document.getElementById('cover').style.display = 'flex';
    document.getElementById('app').style.display = 'none';
@@ -1584,6 +1585,39 @@ onAuthStateChanged(auth, async (user) => {
    loadMyProfile(); // ADD THIS LINE
  }
 });
+
+// SEND VIDEO COMMENT
+window.sendVideoComment = (videoId) => {
+  const inp = document.getElementById(`v-comment-input-${videoId}`);
+  if(!inp.value.trim()) return;
+  const newRef = push(ref(db, `videos/${videoId}/comments`));
+  set(newRef, {
+    uid: currentUser.uid,
+    text: inp.value,
+    ts: Date.now()
+  });
+  inp.value = '';
+}
+
+// LIKE VIDEO COMMENT
+window.likeVideoComment = async(videoId, commentId, btn) => {
+  const r = ref(db, `videos/${videoId}/comments/${commentId}/likes/${currentUser.uid}`);
+  const s = await get(r);
+  if(s.exists()){
+    await remove(r);
+    btn.style.color = '#aaa';
+  } else {
+    await set(r, true);
+    btn.style.color = '#ff3b30';
+  }
+}
+
+// DELETE VIDEO COMMENT
+window.deleteVideoComment = async(videoId, commentId) => {
+  if(confirm("Delete comment?")){
+    await remove(ref(db, `videos/${videoId}/comments/${commentId}`));
+  }
+}
 
 </script>
 </body>
