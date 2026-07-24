@@ -968,6 +968,17 @@ window.toggleVideoComments = (videoId) => {
   document.getElementById(`v-comments-${videoId}`).classList.toggle('show');
 }
 
+window.sendVideoComment = (videoId) => {
+  const inp = document.getElementById(`v-comment-input-${videoId}`);
+  if(!inp.value.trim()) return;
+  push(ref(db, `videos/${videoId}/comments`), {
+    uid: currentUser.uid,
+    text: inp.value,
+    ts: Date.now()
+  });
+  inp.value = '';
+}
+
 // VIDEOS TIKTOK STYLE
 function loadVideos(){
   off(ref(db, 'videos')); 
