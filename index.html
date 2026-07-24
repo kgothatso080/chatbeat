@@ -1504,10 +1504,6 @@ window.viewUserProfile = async (uid) => {
   document.getElementById('profile-box').style.display = 'none';
   document.getElementById('profile-page').style.display = 'block';
 
-  document.getElementById('view-profile-pic').src = u.profilePic || DEFAULT_PIC;
-  document.getElementById('view-profile-name').innerText = u.name;
-  document.getElementById('view-profile-bio').innerText = u.bio || '';
-
   // SHOW EDIT BUTTON ONLY FOR YOUR OWN PROFILE
   document.getElementById('edit-profile-btn').style.display = uid === currentUser.uid? 'block' : 'none';
 
