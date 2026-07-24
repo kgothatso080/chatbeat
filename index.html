@@ -245,84 +245,13 @@ from{transform:rotate(0deg);}
 to{transform:rotate(360deg);}
 } 
 { 
-  font-family: Arial, sans-serif; 
-  background: #fff; 
-  margin: 0; 
-  padding: 0;
-}
-
-.profile-container {
-  padding: 20px; 
-  max-width: 600px; 
-  margin: auto; 
-  clear: both;
-}
-
-.profile-name {
-  font-size: 24px; 
-  font-weight: bold;
-}
-
-.profile-bio {
-  font-size: 14px; 
-  color: gray; 
-  margin-bottom: 15px;
-}
+  
 
 .profile-section {
   margin-bottom: 15px;
   line-height: 1.6;
 }
 
-.profile-label {
-  font-weight: bold;
-}
-
-.profile-link {
-  color: blue; 
-  text-decoration: underline;
-}
-.settings-popup {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #202c33;
-  padding: 20px;
-  border-radius: 16px;
-  width: 90%;
-  max-width: 500px;
-  z-index: 10000;
-  display: none; /* HIDDEN BY DEFAULT */
-  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-}
-.settings-popup.show {
-  display: block; /* YOUR JS ADDS .show TO OPEN IT */
-}
-.profile-popup-close {
-  position:absolute;
-  top:10px;
-  right:15px;
-  font-size:24px;
-  cursor:pointer;
-  color:#aaa;
-}
-.settings-popup input, .settings-popup select {
-  width: 100%;
-  margin: 6px 0;
-  padding: 10px;
-  border-radius: 12px;
-  border: none;
-  background: #2a3942;
-  color: white;
-  font-size: 14px;
-}
-.settings-popup h4 {
-  margin: 12px 0 6px 0;
-  text-align: left;
-  color: #00C896;
-  font-size: 14px;
-}
   </style>
 </head>
 <body>
@@ -1493,20 +1422,6 @@ document.addEventListener('click', () => {
   document.querySelectorAll('.react-picker').forEach(p => p.classList.remove('show'));
   document.querySelectorAll('.react-names-tooltip').forEach(t => t.style.display = 'none');
 });
-// OPEN PROFILE PAGE WHEN CLICKING NAME/PIC
-window.viewUserProfile = async (uid) => {
-  const u = await getUser(uid);
-  document.getElementById('feed-section').style.display = 'none';
-  document.getElementById('chat-section').style.display = 'none';
-  document.getElementById('videos-section').style.display = 'none';
-  document.getElementById('dm-chat-section').style.display = 'none';
-  document.getElementById('friends-section').style.display = 'none';
-  document.getElementById('profile-box').style.display = 'none';
-  document.getElementById('profile-page').style.display = 'block';
-
-  // SHOW EDIT BUTTON ONLY FOR YOUR OWN PROFILE
-  document.getElementById('edit-profile-btn').style.display = uid === currentUser.uid? 'block' : 'none';
-
 // OPEN EDIT PROFILE AND LOAD DATA
 window.openEditProfile = async () => {
   document.getElementById('profile-box').style.display = 'none';
