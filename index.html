@@ -61,7 +61,7 @@
     #app { display:none; }
 .post-box { padding: 10px; background: #202c33; display:flex; gap:8px; align-items:center }
     #feed { padding: 10px; padding-bottom: 20px; }
-.profile-box {background:#202c33; padding:15px; border-radius:12px; margin:10px; text-align:center; display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:95%; max-width:500px; max-height:90vh; overflow-y:auto; z-index:9999; border:2px solid #00C896}
+.profile-box {background:#202c33; padding:15px; border-radius:12px; margin:10px; text-align:center; display:none}
 .profile-box img{width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid #00C896}
 .card { background: #202c33; padding:10px 12px 10px 12px; margin:10px 0; border-radius:12px; position: relative; }
 .card-header { display:flex; align-items:center; gap:10px; margin-bottom:8px }
@@ -244,16 +244,11 @@ font-size:22px;
 from{transform:rotate(0deg);}
 to{transform:rotate(360deg);}
 } 
-.cancel-btn {
-  background: red; 
-  color: white; 
-  border: none; 
-  padding: 8px 12px; 
-  border-radius: 5px; 
-  cursor: pointer; 
-  float: right; 
-  margin: 10px;
-  font-size: 14px;
+{ 
+  font-family: Arial, sans-serif; 
+  background: #fff; 
+  margin: 0; 
+  padding: 0;
 }
 
 .profile-container {
@@ -277,50 +272,60 @@ to{transform:rotate(360deg);}
 .profile-section {
   margin-bottom: 15px;
   line-height: 1.6;
-  text-align: left;
 }
 
 .profile-label {
   font-weight: bold;
-  color: #00C896;
 }
 
 .profile-link {
-  color: #00C896; 
+  color: blue; 
   text-decoration: underline;
 }
   </style>
-  </head>
-  <body>
+</head>
+<body>
 
 <div id="cover">
   <h1>ChatBeat</h1>
-  <p>Connect in Color. Vibe in Sound. 🎵</p>
-  <input id="name-input" placeholder="Choose a name">
-  <input id="email-input" type="email" placeholder="Email">
-  <input id="pass-input" type="password" placeholder="Password">
+  <p><b>Connect in Color. Vibe in Sound.</b><br><br>
+  Welcome to ChatBeat - the most fun way to connect! 🎉</p>
+  <input id="name-input" placeholder="Choose your Name">
+  <input id="email-input" placeholder="Email">
+  <input id="pass-input" placeholder="Password" type="password">
   <button id="register-btn">Register</button>
   <button id="login-btn">Login</button>
   <button id="forgot-btn" class="link-btn">Forgot Password?</button>
-  <div id="cover-error" style="color:red"></div>
+  <p id="cover-error" style="color:#FF6B6B;"></p>
 </div>
-
+  
 <div id="app">
+  <!-- FACEBOOK STYLE HEADER - FIXED: REMOVED DOUBLE TOPBAR -->
   <div class="topbar">
-    <div class="topbar-brand"><h2 id="logo-btn">ChatBeat</h2></div>
-    <div class="topbar-icons">
-      <button class="icon-btn" id="profile-icon-btn"><img id="profile-pic" src="" style="width:30px;height:30px;border-radius:50%"></button>
-      <button class="icon-btn" id="chat-icon-btn">💬<span class="badge" id="chat-badge" style="display:none"></span></button>
-      <button class="icon-btn" onclick="openVideos()">🎬<span class="badge" id="video-badge" style="display:none"></span></button>
-      <button class="icon-btn" onclick="openDMs()">📩<span class="badge" id="dm-badge" style="display:none"></span></button>
-      <button class="icon-btn" onclick="openFriends()">👥</button>
-      <button class="icon-btn" onclick="openSettings()">⚙️</button>
-    </div>
+  <div class="topbar-brand">
+    <h2 id="logo-btn">ChatBeat</h2>
+  </div>
+  <div class="topbar-icons">
+    <button class="icon-btn" id="settings-btn" onclick="openSettings()">⚙️</button>
+    <button class="icon-btn" id="videos-btn" onclick="openVideos()">🎥<span class="badge" id="video-badge" style="display:none">0</span></button>
+    <button class="icon-btn" id="dm-btn" onclick="openDMs()">✉️<span class="badge" id="dm-badge" style="display:none">0</span></button>
+    <button class="icon-btn" id="friends-btn" onclick="openFriends()">👥<span class="badge" id="friend-badge" style="display:none">0</span></button>
+    <button class="icon-btn" id="profile-icon-btn">👤</button>
+    <button class="icon-btn" id="chat-icon-btn">💬<span class="badge" id="chat-badge" style="display:none">0</span></button>
+  </div>
+</div>
+    
+  <div id="profile-box" class="profile-box">
+    <img id="profile-pic" src="https://ui-avatars.com/api/?name=U&background=00C896&color=fff">
+    <h3 id="my-name"></h3>
+    <div id="linked-accounts" style="font-size:12px; margin-top:8px"></div>
+    <input id="profile-upload" type="file" accept="image/*" style="display:none">
+    <button onclick="document.getElementById('profile-upload').click()">Change Profile Photo</button>
+    <button onclick="document.getElementById('profile-box').style.display='none'">Close</button>
   </div>
 
   <div id="feed-section">
     <div class="post-box">
-      <img id="my-profile-pic" src="" style="width:40px;height:40px;border-radius:50%">
       <textarea id="post-text" placeholder="What's on your mind?"></textarea>
       <button id="post-img-btn">📷</button>
       <input id="post-file" type="file" accept="image/*" style="display:none">
@@ -329,11 +334,35 @@ to{transform:rotate(360deg);}
     <div id="feed"></div>
   </div>
 
-  <div id="chat-section" style="display:none">
+  <div id="videos-section">
+    <div id="video-feed"></div>
+    <button class="add-video-btn" onclick="document.getElementById('video-upload').click()">+</button>
+    <input id="video-upload" type="file" accept="video/*" style="display:none">
+  </div>
+
+<div id="dm-chat-section" style="display:none">
+  <div class="chat-header"><button onclick="openDMs()">← Back</button><h3 id="dm-chat-name">DM</h3></div>
+  <div id="dm-chat" class="dm-list"></div>
+  <div class="chat-input-area">
+    <button id="dm-img-btn">📷</button>
+    <input id="dm-file" type="file" accept="image/*" style="display:none">
+    <input id="dm-input" placeholder="Message...">
+    <button id="dm-record-btn">🎤</button>
+    <button id="send-dm">➤</button>
+  </div>
+</div>
+
+  <div id="friends-section" style="display:none">
+    <div class="chat-header"><button onclick="backToFeed()">← Back</button><h3>Friends</h3></div>
+    <div id="friends-list" class="friends-list"></div>
+  </div>
+
+  <div id="chat-section" style="display:none;">
     <div class="chat-header">
-      <button id="back-to-feed">←</button>
+      <button id="back-to-feed">← Back</button>
       <h3>Global Chat</h3>
     </div>
+
     <div id="reply-bar">
       <div id="reply-content">
         <div id="reply-label">Replying to</div>
@@ -341,6 +370,7 @@ to{transform:rotate(360deg);}
       </div>
       <button id="cancel-reply">×</button>
     </div>
+
     <div id="global-chat"></div>
     <div class="chat-input-area">
       <button id="chat-img-btn">📷</button>
@@ -351,85 +381,9 @@ to{transform:rotate(360deg);}
     </div>
   </div>
 
-  <div id="videos-section">
-    <div class="chat-header">
-      <button onclick="backToFeed()">←</button>
-      <h3>Videos</h3>
-      <button onclick="document.getElementById('video-upload').click()">+</button>
-      <input id="video-upload" type="file" accept="video/*" style="display:none">
-    </div>
-    <div id="video-feed"></div>
-  </div>
-
-  <div id="dm-chat-section" style="display:none">
-    <div class="chat-header">
-      <button onclick="backToFeed()">←</button>
-      <h3 id="dm-chat-name">DMs</h3>
-    </div>
-    <div id="dm-chat" class="dm-list"></div>
-    <div class="chat-input-area">
-      <input id="dm-input" placeholder="Message...">
-      <button id="send-dm">➤</button>
-    </div>
-  </div>
-
-  <div id="friends-section" style="display:none">
-    <div class="chat-header">
-      <button onclick="backToFeed()">←</button>
-      <h3>Find Friends</h3>
-    </div>
-    <div id="friends-list" class="friends-list"></div>
-  </div>
-
-  <!-- NEW PROFILE POPUP -->
-  <div id="profile-box" class="profile-box">
-    <h3>My Profile</h3>
-    <img id="profile-pic-big" src="">
-    <input id="profile-upload" type="file" accept="image/*" style="display:none">
-    <button onclick="document.getElementById('profile-upload').click()">Change Photo</button>
-    
-    <div id="profile-info"></div> <!-- Data shows here -->
-
-    <div id="profile-edit-form" style="display:none; margin-top:10px; text-align:left">
-      <input id="surname-input" placeholder="Surname">
-      <input id="bio-input" placeholder="Bio">
-      <input id="age-input" type="number" placeholder="Age">
-      <input id="birth-input" type="date" placeholder="Birth date">
-      <input id="gender-input" placeholder="Gender: Male/Female">
-      <input id="country-input" placeholder="Country">
-      <input id="province-input" placeholder="Province">
-      <input id="city-input" placeholder="City">
-      <input id="town-input" placeholder="Town">
-      <input id="village-input" placeholder="Village">
-      <input id="street-input" placeholder="Street">
-      <input id="school-input" placeholder="School">
-      <input id="bestfriends-input" placeholder="Best Friends - separate with ,">
-      <input id="favteachers-input" placeholder="Fav Teachers - separate with ,">
-      <input id="contact-input" placeholder="Contact Number">
-      <input id="tiktok-input" placeholder="TikTok @">
-      <input id="instagram-input" placeholder="Instagram @">
-      <input id="twitter-input" placeholder="Twitter @">
-      <input id="facebook-input" placeholder="Facebook @">
-      <input id="whatsapp-input" placeholder="WhatsApp Number">
-      <input id="pet-input" placeholder="Pet Name">
-      <input id="hobbies-input" placeholder="Hobbies - separate with ,">
-      <input id="dreamjob-input" placeholder="Dream Job">
-      <input id="dreamcar-input" placeholder="Dream Car">
-      <input id="girlfriend-input" placeholder="Girlfriend Name">
-    </div>
-
-    <div style="display:flex; gap:10px; margin-top:15px; justify-content:center; flex-wrap:wrap">
-      <button id="edit-profile-btn" style="width:45%">Edit</button>
-      <button id="save-profile-btn" style="width:45%; display:none">Save</button>
-      <button id="cancel-profile-btn" style="width:45%; display:none; background:#555">Cancel</button>
-    </div>
-    <button onclick="openSettings()" style="margin-top:10px">Settings</button>
-    <button onclick="document.getElementById('profile-box').style.display='none'" style="background:#555">Close</button>
-  </div>
-
   <div class="footer">
-    Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke. ✨<br>
-    Version 2.1.3 - FACEBOOK STYLE
+    Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke at age of 18. ✨<br>
+    Version 2.1.2 - FACEBOOK STYLE
   </div>
 </div>
 
@@ -438,7 +392,55 @@ to{transform:rotate(360deg);}
   <img id="profile-popup-img" src="" onclick="event.stopPropagation()">
 </div>
 
-<!-- DELETED THE BROKEN <div id="profile"> HERE -->
+<div id="profile-page" class="profile-container" style="display:none; padding-top:20px">
+  <div style="text-align:center">
+    <img id="view-profile-pic" src="" style="width:120px; height:120px; border-radius:50%; border:4px solid #00C896; object-fit:cover">
+    <h2 id="view-profile-name" style="margin:8px 0 0 0"></h2>
+    <p id="view-profile-bio" style="opacity:0.8; font-size:14px"></p>
+    <button id="edit-profile-btn" onclick="openProfileEdit()" style="margin-top:10px">✏️ Edit Profile</button>
+  </div>
+
+  <div id="view-profile-details" style="margin-top:20px; background:#202c33; padding:15px; border-radius:12px"></div>
+</div>
+
+<!-- EDIT POPUP -->
+<div id="edit-profile-popup" class="settings-popup">
+  <h3>✏️ Edit Your Profile</h3>
+  <p style="font-size:12px; opacity:0.8">Fill only what you want. Empty fields won't show on your profile.</p>
+
+  <h4>📍 Location</h4>
+  <input id="edit-country" placeholder="Country">
+  <input id="edit-province" placeholder="Province">
+  <input id="edit-city" placeholder="City">
+  <input id="edit-town" placeholder="Town">
+
+  <h4>👤 About</h4>
+  <select id="edit-gender"><option value="">Gender</option><option>Male</option><option>Female</option><option>Other</option></select>
+  <input id="edit-bio" placeholder="Bio / About you">
+
+  <h4>🏫 School</h4>
+  <input id="edit-school" placeholder="School Name">
+  <input id="edit-grade" placeholder="Grade">
+  <input id="edit-subject" placeholder="Favorite Subject">
+  <input id="edit-teacher" placeholder="Favorite Teacher">
+
+  <h4>❤️ Relationships</h4>
+  <input id="edit-girlfriend" placeholder="Girlfriend / Boyfriend Name">
+  <input id="edit-bestfriend" placeholder="Best Friend Name">
+
+  <h4>🎵 Other</h4>
+  <input id="edit-hobbies" placeholder="Hobbies - comma separated">
+  <input id="edit-pets" placeholder="Pets">
+
+  <h4>📞 Contact</h4>
+  <input id="edit-phone" placeholder="Phone Number">
+  <input id="edit-instagram" placeholder="Instagram">
+  <input id="edit-whatsapp" placeholder="WhatsApp Number">
+
+  <hr>
+  <button onclick="saveProfileEdit()">💾 Save</button>
+  <button onclick="closeProfileEdit()">Cancel</button>
+</div>
 
 <div id="share-popup" class="share-popup">
 <h3>Share</h3>
@@ -486,9 +488,9 @@ to{transform:rotate(360deg);}
   <b>ChatBeat</b> is where you Connect in Color. Vibe in Sound. 🎵<br><br>
   <b>Why use ChatBeat?</b><br>
   1. Promote your business, music, brand, or yourself<br>
-    2. Go viral with TikTok-style videos<br>
-  3. Build real friends and DMs<br>
-    4. Post, React, Comment, Share like Facebook<br><br>
+        2. Go viral with TikTok-style videos<br>
+    3. Build real friends and DMs<br>
+  4. Post, React, Comment, Share like Facebook<br><br>
   <b>How to use:</b><br>
   Feed = Post updates and photos<br>
   Videos = Scroll and post 10s videos with music<br>
@@ -504,10 +506,10 @@ to{transform:rotate(360deg);}
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser, sendPasswordResetEmail, updateEmail, updatePassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-import { getDatabase, ref, set, get, query, orderByChild, equalTo, push, onChildAdded, onChildRemoved, remove, off, limitToLast, onValue, update } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
+import { getDatabase, ref, set, get, query, orderByChild, equalTo, push, onChildAdded, onChildRemoved, remove, off, limitToLast, onValue } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD97-el91-ISWGkOhxWy4V_wXyOK6MJl0k",
@@ -538,7 +540,7 @@ let allMessagesCache = {};
 let replyToMsg = null;
 let dragging = null;
 let shareLink = '';
-let currentDM = null;
+let currentDM = null; 
 let currentVideoId = null;
 let dmIsRecording = false; let dmMediaRecorder; let dmAudioChunks = [];
 const DRAG_THRESHOLD = 70;
@@ -639,18 +641,7 @@ document.getElementById('register-btn').onclick = async () => {
    const cred = await createUserWithEmailAndPassword(auth, email, pass);
    const nameSnap = await get(query(ref(db, 'users'), orderByChild('name'), equalTo(name)));
    if(nameSnap.exists()) { await deleteUser(cred.user); err.innerText = "Name already taken!"; return; }
-   // UPDATED: SAVE ALL 20+ FIELDS
-   await set(ref(db, 'users/' + cred.user.uid), {
-     name, surname: '', email,
-     color: colors[Math.floor(Math.random()*colors.length)],
-     profilePic: DEFAULT_PIC,
-     country:'', province:'', city:'', town:'', village:'', street:'',
-     age:'', birthDate:'', gender:'',
-     bestFriends:'', favTeachers:'', school:'',
-     tiktok:'', instagram:'', twitter:'', facebook:'', whatsapp:'',
-     petName:'', hobbies:'', dreamJob:'', dreamCar:'', bio:'', girlfriend:'',
-     contact:'', createdAt: Date.now()
-   });
+   await set(ref(db, 'users/' + cred.user.uid), { name, email, color: colors[Math.floor(Math.random()*colors.length)], profilePic: DEFAULT_PIC });
  } catch(e) { err.innerText = e.message; }
 }
 
@@ -673,12 +664,25 @@ document.getElementById('forgot-btn').onclick = () => {
 .catch((error) => { err.innerText = error.message; });
 }
 
-let lastSeen = { posts: 0, chat: 0, videos: 0, dms: 0 }
+let lastSeen = {
+  posts: 0,
+  chat: 0,
+  videos: 0,
+  dms: 0
+}
+
+// Helper to show/hide badge
 function updateBadge(id, count){
   const badge = document.getElementById(id);
-  if(count > 0){ badge.innerText = count > 99? '99+' : count; badge.style.display = 'block'; }
-  else { badge.style.display = 'none'; }
+  if(count > 0){
+    badge.innerText = count > 99? '99+' : count;
+    badge.style.display = 'block';
+  } else {
+    badge.style.display = 'none';
+  }
 }
+
+// Load last seen times from localStorage
 function loadLastSeen(){
   const saved = localStorage.getItem('chatbeat_lastseen_' + currentUser.uid);
   if(saved) lastSeen = JSON.parse(saved);
@@ -686,12 +690,54 @@ function loadLastSeen(){
 function saveLastSeen(){
   localStorage.setItem('chatbeat_lastseen_' + currentUser.uid, JSON.stringify(lastSeen));
 }
+
+// REAL NOTIFICATION LISTENERS
 function setupNotifications(){
   loadLastSeen();
-  onValue(ref(db, 'globalChat'), (snap)=>{ let unread = 0; snap.forEach(child=>{ if(child.val().timestamp > lastSeen.chat && child.val().uid!== currentUser.uid){ unread++; } }) updateBadge('chat-badge', unread); })
-  onValue(ref(db, 'posts'), (snap)=>{ let unread = 0; snap.forEach(child=>{ if(child.val().timestamp > lastSeen.posts && child.val().uid!== currentUser.uid){ unread++; } }) updateBadge('video-badge', unread); })
-  onValue(ref(db, 'videos'), (snap)=>{ let unread = 0; snap.forEach(child=>{ if(child.val().timestamp > lastSeen.videos && child.val().uid!== currentUser.uid){ unread++; } }) })
-  onValue(ref(db, 'dmChats'), (snap)=>{ let unread = 0; snap.forEach(child=>{ if(child.key.includes(currentUser.uid) && child.val().lastTimestamp > lastSeen.dms && child.val().lastSender!== currentUser.uid){ unread++; } }) updateBadge('dm-badge', unread); })
+
+  // 1. GLOBAL CHAT UNREAD
+  onValue(ref(db, 'globalChat'), (snap)=>{
+    let unread = 0;
+    snap.forEach(child=>{
+      if(child.val().timestamp > lastSeen.chat && child.val().uid!== currentUser.uid){
+        unread++;
+      }
+    })
+    updateBadge('chat-badge', unread);
+  })
+
+  // 2. POSTS UNREAD
+  onValue(ref(db, 'posts'), (snap)=>{
+    let unread = 0;
+    snap.forEach(child=>{
+      if(child.val().timestamp > lastSeen.posts && child.val().uid!== currentUser.uid){
+        unread++;
+      }
+    })
+    updateBadge('video-badge', unread);
+  })
+
+  // 3. VIDEOS UNREAD
+  onValue(ref(db, 'videos'), (snap)=>{
+    let unread = 0;
+    snap.forEach(child=>{
+      if(child.val().timestamp > lastSeen.videos && child.val().uid!== currentUser.uid){
+        unread++;
+      }
+    })
+    updateBadge('video-badge',unread);
+  })
+
+  // 4. DMS UNREAD
+  onValue(ref(db, 'dmChats'), (snap)=>{
+    let unread = 0;
+    snap.forEach(child=>{
+      if(child.key.includes(currentUser.uid) && child.val().lastTimestamp > lastSeen.dms && child.val().lastSender!== currentUser.uid){
+        unread++;
+      }
+    })
+    updateBadge('dm-badge', unread);
+  })
 }
 
 onAuthStateChanged(auth, async (user) => {
@@ -710,7 +756,7 @@ onAuthStateChanged(auth, async (user) => {
    document.getElementById('app').style.display = 'block'; applyTheme();
    document.getElementById('my-name').innerText = userData.name;
    document.getElementById('profile-pic').src = userData.profilePic || DEFAULT_PIC;
-   document.getElementById('my-profile-pic').src = userData.profilePic || DEFAULT_PIC;
+   
    loadedMessages.clear();
    allMessagesCache = {};
    document.getElementById('feed').innerHTML = '';
@@ -734,16 +780,24 @@ document.getElementById('profile-upload').onchange = (e)=>{
     const reader = new FileReader();
     reader.onload = ()=>{
       set(ref(db,'users/'+currentUser.uid+'/profilePic'), reader.result);
+      get(ref(db, 'users/'+currentUser.uid+'/linked')).then(s=>{
+  const links = s.val() || {};
+  let html = '';
+  if(links.tiktok) html += '🎵 ';
+  if(links.facebook) html += '📘 ';
+  if(links.instagram) html += '📸 ';
+  if(links.x) html += '🐦 ';
+  if(links.google) html += '🇬 ';
+  if(links.phone) html += '📱 ';
+  document.getElementById('linked-accounts').innerHTML = html;
+})
       document.getElementById('profile-pic').src = reader.result;
-      document.getElementById('profile-pic-big').src = reader.result;
-      document.getElementById('my-profile-pic').src = reader.result;
       alert("Profile photo updated!")
     }
     reader.readAsDataURL(file);
   }
 }
 
-// UPDATED PROFILE ICON BTN
 document.getElementById('profile-icon-btn').onclick = () => {
   document.getElementById('profile-box').style.display = 'block';
   document.getElementById('feed-section').style.display = 'none';
@@ -751,8 +805,6 @@ document.getElementById('profile-icon-btn').onclick = () => {
   document.getElementById('videos-section').style.display = 'none';
   document.getElementById('dm-chat-section').style.display = 'none';
   document.getElementById('friends-section').style.display = 'none';
-  document.getElementById('edit-profile-btn').style.display = 'inline-block';
-  loadProfile();
 }
 
 document.getElementById('post-img-btn').onclick = () => document.getElementById('post-file').click();
@@ -793,11 +845,10 @@ function loadPosts() {
     const reactCount = Object.keys(post.reactions||{}).length;
     const commentCount = Object.keys(post.comments||{}).length;
 
-    // UPDATED: NAME IS CLICKABLE
     postDiv.innerHTML = `${delBtn}
     <div class="card-header">
       <img class="card-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">
-      <div class="name" style="color:${user.color}; cursor:pointer" onclick="openUserProfile('${post.uid}')">${user.name}</div>
+      <div class="name" style="color:${user.color}" onclick="viewUserProfile('${post.uid}')">${user.name}</div>
     </div>
     <div>${post.text||''}</div>${imgHtml}
     <div class="post-stats" onclick="toggleComments('${postKey}')">
@@ -830,20 +881,47 @@ function loadPosts() {
 
     const likeBtn = document.getElementById(`like-btn-${postKey}`);
     const picker = document.getElementById(`picker-${postKey}`);
-    let timer; let longPressTriggered = false;
-    likeBtn.onmousedown = likeBtn.ontouchstart = (e) => { e.stopPropagation(); longPressTriggered = false; timer = setTimeout(()=>{ picker.classList.add('show'); longPressTriggered = true; }, LONG_PRESS); }
-    likeBtn.onmouseup = likeBtn.ontouchend = likeBtn.onmouseleave = () => { clearTimeout(timer); if(!longPressTriggered){ setReaction(`posts/${postKey}/reactions`, '👍') } }
+    let timer;
+    let longPressTriggered = false;
+
+    likeBtn.onmousedown = likeBtn.ontouchstart = (e) => {
+      e.stopPropagation();
+      longPressTriggered = false;
+      timer = setTimeout(()=>{ picker.classList.add('show'); longPressTriggered = true; }, LONG_PRESS);
+    }
+    likeBtn.onmouseup = likeBtn.ontouchend = likeBtn.onmouseleave = () => {
+      clearTimeout(timer);
+      if(!longPressTriggered){
+        setReaction(`posts/${postKey}/reactions`, '👍')
+      }
+    }
   });
 }
-window.deletePost = async (key) => { if(confirm("Delete this post?")) { await remove(ref(db, 'posts/' + key)); const el = document.getElementById('post-' + key); if(el) el.remove(); } }
+window.deletePost = async (key) => {
+  if(confirm("Delete this post?")) {
+    const userPosts = query(ref(db, 'posts'), orderByChild('uid'), equalTo(currentUser.uid));
+    if(el) el.remove();
+  }
+}
 window.reactToPost = async (key, emoji) => { await setReaction(`posts/${key}/reactions`, emoji); document.getElementById(`picker-${key}`).classList.remove('show'); }
 window.toggleComments = (key) => document.getElementById(`comments-${key}`).classList.toggle('show');
 window.addComment = async (key) => { const input = document.getElementById(`comment-input-${key}`); const text = input.value.trim(); if(!text) return; await push(ref(db, `posts/${key}/comments`), {uid: currentUser.uid, text, timestamp: Date.now()}); input.value = ''; }
-window.deleteComment = async (postKey, commentKey) => { if(confirm("Delete this comment?")) { await remove(ref(db, `posts/${postKey}/comments/${commentKey}`)); const el = document.getElementById('comment-' + commentKey); if(el) el.remove(); } }
+window.deleteComment = async (postKey, commentKey) => {
+  if(confirm("Delete this comment?")) {
+    await remove(ref(db, `posts/${postKey}/comments/${commentKey}`));
+    const el = document.getElementById('comment-' + commentKey);
+    if(el) el.remove();
+  }
+}
 function loadComments(key){
   onChildAdded(ref(db, `posts/${key}/comments`), async (snap)=>{
-    const c = snap.val(); const commentKey = snap.key; const u = await getUser(c.uid);
-    const div = document.createElement('div'); div.className='comment'; div.id = 'comment-' + commentKey;
+    const c = snap.val();
+    const commentKey = snap.key;
+    const u = await getUser(c.uid);
+    const div = document.createElement('div');
+    div.className='comment';
+    div.id = 'comment-' + commentKey;
+
     let delBtn = c.uid === currentUser.uid? `<button onclick="deleteComment('${key}','${commentKey}')" style="background:rgba(0,0,0,0.4);border:none;border-radius:50%;color:white;font-size:10px;width:16px;height:16px;line-height:16px;text-align:center;cursor:pointer;margin-left:4px">×</button>` : '';
     div.innerHTML = `<img class="comment-avatar" src="${u.profilePic}">
     <div class="comment-bubble">
@@ -868,15 +946,30 @@ window.shareTo = (type) => {
   if(type=="more"){ if(navigator.share){ navigator.share({ title:"ChatBeat", url:shareLink }); } }
   closeShare();
 }
-window.likeVideo = async (id)=>{ const r = ref(db, `videos/${id}/likes/${currentUser.uid}`); const s = await get(r); if(s.exists()) await remove(r); else await set(r,true); }
+window.likeVideo = async (id)=>{
+    const r = ref(db, `videos/${id}/likes/${currentUser.uid}`);
+    const s = await get(r); if(s.exists()) await remove(r);
+    else await set(r,true);
+}
 window.openVideoComments = (id)=>{ alert("Video comments coming next."); }
 
+// VIDEOS TIKTOK STYLE
 function loadVideos(){
-  off(ref(db, 'videos')); document.getElementById('video-feed').innerHTML = '';
-  onChildRemoved(ref(db, 'videos'), (snap) => { const videoCard = document.querySelector(`.video-card[data-id="${snap.key}"]`); if(videoCard) videoCard.remove(); });
+  off(ref(db, 'videos')); 
+  document.getElementById('video-feed').innerHTML = '';
+
+  // ADD THIS: remove from DOM when deleted in DB
+  onChildRemoved(ref(db, 'videos'), (snap) => {
+    const videoCard = document.querySelector(`.video-card[data-id="${snap.key}"]`);
+    if(videoCard) videoCard.remove();
+  });
+
   onChildAdded(query(ref(db, 'videos'), orderByChild('timestamp'), limitToLast(20)), async (snap) => {
-    const v = snap.val(); const u = await getUser(v.uid);
-    const div = document.createElement('div'); div.className = 'video-card'; div.setAttribute('data-id', snap.key);
+    const v = snap.val(); 
+    const u = await getUser(v.uid);
+    const div = document.createElement('div'); 
+    div.className = 'video-card';
+    div.setAttribute('data-id', snap.key); // ADD THIS so we can find it to delete
     div.innerHTML = `
       <video src="${v.video}" loop playsinline onclick="this.paused?this.play():this.pause()"></video>
       <div class="video-info">
@@ -885,7 +978,7 @@ function loadVideos(){
       </div>
       <div class="video-sidebar">
         <div class="profile-wrap">
-            <img class="side-profile" src="${u.profilePic}" onclick="openUserProfile('${v.uid}')">
+            <img class="side-profile" src="${u.profilePic}">
             <span class="plus-badge">+</span>
         </div>
         <div class="video-action" onclick="likeVideo('${snap.key}')">❤️<span>${Object.keys(v.likes || {}).length}</span></div>
@@ -899,13 +992,17 @@ function loadVideos(){
   })
 }
 
+// VIDEO UPLOAD
 document.getElementById('video-upload').onchange = async (e)=>{
   const file = e.target.files[0];
   if(!file) return;
   alert("Checking video size...");
   if(file.size <= 9000000){ uploadVideo(file); return; }
-  if(file.size > 10000000){ alert(`Video is ${(file.size/1024/1024).toFixed(1)}MB. Max is 10MB. I will try to compress it now...`); }
-  else { alert(`Video is ${(file.size/1024/1024).toFixed(1)}MB. Compressing to fit...`); }
+  if(file.size > 10000000){
+    alert(`Video is ${(file.size/1024/1024).toFixed(1)}MB. Max is 10MB. I will try to compress it now...`);
+  } else {
+    alert(`Video is ${(file.size/1024/1024).toFixed(1)}MB. Compressing to fit...`);
+  }
   const compressedBlob = await compressVideo(file);
   if(!compressedBlob){ alert("Compression failed. Please record a shorter video or use 480p"); return; }
   if(compressedBlob.size > 10000000){ alert(`Still too big: ${(compressedBlob.size/1024/1024).toFixed(1)}MB. Please make it under 10 seconds.`); return; }
@@ -917,7 +1014,10 @@ async function uploadVideo(fileBlob){
   const reader = new FileReader();
   reader.onload = async ()=>{
     const desc = prompt("Add a description:");
-    await push(ref(db, 'videos'), { uid: currentUser.uid, video: reader.result, desc, timestamp: Date.now(), reactions:{}, comments:{}, likes:{}, favorites:{}, shares:{} });
+    await push(ref(db, 'videos'), {
+      uid: currentUser.uid, video: reader.result, desc, timestamp: Date.now(),
+      reactions:{}, comments:{}, likes:{}, favorites:{}, shares:{}
+    });
     alert("Video posted!")
   }
   reader.readAsDataURL(fileBlob);
@@ -930,7 +1030,10 @@ function compressVideo(file){
     video.muted = false; video.playsInline = true; video.preload = 'auto';
     video.onloadedmetadata = async () => {
       const stream = video.captureStream();
-      const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8,opus', videoBitsPerSecond: 600000, audioBitsPerSecond: 96000 });
+      const recorder = new MediaRecorder(stream, {
+        mimeType: 'video/webm;codecs=vp8,opus',
+        videoBitsPerSecond: 600000, audioBitsPerSecond: 96000
+      });
       const chunks = [];
       recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
       recorder.onstop = () => { const blob = new Blob(chunks, {type: 'video/webm'}); URL.revokeObjectURL(video.src); resolve(blob); };
@@ -943,6 +1046,7 @@ function compressVideo(file){
   });
 }
 
+// DMs
 function loadDMs(){
   off(ref(db, 'dmChats')); document.getElementById('dm-chat').innerHTML = '';
   onValue(ref(db, 'dmChats'), async (snap)=>{
@@ -987,47 +1091,111 @@ document.getElementById('send-dm').onclick = async () => {
   await set(ref(db, `dmChats/${currentDM.chatId}/lastTimestamp`), Date.now());
 }
 
+// SETTINGS
 window.openSettings = () => document.getElementById('settings-popup').classList.add('show');
 window.closeSettings = () => document.getElementById('settings-popup').classList.remove('show');
 window.signOutUser = () => { signOut(auth); closeSettings(); }
 window.deleteAccount = async () => { if(confirm("Delete account forever?")){ await remove(ref(db, 'users/'+currentUser.uid)); await deleteUser(currentUser); } }
-window.openVideoShare = (id)=>{ currentVideoId=id; shareLink=window.location.origin+"#video-"+id; document.getElementById("share-popup").classList.add("show"); }
-window.favoriteVideo = async(id)=>{ const r = ref(db,`favorites/${currentUser.uid}/${id}`); const s = await get(r); if(s.exists()) await remove(r); else await set(r,true); }
-window.deleteVideo = async (id)=>{ const snap = await get(ref(db,"videos/"+id)); if(!snap.exists()) return; if(snap.val().uid!== currentUser.uid){ alert("You can only delete your own videos"); return; } if(confirm("Delete this video?")){ await remove(ref(db,"videos/"+id)); closeShare(); } }
 
+// VIDEO SHARE
+window.openVideoShare = (id)=>{ currentVideoId=id; shareLink=window.location.origin+"#video-"+id; document.getElementById("share-popup").classList.add("show"); }
+
+// FOLLOWING
 function loadFriends(){
-  off(ref(db, 'friends/'+currentUser.uid)); document.getElementById('friends-list').innerHTML = '';
-  onValue(ref(db, 'users'), async (snap)=>{
-    document.getElementById('friends-list').innerHTML = '';
+  off(ref(db, 'friends/'+currentUser.uid));
+  document.getElementById('friends-list').innerHTML = '';
+
+  get(ref(db, 'users')).then(async (snap)=>{
+    const myData = await getUser(currentUser.uid);
+    const myFriendsSnap = await get(ref(db, 'friends/'+currentUser.uid));
+    const myFriends = myFriendsSnap.exists()? Object.keys(myFriendsSnap.val()) : [];
+
+    let users = [];
     snap.forEach(uSnap=>{
       if(uSnap.key!== currentUser.uid){
-        const u = uSnap.val();
-        const div = document.createElement('div'); div.className = 'friend-item';
-        div.innerHTML = `<div style="cursor:pointer" onclick="openUserProfile('${uSnap.key}')"><img style="width:40px;height:40px;border-radius:50%" src="${u.profilePic}"> ${u.name}</div>
-        <button class="follow-btn" id="follow-${uSnap.key}" onclick="toggleFollow('${uSnap.key}')">Follow</button>`;
-        document.getElementById('friends-list').appendChild(div);
+        users.push({uid: uSnap.key,...uSnap.val()});
       }
+    })
+
+    // SORT: 1. Friends first 2. Same City 3. Same Province 4. Others
+    users.sort((a,b)=>{
+      const aIsFriend = myFriends.includes(a.uid)? 0 : 1;
+      const bIsFriend = myFriends.includes(b.uid)? 0 : 1;
+      if(aIsFriend!== bIsFriend) return aIsFriend - bIsFriend;
+
+      const aScore = (a.city === myData.city? 2 : 0) + (a.province === myData.province? 1 : 0);
+      const bScore = (b.city === myData.city? 2 : 0) + (b.province === myData.province? 1 : 0);
+      return bScore - aScore;
+    })
+
+    users.forEach(u=>{
+      const isFriend = myFriends.includes(u.uid);
+      const locationTag = u.city? `📍 ${u.city}, ${u.province || ''}` : '';
+      const div = document.createElement('div');
+      div.className = 'friend-item';
+      div.innerHTML = `
+        <div onclick="viewUserProfile('${u.uid}')" style="display:flex; gap:10px; align-items:center; cursor:pointer">
+          <img style="width:40px;height:40px;border-radius:50%" src="${u.profilePic}">
+          <div>
+            <b>${u.name}</b><br>
+            <small style="opacity:0.7">${locationTag}</small>
+          </div>
+        </div>
+        <button class="follow-btn" id="follow-${u.uid}" onclick="toggleFollow('${u.uid}')">${isFriend? 'Following' : 'Follow'}</button>
+      `;
+      document.getElementById('friends-list').appendChild(div);
     })
   })
 }
-window.toggleFollow = async (uid) => { const followRef = ref(db, `friends/${currentUser.uid}/${uid}`); const snap = await get(followRef); if(snap.exists()){ await remove(followRef); alert("Unfollowed"); document.getElementById(`follow-${uid}`).innerText = "Follow"; } else { await set(followRef, true); alert("Following!"); document.getElementById(`follow-${uid}`).innerText = "Following"; } }
+window.toggleFollow = async (uid) => {
+  const followRef = ref(db, `friends/${currentUser.uid}/${uid}`);
+  const snap = await get(followRef);
+  if(snap.exists()){ await remove(followRef); alert("Unfollowed"); document.getElementById(`follow-${uid}`).innerText = "Follow"; }
+  else { await set(followRef, true); alert("Following!"); document.getElementById(`follow-${uid}`).innerText = "Following"; }
+}
 
-window.openVideos = () => { lastSeen.posts = Date.now(); lastSeen.videos = Date.now(); saveLastSeen(); updateBadge('video-badge', 0); document.getElementById('feed-section').style.display = 'none'; document.getElementById('chat-section').style.display = 'none'; document.getElementById('videos-section').style.display = 'block'; document.getElementById('dm-chat-section').style.display = 'none'; document.getElementById('friends-section').style.display = 'none'; document.getElementById('profile-box').style.display = 'none'; }
-window.openDMs = () => { lastSeen.dms = Date.now(); saveLastSeen(); updateBadge('dm-badge', 0); document.getElementById('feed-section').style.display = 'none'; document.getElementById('chat-section').style.display = 'none'; document.getElementById('videos-section').style.display = 'none'; document.getElementById('dm-chat-section').style.display = 'block'; document.getElementById('friends-section').style.display = 'none'; document.getElementById('profile-box').style.display = 'none'; loadDMs(); }
-window.openFriends = () => { document.getElementById('feed-section').style.display = 'none'; document.getElementById('chat-section').style.display = 'none'; document.getElementById('videos-section').style.display = 'none'; document.getElementById('dm-chat-section').style.display = 'none'; document.getElementById('friends-section').style.display = 'block'; document.getElementById('profile-box').style.display = 'none'; }
-window.backToFeed = () => { document.getElementById('feed-section').style.display = 'block'; document.getElementById('chat-section').style.display = 'none'; document.getElementById('videos-section').style.display = 'none'; document.getElementById('dm-chat-section').style.display = 'none'; document.getElementById('friends-section').style.display = 'none'; document.getElementById('profile-box').style.display = 'none'; }
-
-document.getElementById('chat-icon-btn').onclick = () => { lastSeen.chat = Date.now(); saveLastSeen(); updateBadge('chat-badge', 0); document.getElementById('feed-section').style.display = 'none'; document.getElementById('chat-section').style.display = 'block'; document.getElementById('profile-box').style.display = 'none'; document.getElementById('videos-section').style.display = 'none'; document.getElementById('dm-chat-section').style.display = 'none'; document.getElementById('friends-section').style.display = 'none'; }
-document.getElementById('back-to-feed').onclick = backToFeed;
-document.getElementById('logo-btn').onclick = backToFeed;
-
-document.addEventListener('click', () => { document.querySelectorAll('.react-picker').forEach(p => p.classList.remove('show')); document.querySelectorAll('.react-names-tooltip').forEach(t => t.style.display = 'none'); });
+// NAVIGATION - SINGLE COPY ONLY
+window.openVideos = () => {
+  lastSeen.posts = Date.now(); lastSeen.videos = Date.now(); saveLastSeen(); updateBadge('video-badge', 0);
+  document.getElementById('feed-section').style.display = 'none';
+  document.getElementById('chat-section').style.display = 'none';
+  document.getElementById('videos-section').style.display = 'block';
+  document.getElementById('dm-chat-section').style.display = 'none';
+  document.getElementById('friends-section').style.display = 'none';
+  document.getElementById('profile-box').style.display = 'none';
+}
+window.openDMs = () => {
+  lastSeen.dms = Date.now(); saveLastSeen(); updateBadge('dm-badge', 0);
+  document.getElementById('feed-section').style.display = 'none';
+  document.getElementById('chat-section').style.display = 'none';
+  document.getElementById('videos-section').style.display = 'none';
+  document.getElementById('dm-chat-section').style.display = 'block';
+  document.getElementById('friends-section').style.display = 'none';
+  document.getElementById('profile-box').style.display = 'none';
+  loadDMs();
+}
+window.openFriends = () => {
+  document.getElementById('feed-section').style.display = 'none';
+  document.getElementById('chat-section').style.display = 'none';
+  document.getElementById('videos-section').style.display = 'none';
+  document.getElementById('dm-chat-section').style.display = 'none';
+  document.getElementById('friends-section').style.display = 'block';
+  document.getElementById('profile-box').style.display = 'none';
+}
+window.backToFeed = () => {
+  document.getElementById('feed-section').style.display = 'block';
+  document.getElementById('chat-section').style.display = 'none';
+  document.getElementById('videos-section').style.display = 'none';
+  document.getElementById('dm-chat-section').style.display = 'none';
+  document.getElementById('friends-section').style.display = 'none';
+  document.getElementById('profile-box').style.display = 'none';
+}
 
 document.getElementById('chat-img-btn').onclick = () => document.getElementById('chat-file').click();
 document.getElementById('chat-file').onchange = async (e)=>{
   const file = e.target.files[0];
   if(file){
-        const reader = new FileReader();
+    const reader = new FileReader();
     reader.onload = async ()=>{
       chatImageData = reader.result;
       await push(ref(db, 'globalChat'), { uid: currentUser.uid, image: chatImageData, replyTo: replyToMsg?.key || null, timestamp: Date.now(), reactions:{} });
@@ -1122,10 +1290,9 @@ async function renderMessage(snap, scroll){
     replyHtml = `<div class="reply-quote"><div class="reply-quote-name">${repliedUser.name}</div><div class="reply-quote-text">${repliedMsg.text || 'Media'}</div></div>`;
   }
   let content = '';
-  // UPDATED: NAME IS CLICKABLE
-  if(msg.image) { content = `${replyHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')"><span onclick="openUserProfile('${msg.uid}')" style="cursor:pointer">${user.name}</span></span>${delBtn}<img class="bubble-img" src="${msg.image}" onclick="openProfilePopup('${msg.image}')">`; }
-  else if(msg.audio) { content = `${replyHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')"><span onclick="openUserProfile('${msg.uid}')" style="cursor:pointer">${user.name}</span></span>${delBtn}<audio controls src="${msg.audio}"></audio>`; }
-  else { content = `${replyHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')"><span onclick="openUserProfile('${msg.uid}')" style="cursor:pointer">${user.name}</span></span>${delBtn}<span class="bubble-text">${msg.text}</span>`; }
+  if(msg.image) { content = `${replyHtml}<span class="bubble-name" onclick="viewUserProfile('${msg.uid}')"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<img class="bubble-img" src="${msg.image}" onclick="openProfilePopup('${msg.image}')">`; }
+  else if(msg.audio) { content = `${replyHtml}<span class="bubble-name" onclick="viewUserProfile('${msg.uid}')"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`; }
+  else { content = `${replyHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`; }
   wrapper.innerHTML = `<div class="reply-hint">↩️</div><div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}" id="bubble-${msgKey}">${content}<div class="bubble-reactions" id="msg-react-${msgKey}"></div></div><div class="react-picker" id="msg-picker-${msgKey}">${REACTIONS.map(r=>`<span onclick="reactToMsg('${msgKey}','${r}')">${r}</span>`).join('')}</div>`;
   wrapper.addEventListener('touchstart', e => startDrag(e, msgKey), {passive: true});
   wrapper.addEventListener('touchmove', e => moveDrag(e), {passive: false});
@@ -1145,110 +1312,203 @@ async function renderMessage(snap, scroll){
   if(scroll) document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
 }
 
-window.deleteMsg = async (key) => { if(confirm("Delete this message?")) { await remove(ref(db, 'globalChat/' + key)); const el = document.getElementById('wrapper-' + key); if(el) el.remove(); loadedMessages.delete(key); delete allMessagesCache[key]; } }
+window.deleteMsg = async (key) => {
+  if(confirm("Delete this message?")) {
+    await remove(ref(db, 'globalChat/' + key));
+    const el = document.getElementById('wrapper-' + key);
+    if(el) el.remove();
+    loadedMessages.delete(key); delete allMessagesCache[key];
+  }
+}
 window.reactToMsg = async (key, emoji) => { await setReaction(`globalChat/${key}/reactions`, emoji); document.getElementById(`msg-picker-${key}`).classList.remove('show'); }
 
 // THEME SYSTEM
 let currentTheme = localStorage.getItem('chatbeat_theme') || '#00C896';
 let isLightMode = localStorage.getItem('chatbeat_light') === 'true';
-window.setTheme = (color) => { currentTheme = color; localStorage.setItem('chatbeat_theme', color); document.documentElement.style.setProperty('--main-color', color); alert("Theme updated!"); applyTheme(); }
-window.toggleLightMode = () => { isLightMode =!isLightMode; localStorage.setItem('chatbeat_light', isLightMode); applyTheme(); }
+
+window.setTheme = (color) => {
+  currentTheme = color;
+  localStorage.setItem('chatbeat_theme', color);
+  document.documentElement.style.setProperty('--main-color', color);
+  alert("Theme updated!");
+  applyTheme();
+}
+
+window.toggleLightMode = () => {
+  isLightMode = !isLightMode;
+  localStorage.setItem('chatbeat_light', isLightMode);
+  applyTheme();
+}
+
 function applyTheme(){
-  const bg = isLightMode? '#f0f2f5' : '#0b141a';
-  const card = isLightMode? '#ffffff' : '#202c33';
-  const text = isLightMode? '#000' : '#fff';
+  const bg = isLightMode ? '#f0f2f5' : '#0b141a';
+  const card = isLightMode ? '#ffffff' : '#202c33';
+  const text = isLightMode ? '#000' : '#fff';
   document.body.style.background = bg;
   document.body.style.color = text;
-  document.querySelectorAll('.card,.post-box,.profile-box,.settings-popup,.share-popup').forEach(el=>{ el.style.background = card; el.style.color = text; })
+  document.querySelectorAll('.card, .post-box, .profile-box, .settings-popup, .share-popup').forEach(el=>{
+    el.style.background = card;
+    el.style.color = text;
+  })
 }
 
 // ACCOUNT FUNCTIONS
-window.changeName = async () => { const newName = prompt("Enter new display name:"); if(!newName || newName.length < 3) return alert("Name too short"); await set(ref(db, 'users/'+currentUser.uid+'/name'), newName); document.getElementById('my-name').innerText = newName; alert("Name updated!"); }
-window.changeEmail = async () => { const newEmail = prompt("Enter new email:"); if(!newEmail) return; try { await updateEmail(currentUser, newEmail); await set(ref(db, 'users/'+currentUser.uid+'/email'), newEmail); alert("Email updated! Check inbox to verify"); } catch(e){ alert(e.message) } }
-window.changePassword = async () => { const newPass = prompt("Enter new password:"); if(!newPass || newPass.length < 6) return alert("Password must be 6+ chars"); try { await updatePassword(currentUser, newPass); alert("Password updated!"); } catch(e){ alert("Login again first: "+e.message) } }
-window.removeProfilePhoto = async () => { if(confirm("Remove profile photo?")){ await set(ref(db, 'users/'+currentUser.uid+'/profilePic'), DEFAULT_PIC); document.getElementById('profile-pic').src = DEFAULT_PIC; document.getElementById('profile-pic-big').src = DEFAULT_PIC; alert("Photo removed"); } }
-window.linkAccount = (type) => { const url = prompt(`Paste your ${type} profile link:`); if(!url) return; set(ref(db, `users/${currentUser.uid}/linked/${type}`), url); alert(`${type} linked!`); }
-
-// ===== NEW PROFILE FUNCTIONS START HERE =====
-// FUNCTION 1: LOAD YOUR OWN PROFILE WITH EDIT
-async function loadProfile(){
-  const snap = await get(ref(db, 'users/' + currentUser.uid));
-  const u = snap.val() || {};
-
-  document.getElementById('profile-pic-big').src = u.profilePic || DEFAULT_PIC;
-
-  document.getElementById('profile-info').innerHTML = `
-    <div class="profile-name">${u.name || ''} ${u.surname || ''}</div>
-    ${u.bio? `<div class="profile-bio">${u.bio}</div>` : ''}
-    <div class="profile-section"><span class="profile-label">Location:</span><br>${u.country || '-'}; ${u.province || '-'}; ${u.city || '-'}; ${u.town || '-'}; ${u.village || '-'}; ${u.street || '-'}</div>
-    <div class="profile-section"><span class="profile-label">Age:</span> ${u.age || '-'} | <span class="profile-label">Birth:</span> ${u.birthDate || '-'} | <span class="profile-label">Gender:</span> ${u.gender || '-'}</div>
-    <div class="profile-section"><span class="profile-label">School:</span> ${u.school || '-'} <br><span class="profile-label">Best Friends:</span> ${u.bestFriends || '-'} <br><span class="profile-label">Fav Teachers:</span> ${u.favTeachers || '-'}</div>
-    <div class="profile-section"><span class="profile-label">Contact:</span> ${u.contact || '-'} <br><span class="profile-label">Socials:</span> TT:${u.tiktok || '-'} IG:${u.instagram || '-'} TW:${u.twitter || '-'} FB:${u.facebook || '-'} WA:${u.whatsapp || '-'}</div>
-    <div class="profile-section"><span class="profile-label">Pet:</span> ${u.petName || '-'} <br><span class="profile-label">Hobbies:</span> ${u.hobbies || '-'} <br><span class="profile-label">Dream Job:</span> ${u.dreamJob || '-'} <br><span class="profile-label">Dream Car:</span> ${u.dreamCar || '-'} <br><span class="profile-label">Girlfriend:</span> ${u.girlfriend || '-'}</div>
-  `;
-
-  ['surname','bio','age','birthDate','gender','country','province','city','town','village','street','school','bestFriends','favTeachers','contact','tiktok','instagram','twitter','facebook','whatsapp','petName','hobbies','dreamJob','dreamCar','girlfriend']
-.forEach(id => { if(document.getElementById(id+'-input')) document.getElementById(id+'-input').value = u[id] || '' });
+window.changeName = async () => {
+  const newName = prompt("Enter new display name:");
+  if(!newName || newName.length < 3) return alert("Name too short");
+  await set(ref(db, 'users/'+currentUser.uid+'/name'), newName);
+  document.getElementById('my-name').innerText = newName;
+  alert("Name updated!");
 }
 
-// FUNCTION 2: OPEN ANY OTHER USER'S PROFILE
-window.openUserProfile = async (uid) => {
-  const snap = await get(ref(db, 'users/' + uid));
-  const u = snap.val(); if(!u) return;
-
-  document.getElementById('profile-box').style.display = 'block';
-  document.getElementById('edit-profile-btn').style.display = 'none';
-  document.getElementById('save-profile-btn').style.display = 'none';
-  document.getElementById('cancel-profile-btn').style.display = 'none';
-  document.getElementById('profile-edit-form').style.display = 'none';
-  document.getElementById('profile-info').style.display = 'block';
-  document.getElementById('profile-pic-big').src = u.profilePic || DEFAULT_PIC;
-
-  document.getElementById('profile-info').innerHTML = `
-    <div class="profile-name">${u.name || ''} ${u.surname || ''}</div>
-    ${u.bio? `<div class="profile-bio">${u.bio}</div>` : ''}
-    <div class="profile-section"><span class="profile-label">Location:</span><br>${u.country || '-'}; ${u.province || '-'}; ${u.city || '-'}; ${u.town || '-'}; ${u.village || '-'}; ${u.street || '-'}</div>
-    <div class="profile-section"><span class="profile-label">Age:</span> ${u.age || '-'} | <span class="profile-label">Birth:</span> ${u.birthDate || '-'} | <span class="profile-label">Gender:</span> ${u.gender || '-'}</div>
-    <div class="profile-section"><span class="profile-label">School:</span> ${u.school || '-'} <br><span class="profile-label">Best Friends:</span> ${u.bestFriends || '-'} <br><span class="profile-label">Fav Teachers:</span> ${u.favTeachers || '-'}</div>
-    <div class="profile-section"><span class="profile-label">Contact:</span> ${u.contact || '-'} <br><span class="profile-label">Socials:</span> TT:${u.tiktok || '-'} IG:${u.instagram || '-'} TW:${u.twitter || '-'} FB:${u.facebook || '-'} WA:${u.whatsapp || '-'}</div>
-    <div class="profile-section"><span class="profile-label">Pet:</span> ${u.petName || '-'} <br><span class="profile-label">Hobbies:</span> ${u.hobbies || '-'} <br><span class="profile-label">Dream Job:</span> ${u.dreamJob || '-'} <br><span class="profile-label">Dream Car:</span> ${u.dreamCar || '-'} <br><span class="profile-label">Girlfriend:</span> ${u.girlfriend || '-'}</div>
-  `;
+window.changeEmail = async () => {
+  const newEmail = prompt("Enter new email:");
+  if(!newEmail) return;
+  try {
+    await updateEmail(currentUser, newEmail);
+    await set(ref(db, 'users/'+currentUser.uid+'/email'), newEmail);
+    alert("Email updated! Check inbox to verify");
+  } catch(e){ alert(e.message) }
 }
 
-// EDIT / SAVE / CANCEL BUTTONS
-document.getElementById('edit-profile-btn').onclick = () => {
-  document.getElementById('profile-info').style.display = 'none';
-  document.getElementById('profile-edit-form').style.display = 'block';
-  document.getElementById('edit-profile-btn').style.display = 'none';
-  document.getElementById('save-profile-btn').style.display = 'inline-block';
-  document.getElementById('cancel-profile-btn').style.display = 'inline-block';
+window.changePassword = async () => {
+  const newPass = prompt("Enter new password:");
+  if(!newPass || newPass.length < 6) return alert("Password must be 6+ chars");
+  try {
+    await updatePassword(currentUser, newPass);
+    alert("Password updated!");
+  } catch(e){ alert("Login again first: "+e.message) }
 }
-document.getElementById('cancel-profile-btn').onclick = () => {
-  document.getElementById('profile-info').style.display = 'block';
-  document.getElementById('profile-edit-form').style.display = 'none';
-  document.getElementById('edit-profile-btn').style.display = 'inline-block';
-  document.getElementById('save-profile-btn').style.display = 'none';
-  document.getElementById('cancel-profile-btn').style.display = 'none';
+
+window.removeProfilePhoto = async () => {
+  if(confirm("Remove profile photo?")){
+    await set(ref(db, 'users/'+currentUser.uid+'/profilePic'), DEFAULT_PIC);
+    document.getElementById('profile-pic').src = DEFAULT_PIC;
+    alert("Photo removed");
+  }
 }
-document.getElementById('save-profile-btn').onclick = async () => {
-  const updates = {
-    surname: document.getElementById('surname-input').value, bio: document.getElementById('bio-input').value,
-    age: document.getElementById('age-input').value, birthDate: document.getElementById('birth-input').value, gender: document.getElementById('gender-input').value,
-    country: document.getElementById('country-input').value, province: document.getElementById('province-input').value, city: document.getElementById('city-input').value,
-    town: document.getElementById('town-input').value, village: document.getElementById('village-input').value, street: document.getElementById('street-input').value,
-    school: document.getElementById('school-input').value, bestFriends: document.getElementById('bestfriends-input').value, favTeachers: document.getElementById('favteachers-input').value,
-    contact: document.getElementById('contact-input').value, tiktok: document.getElementById('tiktok-input').value, instagram: document.getElementById('instagram-input').value,
-    twitter: document.getElementById('twitter-input').value, facebook: document.getElementById('facebook-input').value, whatsapp: document.getElementById('whatsapp-input').value,
-    petName: document.getElementById('pet-input').value, hobbies: document.getElementById('hobbies-input').value, dreamJob: document.getElementById('dreamjob-input').value,
-    dreamCar: document.getElementById('dreamcar-input').value, girlfriend: document.getElementById('girlfriend-input').value,
+
+// LINK SOCIAL ACCOUNTS
+window.linkAccount = (type) => {
+  const url = prompt(`Paste your ${type} profile link:`);
+  if(!url) return;
+  set(ref(db, `users/${currentUser.uid}/linked/${type}`), url);
+  alert(`${type} linked!`);
+}
+
+// DELETE ACCOUNT FULL WIPE
+window.deleteAccount = async () => { 
+  if(confirm("This will delete ALL your data forever. Are you sure?")){
+    await remove(ref(db, 'users/'+currentUser.uid));
+    await remove(ref(db, 'posts')).then(()=>{});
+    await remove(ref(db, 'videos')).then(()=>{});
+    await remove(ref(db, 'dmChats')).then(()=>{});
+    await deleteUser(currentUser); 
+  }
+}
+window.favoriteVideo = async(id)=>{
+    const r = ref(db,`favorites/${currentUser.uid}/${id}`);
+    const s = await get(r);
+    if(s.exists()) await remove(r);
+    else await set(r,true);
+}
+
+// ADD IT HERE 👇
+window.deleteVideo = async (id)=>{
+    const snap = await get(ref(db,"videos/"+id));
+    if(!snap.exists()) return;
+    if(snap.val().uid !== currentUser.uid){
+      alert("You can only delete your own videos");
+      return;
+    }
+    if(confirm("Delete this video?")){
+        const userVideos = query(ref(db, 'videos'), orderByChild('uid'), equalTo(currentUser.uid));
+    }
+}
+
+document.getElementById('chat-icon-btn').onclick = () => {
+  lastSeen.chat = Date.now();
+  saveLastSeen();
+  updateBadge('chat-badge', 0);
+  document.getElementById('feed-section').style.display = 'none';
+  document.getElementById('chat-section').style.display = 'block';
+  document.getElementById('profile-box').style.display = 'none';
+  document.getElementById('videos-section').style.display = 'none';
+  document.getElementById('dm-chat-section').style.display = 'none';
+  document.getElementById('friends-section').style.display = 'none';
+}
+
+document.getElementById('back-to-feed').onclick = backToFeed;
+document.getElementById('logo-btn').onclick = backToFeed;
+
+document.addEventListener('click', () => {
+  document.querySelectorAll('.react-picker').forEach(p => p.classList.remove('show'));
+  document.querySelectorAll('.react-names-tooltip').forEach(t => t.style.display = 'none');
+});
+// OPEN PROFILE PAGE WHEN CLICKING NAME/PIC
+window.viewUserProfile = async (uid) => {
+  const u = await getUser(uid);
+  document.getElementById('feed-section').style.display = 'none';
+  document.getElementById('chat-section').style.display = 'none';
+  document.getElementById('videos-section').style.display = 'none';
+  document.getElementById('dm-chat-section').style.display = 'none';
+  document.getElementById('friends-section').style.display = 'none';
+  document.getElementById('profile-box').style.display = 'none';
+  document.getElementById('profile-page').style.display = 'block';
+
+  document.getElementById('view-profile-pic').src = u.profilePic || DEFAULT_PIC;
+  document.getElementById('view-profile-name').innerText = u.name;
+  document.getElementById('view-profile-bio').innerText = u.bio || '';
+
+  // SHOW EDIT BUTTON ONLY FOR YOUR OWN PROFILE
+  document.getElementById('edit-profile-btn').style.display = uid === currentUser.uid? 'block' : 'none';
+
+  // BUILD DETAILS - ONLY SHOW FILLED FIELDS
+  let html = '';
+  const sections = {
+    "📍 Location": ['country','province','city','town'],
+    "👤 About": ['gender','bio'],
+    "🏫 School": ['school','grade','subject','teacher'],
+    "❤️ Relationships": ['girlfriend','bestfriend'],
+    "🎵 Other": ['hobbies','pets'],
+    "📞 Contact": ['phone','instagram','whatsapp']
   };
-  await update(ref(db, 'users/' + currentUser.uid), updates);
-  alert("Profile saved!");
-  document.getElementById('cancel-profile-btn').onclick();
-  loadProfile();
+
+  for(const [title, keys] of Object.entries(sections)){
+    let sectionHtml = '';
+    keys.forEach(k=>{
+      if(u[k]){
+        let label = k.charAt(0).toUpperCase() + k.slice(1);
+        sectionHtml += `<div class="profile-section"><span class="profile-label">${label}:</span> ${u[k]}</div>`;
+      }
+    })
+    if(sectionHtml) html += `<h4 style="margin-top:15px">${title}</h4>` + sectionHtml;
+  }
+
+  document.getElementById('view-profile-details').innerHTML = html || '<p style="opacity:0.6">No details added yet</p>';
 }
-// ===== NEW PROFILE FUNCTIONS END HERE =====
+
+window.openProfileEdit = async () => {
+  const u = await getUser(currentUser.uid);
+  ['country','province','city','town','gender','bio','school','grade','subject','teacher','girlfriend','bestfriend','hobbies','pets','phone','instagram','whatsapp']
+ .forEach(k => document.getElementById('edit-'+k).value = u[k] || '');
+  document.getElementById('edit-profile-popup').classList.add('show');
+}
+
+window.closeProfileEdit = () => document.getElementById('edit-profile-popup').classList.remove('show');
+
+window.saveProfileEdit = async () => {
+  const updates = {};
+  ['country','province','city','town','gender','bio','school','grade','subject','teacher','girlfriend','bestfriend','hobbies','pets','phone','instagram','whatsapp']
+ .forEach(k => updates[k] = document.getElementById('edit-'+k).value.trim());
+  await set(ref(db, 'users/'+currentUser.uid), {...await (await get(ref(db,'users/'+currentUser.uid))).val(),...updates});
+  alert("Profile updated!");
+  closeProfileEdit();
+  viewUserProfile(currentUser.uid);
+}
 
 </script>
 </body>
 </html>
+
+    
