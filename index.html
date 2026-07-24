@@ -964,11 +964,8 @@ window.likeVideo = async (id, el)=>{
     let count = parseInt(countSpan.innerText) || 0;
     countSpan.innerText = s.exists() ? count - 1 : count + 1;
 }
-window.openVideoComments = (id)=>{
-  const comment = prompt("Add a comment:");
-  if(comment){
-    push(ref(db, `videos/${id}/comments`), {uid: currentUser.uid, text: comment, timestamp: Date.now()});
-  }
+window.toggleVideoComments = (videoId) => {
+  document.getElementById(`v-comments-${videoId}`).classList.toggle('show');
 }
 
 // VIDEOS TIKTOK STYLE
@@ -989,26 +986,35 @@ function loadVideos(){
     div.className = 'video-card';
     div.setAttribute('data-id', snap.key); // ADD THIS so we can find it to delete
     div.innerHTML = `
-      <video src="${v.video}" loop playsinline onclick="this.paused?this.play():this.pause()"></video>
-      <div class="video-info">
-        <h4>@${u.name}</h4>
-        <p>${v.desc || ""}</p>
-      </div>
-      <div class="video-sidebar">
-        <div class="profile-wrap">
-            <img class="side-profile" src="${u.profilePic}">
-            <span class="plus-badge">+</span>
-        </div>
-        <div class="video-action" onclick="likeVideo('${snap.key}')">❤️<span>${Object.keys(v.likes || {}).length}</span></div>
-        <div class="video-action" onclick="openVideoComments('${snap.key}')">💬<span>${Object.keys(v.comments || {}).length}</span></div>
-        <div class="video-action" onclick="favoriteVideo('${snap.key}', this)">🔖<span>${Object.keys(v.favorites || {}).length}</span></div>
-        <div class="video-action" onclick="openVideoShare('${snap.key}')">↗<span>${Object.keys(v.shares || {}).length}</span></div>
-        <div class="music-disc">🎵</div>
-      </div>
-    `;
+  <video src="${v.video}" loop playsinline onclick="this.paused?this.play():this.pause()"></video>
+  <div class="video-info">
+    <h4>@${u.name}</h4>
+    <p>${v.desc || ""}</p>
+  </div>
+  <div class="video-sidebar">
+    <div class="profile-wrap">
+        <img class="side-profile" src="${u.profilePic}">
+        <span class="plus-badge">+</span>
+    </div>
+    <div class="video-action" onclick="likeVideo('${snap.key}', this)">❤️<span>${Object.keys(v.likes || {}).length}</span></div>
+    <div class="video-action" onclick="toggleVideoComments('${snap.key}')">💬<span>${Object.keys(v.comments || {}).length}</span></div>
+    <div class="video-action" onclick="favoriteVideo('${snap.key}', this)">🔖<span>${Object.keys(v.favorites || {}).length}</span></div>
+    <div class="video-action" onclick="openVideoShare('${snap.key}')">↗<span>${Object.keys(v.shares || {}).length}</span></div>
+    <div class="music-disc">🎵</div>
+  </div>
+  
+  <!-- THIS WAS MISSING -->
+  <div class="video-comments-section" id="v-comments-${snap.key}">
+    <div id="v-comment-list-${snap.key}" class="video-comment-list"></div> 
+    <div class="video-comment-input-row">
+      <input id="v-comment-input-${snap.key}" placeholder="Add comment...">
+      <button onclick="sendVideoComment('${snap.key}')">➤</button>
+    </div>
+  </div>
+`;
     document.getElementById('video-feed').appendChild(div);
 videoObserver.observe(div);
-loadVideoComments(videoId);
+loadVideoComments(snap.key);
   })
 }
 
