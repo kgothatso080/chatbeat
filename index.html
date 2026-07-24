@@ -356,14 +356,18 @@ to{transform:rotate(360deg);}
   </div>
 </div>
     
-  <div id="profile-box" class="profile-box">
+<div id="profile-box" class="profile-box">
     <img id="profile-pic" src="https://ui-avatars.com/api/?name=U&background=00C896&color=fff">
     <h3 id="my-name"></h3>
+    <p id="my-bio" style="font-size:13px; opacity:0.8; margin:4px 0"></p>
+    <p id="my-location" style="font-size:12px; opacity:0.7"></p>
     <div id="linked-accounts" style="font-size:12px; margin-top:8px"></div>
+
     <input id="profile-upload" type="file" accept="image/*" style="display:none">
     <button onclick="document.getElementById('profile-upload').click()">Change Profile Photo</button>
+    <button onclick="openEditProfile()">✏️ Edit Profile</button>
     <button onclick="document.getElementById('profile-box').style.display='none'">Close</button>
-  </div>
+</div>
 
   <div id="feed-section">
     <div class="post-box">
@@ -438,54 +442,46 @@ to{transform:rotate(360deg);}
   
   <div style="text-align:center; background:#202c33; padding:20px; border-radius:12px">
     <img id="view-profile-pic" src="" style="width:120px; height:120px; border-radius:50%; border:4px solid #00C896; object-fit:cover">
-    <h2 id="view-profile-name" style="margin:8px 0 0 0"></h2>
-    <p id="view-profile-bio" style="opacity:0.8; font-size:14px"></p>
-    <button id="edit-profile-btn" onclick="openProfileEdit()" style="margin-top:10px; display:none">✏️ Edit Profile</button>
-  </div>
+  <div id="edit-profile-popup" class="settings-popup">
+  <h3>✏️ Edit Profile</h3>
+  
+  <h4>About Me</h4>
+  <textarea id="bio-input" placeholder="Write your bio..." style="height:60px"></textarea>
+  
+  <h4>Location</h4>
+  <input id="country-input" placeholder="Country">
+  <input id="province-input" placeholder="Province">
+  <input id="city-input" placeholder="City">
+  <input id="town-input" placeholder="Town/Village">
 
-  <div id="view-profile-details" style="margin-top:20px; background:#202c33; padding:15px; border-radius:12px"></div>
+  <h4>School Details</h4>
+  <input id="school-input" placeholder="School">
+  <input id="grade-input" placeholder="Grade">
+  <input id="fav-subject-input" placeholder="Favorite Subject">
+  <input id="fav-teacher-input" placeholder="Favorite Teacher">
+  <input id="fav-book-input" placeholder="Favorite Book">
 
-  <!-- EDIT POPUP IS NOW INSIDE PROFILE -->
-  <div id="edit-profile-popup" class="settings-popup"> <!-- REMOVED inline style, added class only -->
-    <span class="profile-popup-close" onclick="closeProfileEdit()">×</span>
-    <h3>✏️ Edit Your Profile</h3>
-    <p style="font-size:12px; opacity:0.8">Fill only what you want. Empty fields won't show.</p>
-
-    <div style="max-height:60vh; overflow-y:auto; padding-right:5px">
-      <h4>📍 Location</h4>
-      <input id="edit-country" placeholder="Country">
-      <input id="edit-province" placeholder="Province">
-      <input id="edit-city" placeholder="City">
-      <input id="edit-town" placeholder="Town">
-
-      <h4>👤 About</h4>
-      <select id="edit-gender"><option value="">Gender</option><option>Male</option><option>Female</option><option>Other</option></select>
-      <input id="edit-bio" placeholder="Bio / About you">
-
-      <h4>🏫 School</h4>
-      <input id="edit-school" placeholder="School Name">
-      <input id="edit-grade" placeholder="Grade">
-      <input id="edit-subject" placeholder="Favorite Subject">
-      <input id="edit-teacher" placeholder="Favorite Teacher">
-
-      <h4>❤️ Relationships</h4>
-      <input id="edit-girlfriend" placeholder="Girlfriend / Boyfriend Name">
-      <input id="edit-bestfriend" placeholder="Best Friend Name">
-
-      <h4>🎵 Other</h4>
-      <input id="edit-hobbies" placeholder="Hobbies - comma separated">
-      <input id="edit-pets" placeholder="Pets">
-
-      <h4>📞 Contact</h4>
-      <input id="edit-phone" placeholder="Phone Number">
-      <input id="edit-instagram" placeholder="Instagram">
-      <input id="edit-whatsapp" placeholder="WhatsApp Number">
-    </div>
-
-    <hr style="margin:15px 0; border-color:#2a3942">
-    <button onclick="saveProfileEdit()">💾 Save</button>
-    <button onclick="closeProfileEdit()" style="background:#555">Cancel</button>
-  </div> <!-- THIS WAS MISSING -->
+  <h4>What I Like</h4>
+  <input id="hobbies-input" placeholder="Hobbies: Soccer, Music...">
+  <input id="fav-foods-input" placeholder="Top 5 Foods: 1. Pizza, 2. Rice...">
+  <input id="fav-music-input" placeholder="Top 5 Songs/Artists">
+  <input id="fav-games-input" placeholder="Favorite Games">
+  <input id="fav-color-input" placeholder="Favorite Color">
+  <input id="fav-person-input" placeholder="Favorite Person">
+  
+  <h4>Status + Contact</h4>
+  <select id="relationship-input" style="width:80%; padding:12px; border-radius:25px; background:#2a3942; color:white; border:none">
+    <option value="">Relationship</option>
+    <option value="Single">Single</option>
+    <option value="Taken">Taken</option>
+  </select>
+  <input id="phone-input" placeholder="Phone Number">
+  <input id="instagram-input" placeholder="Instagram">
+  <input id="tiktok-input" placeholder="TikTok">
+  <input id="facebook-input" placeholder="Facebook">
+  
+  <button onclick="saveProfile()">💾 Save Profile</button>
+  <button onclick="closeEditProfile()">Cancel</button>
 </div>
 
 <div id="share-popup" class="share-popup">
@@ -520,6 +516,11 @@ to{transform:rotate(360deg);}
     <button onclick="setTheme('#FF6B6B')" style="background:#FF6B6B; width:40px; height:40px; padding:0"></button>
   </div>
   <button onclick="toggleLightMode()">🌙 Toggle Dark/Light Mode</button>
+  <h4 style="text-align:left; margin-top:15px">🔒 Privacy</h4>
+<label style="display:flex; align-items:center; gap:10px; justify-content:center">
+  <input type="checkbox" id="private-toggle" onchange="togglePrivate()">
+  Make Account Private
+</label>
   
   <h4 style="text-align:left; margin-top:15px">🔗 Linked Accounts</h4>
   <button onclick="linkAccount('tiktok')">🎵 Link TikTok</button>
@@ -1160,6 +1161,7 @@ function loadFriends(){
     snap.forEach(uSnap=>{
       if(uSnap.key!== currentUser.uid){
         users.push({uid: uSnap.key,...uSnap.val()});
+      if(u.isPrivate && uSnap.key !== currentUser.uid) return; 
       }
     })
 
@@ -1509,49 +1511,98 @@ window.viewUserProfile = async (uid) => {
   // SHOW EDIT BUTTON ONLY FOR YOUR OWN PROFILE
   document.getElementById('edit-profile-btn').style.display = uid === currentUser.uid? 'block' : 'none';
 
-  // BUILD DETAILS - ONLY SHOW FILLED FIELDS
-  let html = '';
-  const sections = {
-    "📍 Location": ['country','province','city','town'],
-    "👤 About": ['gender','bio'],
-    "🏫 School": ['school','grade','subject','teacher'],
-    "❤️ Relationships": ['girlfriend','bestfriend'],
-    "🎵 Other": ['hobbies','pets'],
-    "📞 Contact": ['phone','instagram','whatsapp']
-  };
-
-  for(const [title, keys] of Object.entries(sections)){
-    let sectionHtml = '';
-    keys.forEach(k=>{
-      if(u[k]){
-        let label = k.charAt(0).toUpperCase() + k.slice(1);
-        sectionHtml += `<div class="profile-section"><span class="profile-label">${label}:</span> ${u[k]}</div>`;
-      }
-    })
-    if(sectionHtml) html += `<h4 style="margin-top:15px">${title}</h4>` + sectionHtml;
-  }
-
-  document.getElementById('view-profile-details').innerHTML = html || '<p style="opacity:0.6">No details added yet</p>';
-}
-
-window.openProfileEdit = async () => {
-  const u = await getUser(currentUser.uid);
-  ['country','province','city','town','gender','bio','school','grade','subject','teacher','girlfriend','bestfriend','hobbies','pets','phone','instagram','whatsapp']
- .forEach(k => document.getElementById('edit-'+k).value = u[k] || '');
+// OPEN EDIT PROFILE AND LOAD DATA
+window.openEditProfile = async () => {
+  document.getElementById('profile-box').style.display = 'none';
   document.getElementById('edit-profile-popup').classList.add('show');
+  
+  const snap = await get(ref(db, 'users/'+currentUser.uid));
+  const data = snap.val() || {};
+  
+  // Fill inputs
+  document.getElementById('bio-input').value = data.bio || '';
+  document.getElementById('country-input').value = data.country || '';
+  document.getElementById('province-input').value = data.province || '';
+  document.getElementById('city-input').value = data.city || '';
+  document.getElementById('town-input').value = data.town || '';
+  document.getElementById('school-input').value = data.school || '';
+  document.getElementById('grade-input').value = data.grade || '';
+  document.getElementById('fav-subject-input').value = data.favSubject || '';
+  document.getElementById('fav-teacher-input').value = data.favTeacher || '';
+  document.getElementById('fav-book-input').value = data.favBook || '';
+  document.getElementById('hobbies-input').value = data.hobbies || '';
+  document.getElementById('fav-foods-input').value = data.favFoods || '';
+  document.getElementById('fav-music-input').value = data.favMusic || '';
+  document.getElementById('fav-games-input').value = data.favGames || '';
+  document.getElementById('fav-color-input').value = data.favColor || '';
+  document.getElementById('fav-person-input').value = data.favPerson || '';
+  document.getElementById('relationship-input').value = data.relationship || '';
+  document.getElementById('phone-input').value = data.phone || '';
+  document.getElementById('instagram-input').value = data.instagram || '';
+  document.getElementById('tiktok-input').value = data.tiktok || '';
+  document.getElementById('facebook-input').value = data.facebook || '';
+  document.getElementById('private-toggle').checked = data.isPrivate || false;
 }
 
-window.closeProfileEdit = () => document.getElementById('edit-profile-popup').classList.remove('show');
-
-window.saveProfileEdit = async () => {
-  const updates = {};
-  ['country','province','city','town','gender','bio','school','grade','subject','teacher','girlfriend','bestfriend','hobbies','pets','phone','instagram','whatsapp']
- .forEach(k => updates[k] = document.getElementById('edit-'+k).value.trim());
-  await set(ref(db, 'users/'+currentUser.uid), {...await (await get(ref(db,'users/'+currentUser.uid))).val(),...updates});
-  alert("Profile updated!");
-  closeProfileEdit();
-  viewUserProfile(currentUser.uid);
+window.closeEditProfile = () => {
+  document.getElementById('edit-profile-popup').classList.remove('show');
+  document.getElementById('profile-box').style.display = 'block';
 }
+
+// SAVE PROFILE
+window.saveProfile = async () => {
+  const profileData = {
+    bio: document.getElementById('bio-input').value.trim(),
+    country: document.getElementById('country-input').value.trim(),
+    province: document.getElementById('province-input').value.trim(),
+    city: document.getElementById('city-input').value.trim(),
+    town: document.getElementById('town-input').value.trim(),
+    school: document.getElementById('school-input').value.trim(),
+    grade: document.getElementById('grade-input').value.trim(),
+    favSubject: document.getElementById('fav-subject-input').value.trim(),
+    favTeacher: document.getElementById('fav-teacher-input').value.trim(),
+    favBook: document.getElementById('fav-book-input').value.trim(),
+    hobbies: document.getElementById('hobbies-input').value.trim(),
+    favFoods: document.getElementById('fav-foods-input').value.trim(),
+    favMusic: document.getElementById('fav-music-input').value.trim(),
+    favGames: document.getElementById('fav-games-input').value.trim(),
+    favColor: document.getElementById('fav-color-input').value.trim(),
+    favPerson: document.getElementById('fav-person-input').value.trim(),
+    relationship: document.getElementById('relationship-input').value,
+    phone: document.getElementById('phone-input').value.trim(),
+    instagram: document.getElementById('instagram-input').value.trim(),
+    tiktok: document.getElementById('tiktok-input').value.trim(),
+    facebook: document.getElementById('facebook-input').value.trim(),
+  };
+  await set(ref(db, 'users/'+currentUser.uid), {...(await get(ref(db, 'users/'+currentUser.uid))).val(), ...profileData});
+  alert("Profile Saved!");
+  closeEditProfile();
+  loadMyProfile(); // refresh display
+}
+
+// SHOW PROFILE DATA
+async function loadMyProfile(){
+  const snap = await get(ref(db, 'users/'+currentUser.uid));
+  const data = snap.val() || {};
+  document.getElementById('my-bio').innerText = data.bio || '';
+  let loc = [data.city, data.province, data.country].filter(Boolean).join(', ');
+  document.getElementById('my-location').innerText = loc;
+}
+
+// PRIVACY TOGGLE
+window.togglePrivate = async () => {
+  const isPrivate = document.getElementById('private-toggle').checked;
+  await set(ref(db, 'users/'+currentUser.uid+'/isPrivate'), isPrivate);
+  alert(isPrivate? "Account is now Private" : "Account is now Public");
+}
+
+// CALL THIS ON LOGIN
+onAuthStateChanged(auth, async (user) => {
+ if(user) {
+   // ... your existing code ...
+   loadMyProfile(); // ADD THIS LINE
+ }
+});
 
 </script>
 </body>
