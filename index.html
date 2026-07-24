@@ -154,19 +154,12 @@
 .comment-input-row { display:flex; gap:6px; margin-top:6px; align-items:center }
 .comment-input-row input { flex:1; background:#2a3942; color:white; border-radius:20px; padding:8px 12px }
 .comment-input-row button { width:40px; height:40px; border-radius:50%; padding:0; font-size:16px; min-width:40px }
-.video-comments-section { 
-  position: absolute; 
-  bottom: 80px; 
-  left: 10px; 
-  right: 70px; 
-  background: rgba(0,0,0,0.85); 
-  border-radius: 12px; 
-  padding: 10px; 
-  display: none; 
-  max-height: 40vh; 
-  overflow-y: auto; 
-  z-index: 30;
-  backdrop-filter: blur(10px);
+.video-comments-section {
+  display: none; /* hidden by default */
+  padding: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: rgba(0,0,0,0.3);
 }
 .video-comments-section.show { display: block }
 .video-comment { display:flex; gap:8px; margin:6px 0; font-size:14px; }
@@ -761,7 +754,6 @@ onAuthStateChanged(auth, async (user) => {
    loadFriends();
    setupNotifications();
    loadMyProfile(); 
-   loadVideoComments(videoId);
  } else {
    document.getElementById('cover').style.display = 'flex';
    document.getElementById('app').style.display = 'none';
@@ -1015,6 +1007,8 @@ function loadVideos(){
       </div>
     `;
     document.getElementById('video-feed').appendChild(div);
+videoObserver.observe(div);
+loadVideoComments(videoId);
   })
 }
 
