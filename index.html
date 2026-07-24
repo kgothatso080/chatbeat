@@ -155,22 +155,29 @@
 .comment-input-row input { flex:1; background:#2a3942; color:white; border-radius:20px; padding:8px 12px }
 .comment-input-row button { width:40px; height:40px; border-radius:50%; padding:0; font-size:16px; min-width:40px }
 .video-comments-section {
-  display: none; /* hidden by default */
+  display: none;
   padding: 10px;
-  max-height: 300px;
+  height: 250px;
   overflow-y: auto;
   background: rgba(0,0,0,0.3);
+  border-top: 1px solid #333;
 }
-.video-comments-section.show { display: block }
-.video-comment { display:flex; gap:8px; margin:6px 0; font-size:14px; }
+.video-comments-section.show { display:block; }
+
+.share-popup { 
+  position:fixed; bottom:0; left:0; right:0; top:auto; transform:none;
+  background:#1a1a1a; padding:20px; border-radius:20px 20px 0 0; 
+  z-index:9999; display:none; border:2px solid #00C896; width:100%; 
+}
+.share-popup button { background:#2a3942; border:none; color:white; padding:10px; border-radius:10px; font-size:12px; cursor:pointer }
+
+.video-comment { display:flex; gap:8px; margin:6px 0; font-size:14px; position:relative; }
 .video-comment-avatar {width:28px; height:28px; border-radius:50%;}
 .video-comment-bubble { background:#2a3942; padding:6px 10px; border-radius:18px; flex:1 }
 .video-comment-input-row { display:flex; gap:6px; margin-top:6px; align-items:center }
-.video-comment-input-row input { flex:1; background:#2a3942; color:white; border-radius:20px; padding:8px 12px }
-.video-comment-input-row button { width:40px; height:40px; border-radius:50%; padding:0; font-size:16px; min-width:40px }
-.bubble-reactions { display:flex; gap:2px; margin-top:3px; font-size:11px; position:absolute; bottom:-10px; left:10px; background:#3a3b3c; border-radius:12px; padding:2px 4px; cursor:pointer; z-index:2 }
-.share-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#202c33; padding:20px; border-radius:15px; z-index:9999; display:none; border:2px solid #00C896; width:90%; max-width:300px }
-
+.video-comment-input-row input { flex:1; background:#2a3942; color:white; border-radius:20px; padding:8px 12px; border:none }
+.video-comment-input-row button { width:40px; height:40px; border-radius:50%; padding:0; font-size:16px; min-width:40px; border:none }
+.del-btn { position:absolute; right:5px; top:5px; background:red; color:white; border:none; border-radius:50%; width:18px; height:18px; font-size:12px; cursor:pointer }
 .settings-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#202c33; padding:20px; border-radius:15px; z-index:9999; display:none; border:2px solid #00C896; width:90%; max-width:350px; max-height:90vh; overflow-y:auto }
 .settings-popup.show { display:block }
     
@@ -422,20 +429,6 @@ to{transform:rotate(360deg);}
   <button onclick="closeEditProfile()">Cancel</button>
 </div>
 
-<div id="share-popup" class="share-popup">
-<h3>Share</h3>
-<button onclick="shareTo('whatsapp')">📱 WhatsApp</button>
-<button onclick="shareTo('facebook')">📘 Facebook</button>
-<button onclick="shareTo('instagram')">📸 Instagram</button>
-<button onclick="shareTo('tiktok')">🎵 TikTok</button>
-<button onclick="shareTo('twitter')">🐦 Twitter/X</button>
-<button onclick="shareTo('copy')">🔗 Copy Link</button>
-<button onclick="shareTo('more')">⋯ More</button>
-<hr>
-<button onclick="deleteVideo(currentVideoId)" style="background:#ff3b30">🗑 Delete</button>
-<button onclick="closeShare()">Cancel</button>
-</div>
-
 <div id="settings-popup" class="settings-popup">
   <h3>⚙️ Settings</h3>
   
@@ -489,6 +482,8 @@ to{transform:rotate(360deg);}
   <button onclick="deleteAccount()" style="background:#ff3b30">🗑 Delete Account</button>
   <button onclick="closeSettings()">Cancel</button>
 </div>
+
+<div class="share-popup" id="video-share-popup"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
@@ -912,17 +907,6 @@ window.shareTo = (type) => {
   if(type=="more"){ if(navigator.share){ navigator.share({ title:"ChatBeat", url:shareLink }); } }
   closeShare();
 }
-window.likeVideo = async (id, el)=>{
-    const r = ref(db, `videos/${id}/likes/${currentUser.uid}`);
-    const s = await get(r); 
-    if(s.exists()) await remove(r);
-    else await set(r,true);
-    
-    // Update the number in the sidebar
-    const countSpan = el.querySelector('span');
-    let count = parseInt(countSpan.innerText) || 0;
-    countSpan.innerText = s.exists() ? count - 1 : count + 1;
-}
 
 // VIDEO UPLOAD
 document.getElementById('video-upload').onchange = async (e)=>{
@@ -1028,24 +1012,6 @@ window.openSettings = () => document.getElementById('settings-popup').classList.
 window.closeSettings = () => document.getElementById('settings-popup').classList.remove('show');
 window.signOutUser = () => { signOut(auth); closeSettings(); }
 window.deleteAccount = async () => { if(confirm("Delete account forever?")){ await remove(ref(db, 'users/'+currentUser.uid)); await deleteUser(currentUser); } }
-
-window.openVideoShare = (id)=>{
-  currentVideoId = id;
-  shareLink = window.location.origin+"#video-"+id; 
-  document.getElementById("share-popup").classList.add("show");
-  
-  // show/hide delete button based on owner
-  get(ref(db,"videos/"+id)).then(s=>{
-    const delBtn = document.getElementById('delete-video-btn');
-    if(s.exists() && s.val().uid === currentUser.uid){
-      delBtn.style.display = 'block';
-    } else {
-      delBtn.style.display = 'none';
-    }
-  })
-  
-  set(ref(db, `videos/${id}/shares/${currentUser.uid}`), Date.now());
-}
 
 // FOLLOWING
 function loadFriends(){
@@ -1355,20 +1321,6 @@ window.deleteAccount = async () => {
   }
 }
 
-
-window.deleteVideo = async (id)=>{
-    const snap = await get(ref(db,"videos/"+id));
-    if(!snap.exists()) return;
-    if(snap.val().uid !== currentUser.uid){
-      alert("You can only delete your own videos");
-      return;
-    }
-    if(confirm("Delete this video?")){
-      await remove(ref(db, "videos/"+id)); 
-      closeShare();
-    }
-}
-
 document.getElementById('chat-icon-btn').onclick = () => {
   lastSeen.chat = Date.now();
   saveLastSeen();
@@ -1480,33 +1432,33 @@ onAuthStateChanged(auth, async (user) => {
    loadMyProfile(); // ADD THIS LINE
  }
 });
-// ADD THIS IF IT'S MISSING
+// 1. VIDEO AUTOPLAY
 const videoObserver = new IntersectionObserver((entries)=>{
   entries.forEach(entry=>{
     const video = entry.target.querySelector('video');
-    if(entry.isIntersecting){ video.play(); }
+    if(entry.isIntersecting){ video.play().catch(()=>{}); }
     else { video.pause(); }
   })
 }, { threshold: 0.6 });
 
-// TOGGLE THE COMMENT BOX
+// 2. TOGGLE COMMENTS
 window.toggleVideoComments = (videoId) => {
   document.getElementById(`v-comments-${videoId}`).classList.toggle('show');
 }
 
-// SEND COMMENT
+// 3. SEND COMMENT
 window.sendVideoComment = (videoId) => {
   const inp = document.getElementById(`v-comment-input-${videoId}`);
   if(!inp.value.trim()) return;
   push(ref(db, `videos/${videoId}/comments`), {
     uid: currentUser.uid,
     text: inp.value,
-    timestamp: Date.now() // MUST BE timestamp NOT ts
+    timestamp: Date.now()
   });
   inp.value = '';
 }
 
-// LOAD COMMENTS LIST
+// 4. LOAD COMMENTS
 function loadVideoComments(videoId){
   const list = document.getElementById(`v-comment-list-${videoId}`);
   if(!list) return;
@@ -1515,27 +1467,54 @@ function loadVideoComments(videoId){
   onChildAdded(ref(db, `videos/${videoId}/comments`), async (snap)=>{
     const c = snap.val();
     const u = await getUser(c.uid);
+    const commentId = snap.key;
+    const delBtn = c.uid === currentUser.uid ? `<button class="del-btn" onclick="deleteVideoComment('${videoId}','${commentId}')">×</button>` : '';
+
     const div = document.createElement('div');
     div.className = 'video-comment';
+    div.id = 'v-comment-' + commentId;
     div.innerHTML = `
       <img class="video-comment-avatar" src="${u.profilePic}" onclick="openProfilePopup('${u.profilePic}')">
       <div class="video-comment-bubble">
         <b style="color:${u.color}" onclick="viewUserProfile('${c.uid}')">${u.name}</b><br>
         ${c.text}
+        <div style="font-size:10px; opacity:0.6">${timeAgo(c.timestamp)}</div>
+        ${delBtn}
       </div>
     `;
     list.appendChild(div);
   })
   
   onChildRemoved(ref(db, `videos/${videoId}/comments`), (snap)=>{
-    list.innerHTML = ''; // simple refresh
-    loadVideoComments(videoId);
+    document.getElementById('v-comment-' + snap.key)?.remove();
   })
 }
 
-// FAVORITE FIX
+// 5. DELETE VIDEO COMMENT
+window.deleteVideoComment = (videoId, commentId) => {
+  if(confirm('Delete comment?')) remove(ref(db, `videos/${videoId}/comments/${commentId}`));
+}
+
+// 6. REAL LIKE BUTTON
+window.likeVideo = async(id, el)=>{
+  const r = ref(db,`videos/${id}/likes/${currentUser.uid}`);
+  const s = await get(r);
+  const span = el.querySelector('span');
+  if(s.exists()){ 
+    await remove(r);
+    el.style.color = 'white';
+    span.innerText = parseInt(span.innerText) - 1;
+  }
+  else { 
+    await set(r,true);
+    el.style.color = '#FF0050';
+    span.innerText = parseInt(span.innerText) + 1;
+  }
+}
+
+// 7. REAL FAVORITE BUTTON
 window.favoriteVideo = async(id, el)=>{
-  const r = ref(db,`videos/${id}/favorites/${currentUser.uid}`); // SAVE INSIDE VIDEO
+  const r = ref(db,`videos/${id}/favorites/${currentUser.uid}`);
   const s = await get(r);
   if(s.exists()){ 
     await remove(r);
@@ -1547,7 +1526,57 @@ window.favoriteVideo = async(id, el)=>{
   }
 }
 
-// LOAD VIDEOS - WITH CORRECT BUTTON
+// 8. REAL FOLLOW BUTTON
+window.followUserFromVideo = async(uid, el) => {
+  const r = ref(db, `users/${currentUser.uid}/following/${uid}`);
+  const s = await get(r);
+  if(s.exists()){
+    await remove(r);
+    el.innerText = 'Follow';
+    el.style.background = '#00C896';
+  } else {
+    await set(r, true);
+    el.innerText = 'Following';
+    el.style.background = '#2a3942';
+  }
+}
+
+// 9. DELETE VIDEO
+window.deleteVideo = async(id) => {
+  if(!confirm('Delete this video?')) return;
+  await remove(ref(db, `videos/${id}`));
+  document.querySelector(`.video-card[data-id="${id}"]`)?.remove();
+}
+
+// 10. SHARE POPUP WITH ALL OPTIONS
+window.openVideoShare = (videoId) => {
+  const url = `${window.location.origin}${window.location.pathname}?video=${videoId}`;
+  const popup = document.getElementById('video-share-popup');
+  popup.innerHTML = `
+    <h3>Share Video</h3>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:15px 0">
+      <button onclick="navigator.clipboard.writeText('${url}'); alert('Copied!')">📋<br>Copy</button>
+      <button onclick="window.open('https://wa.me/?text=${url}')">📱<br>WhatsApp</button>
+      <button onclick="window.open('https://www.instagram.com/')">📷<br>Instagram</button>
+      <button onclick="window.open('https://twitter.com/intent/tweet?url=${url}')">🐦<br>Twitter</button>
+      <button onclick="window.open('https://www.tiktok.com/')">🎵<br>TikTok</button>
+      <button onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=${url}')">f<br>Facebook</button>
+    </div>
+    <button onclick="deleteVideo('${videoId}')" style="background:red; width:100%">🗑️ Delete Video</button>
+    <button onclick="pinVideo('${videoId}')" style="background:#00C896; width:100%; margin-top:8px">📌 Pin Video</button>
+    <button class="link-btn" onclick="popup.style.display='none'">Cancel</button>
+  `;
+  popup.style.display = 'block';
+}
+
+// 11. PIN VIDEO
+window.pinVideo = async(videoId) => {
+  await set(ref(db, `users/${currentUser.uid}/pinnedVideo`), videoId);
+  alert('Video pinned to your profile!');
+  document.getElementById('video-share-popup').style.display = 'none';
+}
+
+// 12. LOAD VIDEOS - FULL VERSION
 function loadVideos(){
   off(ref(db, 'videos')); 
   document.getElementById('video-feed').innerHTML = '';
@@ -1559,6 +1588,11 @@ function loadVideos(){
   onChildAdded(query(ref(db, 'videos'), orderByChild('timestamp'), limitToLast(20)), async (snap) => {
     const v = snap.val(); 
     const u = await getUser(v.uid);
+    const isFollowing = (await get(ref(db, `users/${currentUser.uid}/following/${v.uid}`))).exists();
+    const isLiked = (await get(ref(db, `videos/${snap.key}/likes/${currentUser.uid}`))).exists();
+    const isFav = (await get(ref(db, `videos/${snap.key}/favorites/${currentUser.uid}`))).exists();
+    const isOwner = v.uid === currentUser.uid;
+
     const div = document.createElement('div'); 
     div.className = 'video-card';
     div.setAttribute('data-id', snap.key);
@@ -1570,12 +1604,12 @@ function loadVideos(){
       </div>
       <div class="video-sidebar">
         <div class="profile-wrap">
-          <img class="side-profile" src="${u.profilePic}">
-          <span class="plus-badge">+</span>
+          <img class="side-profile" src="${u.profilePic}" onclick="viewUserProfile('${v.uid}')">
+          ${!isOwner ? `<button class="plus-badge" onclick="followUserFromVideo('${v.uid}', this)">${isFollowing ? '✓' : '+'}</button>` : ''}
         </div>
-        <div class="video-action" onclick="likeVideo('${snap.key}', this)">❤️<span>${Object.keys(v.likes || {}).length}</span></div>
-        <div class="video-action" onclick="toggleVideoComments('${snap.key}')">💬<span>${Object.keys(v.comments || {}).length}</span></div> <!-- FIXED -->
-        <div class="video-action" onclick="favoriteVideo('${snap.key}', this)">🔖<span>${Object.keys(v.favorites || {}).length}</span></div>
+        <div class="video-action" onclick="likeVideo('${snap.key}', this)" style="color:${isLiked?'#FF0050':'white'}">❤️<span>${Object.keys(v.likes || {}).length}</span></div>
+        <div class="video-action" onclick="toggleVideoComments('${snap.key}')">💬<span>${Object.keys(v.comments || {}).length}</span></div>
+        <div class="video-action" onclick="favoriteVideo('${snap.key}', this)" style="color:${isFav?'#00C896':'white'}">🔖<span>${Object.keys(v.favorites || {}).length}</span></div>
         <div class="video-action" onclick="openVideoShare('${snap.key}')">↗<span>${Object.keys(v.shares || {}).length}</span></div>
         <div class="music-disc">🎵</div>
       </div>
@@ -1593,7 +1627,6 @@ function loadVideos(){
     videoObserver.observe(div);
   })
 }
-
 </script>
 </body>
 </html>
