@@ -623,6 +623,12 @@ async function renderReactions(container, reactions, userReact){
     }
   }
 }
+function timeAgo(t){
+  const s = Math.floor((Date.now()-t)/1000); 
+  if(s<60) return s+'s'; 
+  if(s<3600) return Math.floor(s/60)+'m'; 
+  return Math.floor(s/3600)+'h';
+}
 
 function startAutoDelete() {
   setInterval(() => {
@@ -785,7 +791,7 @@ onAuthStateChanged(auth, async (user) => {
    loadDMs();
    loadFriends();
    setupNotifications();
-   loadMyProfile(); 
+   loadMyProfile();
  } else {
    document.getElementById('cover').style.display = 'flex';
    document.getElementById('app').style.display = 'none';
@@ -917,8 +923,9 @@ function loadPosts() {
 }
 window.deletePost = async (key) => {
   if(confirm("Delete this post?")) {
-    const userPosts = query(ref(db, 'posts'), orderByChild('uid'), equalTo(currentUser.uid));
-    if(el) el.remove();
+    const el = document.getElementById('post-' + key); 
+    if(el) el.remove(); 
+    await remove(ref(db, 'posts/' + key));
   }
 }
 window.reactToPost = async (key, emoji) => { await setReaction(`posts/${key}/reactions`, emoji); document.getElementById(`picker-${key}`).classList.remove('show'); }
@@ -1338,6 +1345,7 @@ window.removeProfilePhoto = async () => {
     alert("Photo removed");
   }
 }
+window.viewUserProfile = (uid) => alert("View profile: " + uid)
 
 // LINK SOCIAL ACCOUNTS
 window.linkAccount = (type) => {
@@ -1347,13 +1355,17 @@ window.linkAccount = (type) => {
   alert(`${type} linked!`);
 }
 
-// DELETE ACCOUNT FULL WIPE
 window.deleteAccount = async () => { 
   if(confirm("This will delete ALL your data forever. Are you sure?")){
+    // delete user posts
+    const myPosts = await get(query(ref(db,'posts'), orderByChild('uid'), equalTo(currentUser.uid)));
+    myPosts.forEach(s => remove(ref(db, 'posts/' + s.key)));
+    
+    // delete user videos
+    const myVids = await get(query(ref(db,'videos'), orderByChild('uid'), equalTo(currentUser.uid)));
+    myVids.forEach(s => remove(ref(db, 'videos/' + s.key)));
+    
     await remove(ref(db, 'users/'+currentUser.uid));
-    await remove(ref(db, 'posts')).then(()=>{});
-    await remove(ref(db, 'videos')).then(()=>{});
-    await remove(ref(db, 'dmChats')).then(()=>{});
     await deleteUser(currentUser); 
   }
 }
@@ -1462,14 +1474,6 @@ window.togglePrivate = async () => {
   alert(isPrivate? "Account is now Private" : "Account is now Public");
 }
 
-// CALL THIS ON LOGIN
-onAuthStateChanged(auth, async (user) => {
- if(user) {
-   // ... your existing code ...
-   loadMyProfile(); // ADD THIS LINE
- }
-});
-
 // 1. VIDEO AUTOPLAY
 const videoObserver = new IntersectionObserver((entries)=>{
   entries.forEach(entry=>{
@@ -1484,16 +1488,17 @@ window.toggleVideoComments = (videoId) => {
   document.getElementById(`v-comments-${videoId}`).classList.toggle('show');
 }
 
-// 3. SEND COMMENT
-window.sendVideoComment = (videoId) => {
+window.sendVideoComment = async (videoId) => {
   const inp = document.getElementById(`v-comment-input-${videoId}`);
   if(!inp.value.trim()) return;
-  push(ref(db, `videos/${videoId}/comments`), {
-    uid: currentUser.uid,
-    text: inp.value,
-    timestamp: Date.now()
-  });
-  inp.value = '';
+  try {
+    await push(ref(db, `videos/${videoId}/comments`), {
+      uid: currentUser.uid,
+      text: inp.value,
+      timestamp: Date.now()
+    });
+    inp.value = '';
+  } catch(e) { alert("Error: " + e.message) }
 }
 
 // 4. LOAD COMMENTS
@@ -1527,7 +1532,9 @@ function loadVideoComments(videoId){
     document.getElementById('v-comment-' + snap.key)?.remove();
   })
 }
-
+window.closeComments = (videoId) => {
+  document.getElementById(`v-comments-${videoId}`).classList.remove('show');
+}
 // 5. DELETE VIDEO COMMENT
 window.deleteVideoComment = (videoId, commentId) => {
   if(confirm('Delete comment?')) remove(ref(db, `videos/${videoId}/comments/${commentId}`));
@@ -1602,7 +1609,7 @@ window.openVideoShare = (videoId) => {
     </div>
     <button onclick="deleteVideo('${videoId}')" style="background:red; width:100%">🗑️ Delete Video</button>
     <button onclick="pinVideo('${videoId}')" style="background:#00C896; width:100%; margin-top:8px">📌 Pin Video</button>
-    <button class="link-btn" onclick="popup.style.display='none'">Cancel</button>
+   <button class="link-btn" onclick="document.getElementById('video-share-popup').style.display='none'">Cancel</button>
   `;
   popup.style.display = 'block';
 }
