@@ -468,6 +468,31 @@ to{transform:rotate(360deg);}
 
 <div class="share-popup" id="video-share-popup"></div>
 
+  <div id="user-profile-popup" class="settings-popup" style="max-width:400px">
+  <span onclick="closeUserProfile()" style="position:absolute; top:10px; right:15px; font-size:30px; cursor:pointer">×</span>
+  <div style="text-align:center">
+    <img id="up-pic" src="" style="width:90px; height:90px; border-radius:50%; border:3px solid #00C896; object-fit:cover">
+    <h2 id="up-name" style="margin:8px 0 4px 0"></h2>
+    <p id="up-bio" style="font-size:13px; opacity:0.8"></p>
+    <p id="up-location" style="font-size:12px; opacity:0.7"></p>
+  </div>
+
+  <div style="display:flex; gap:8px; margin:15px 0">
+    <button id="up-follow-btn" onclick="followFromProfile()" style="flex:1">Follow</button>
+    <button onclick="messageFromProfile()" style="flex:1; background:#0077FF">Message</button>
+    <button onclick="pokeFromProfile()" style="width:50px">👉</button>
+  </div>
+
+  <div style="display:flex; gap:5px; margin-top:10px; border-bottom:1px solid #2a3942">
+  <button onclick="showUpTab('info')" id="up-tab-info" style="flex:1; background:transparent; border-bottom:2px solid #00C896">About</button>
+  <button onclick="showUpTab('posts')" id="up-tab-posts" style="flex:1; background:transparent">Posts</button>
+  <button onclick="showUpTab('videos')" id="up-tab-videos" style="flex:1; background:transparent">Videos</button>
+</div>
+
+<div id="up-tab-content-info" style="font-size:13px; text-align:left; max-height:200px; overflow-y:auto; margin-top:10px"></div>
+<div id="up-tab-content-posts" style="display:none; max-height:200px; overflow-y:auto; margin-top:10px"></div>
+<div id="up-tab-content-videos" style="display:none; max-height:200px; overflow-y:auto; margin-top:10px"></div>
+  
 <div id="settings-popup" class="settings-popup">
   <h3>⚙️ Settings</h3>
   
@@ -857,7 +882,35 @@ async function getUser(uid){
   userCache[uid] = user;
   return user;
 }
+function loadComments(postKey){
+  off(ref(db, `posts/${postKey}/comments`));
+  const list = document.getElementById(`comment-list-${postKey}`);
+  if(!list) return;
+  list.innerHTML = '';
 
+  onChildAdded(ref(db, `posts/${postKey}/comments`), async (snap)=>{
+    const c = snap.val();
+    const u = await getUser(c.uid);
+    const delBtn = c.uid === currentUser.uid? `<button class="del-btn" onclick="deleteComment('${postKey}','${snap.key}')">×</button>` : '';
+    const div = document.createElement('div');
+    div.className = 'comment';
+    div.id = 'comment-' + snap.key;
+    div.innerHTML = `
+      <img class="comment-avatar" src="${u.profilePic}" onclick="openProfilePopup('${u.profilePic}')">
+      <div class="comment-bubble">
+        <b style="color:${u.color}" onclick="viewUserProfile('${c.uid}')">${u.name}</b><br>
+        ${c.text}
+        <div style="font-size:10px; opacity:0.6">${timeAgo(c.timestamp)}</div>
+        ${delBtn}
+      </div>
+    `;
+    list.appendChild(div);
+  })
+
+  onChildRemoved(ref(db, `posts/${postKey}/comments`), (snap)=>{
+    document.getElementById('comment-' + snap.key)?.remove();
+  })
+}
 function loadPosts() {
   off(ref(db, 'posts')); document.getElementById('feed').innerHTML = '';
   onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50)), async (snap) => {
@@ -1234,42 +1287,45 @@ function loadChat() {
 }
 
 async function renderMessage(snap, scroll){
-  const msg = snap.val(); const msgKey = snap.key;
-  if(loadedMessages.has(msgKey)) return;
-  loadedMessages.add(msgKey); allMessagesCache[msgKey] = msg;
-  const user = await getUser(msg.uid); const userPic = user.profilePic || DEFAULT_PIC;
-  const isMe = msg.uid === currentUser.uid; const userReact = msg.reactions?.[currentUser.uid] || null; msg.name = user.name;
-  const wrapper = document.createElement('div');
-  wrapper.className = `bubble-wrapper ${isMe? 'me-wrapper' : 'other-wrapper'}`; wrapper.id = 'wrapper-' + msgKey;
-  let delBtn = isMe? `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>` : '';
-  let replyHtml = '';
-  if(msg.replyTo && allMessagesCache[msg.replyTo]){
-    const repliedMsg = allMessagesCache[msg.replyTo]; const repliedUser = await getUser(repliedMsg.uid);
-    replyHtml = `<div class="reply-quote"><div class="reply-quote-name">${repliedUser.name}</div><div class="reply-quote-text">${repliedMsg.text || 'Media'}</div></div>`;
-  }
-  let content = '';
-  if(msg.image) { content = `${replyHtml}<span class="bubble-name" onclick="viewUserProfile('${msg.uid}')"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<img class="bubble-img" src="${msg.image}" onclick="openProfilePopup('${msg.image}')">`; }
-  else if(msg.audio) { content = `${replyHtml}<span class="bubble-name" onclick="viewUserProfile('${msg.uid}')"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`; }
-  else { content = `${replyHtml}<span class="bubble-name"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`; }
-  wrapper.innerHTML = `<div class="reply-hint">↩️</div><div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}" id="bubble-${msgKey}">${content}<div class="bubble-reactions" id="msg-react-${msgKey}"></div></div><div class="react-picker" id="msg-picker-${msgKey}">${REACTIONS.map(r=>`<span onclick="reactToMsg('${msgKey}','${r}')">${r}</span>`).join('')}</div>`;
-  wrapper.addEventListener('touchstart', e => startDrag(e, msgKey), {passive: true});
-  wrapper.addEventListener('touchmove', e => moveDrag(e), {passive: false});
-  wrapper.addEventListener('touchend', e => endDrag(e, msg, msgKey));
-  wrapper.addEventListener('mousedown', e => startDrag(e, msgKey));
-  wrapper.addEventListener('mousemove', e => moveDrag(e));
-  wrapper.addEventListener('mouseup', e => endDrag(e, msg, msgKey));
-  wrapper.addEventListener('mouseleave', e => endDrag(e, msg, msgKey));
-  const reactSum = wrapper.querySelector(`#msg-react-${msgKey}`);
-  const picker = wrapper.querySelector(`#msg-picker-${msgKey}`);
-  let timer; let longPressTriggered = false;
-  reactSum.onmousedown = reactSum.ontouchstart = (e) => { e.stopPropagation(); longPressTriggered = false; timer = setTimeout(()=>{ picker.classList.add('show'); longPressTriggered = true; }, LONG_PRESS); }
-  reactSum.onmouseup = reactSum.ontouchend = reactSum.onmouseleave = () => { clearTimeout(timer); if(!longPressTriggered){ setReaction(`globalChat/${msgKey}/reactions`, '👍') } }
-  document.getElementById('global-chat').appendChild(wrapper);
-  renderReactions(document.getElementById(`msg-react-${msgKey}`), msg.reactions, userReact);
-  onValue(ref(db, `globalChat/${msgKey}/reactions`), (s)=>{ const reacts = s.val() || {}; renderReactions(document.getElementById(`msg-react-${msgKey}`), reacts, reacts[currentUser.uid]); });
-  if(scroll) document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
+  try{
+    const msg = snap.val(); const msgKey = snap.key;
+    if(loadedMessages.has(msgKey)) return;
+    loadedMessages.add(msgKey); allMessagesCache[msgKey] = msg;
+    const user = await getUser(msg.uid); const userPic = user.profilePic || DEFAULT_PIC;
+    const isMe = msg.uid === currentUser.uid; const userReact = msg.reactions?.[currentUser.uid] || null; msg.name = user.name;
+    const wrapper = document.createElement('div');
+    wrapper.className = `bubble-wrapper ${isMe? 'me-wrapper' : 'other-wrapper'}`; wrapper.id = 'wrapper-' + msgKey;
+    let delBtn = isMe? `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>` : '';
+    let replyHtml = '';
+    if(msg.replyTo && allMessagesCache[msg.replyTo]){
+      try{
+        const repliedMsg = allMessagesCache[msg.replyTo]; const repliedUser = await getUser(repliedMsg.uid);
+        replyHtml = `<div class="reply-quote"><div class="reply-quote-name">${repliedUser.name}</div><div class="reply-quote-text">${repliedMsg.text || 'Media'}</div></div>`;
+      }catch(e){}
+    }
+    let content = '';
+    if(msg.image) { content = `${replyHtml}<span class="bubble-name" onclick="viewUserProfile('${msg.uid}')"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<img class="bubble-img" src="${msg.image}" onclick="openProfilePopup('${msg.image}')">`; }
+    else if(msg.audio) { content = `${replyHtml}<span class="bubble-name" onclick="viewUserProfile('${msg.uid}')"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`; }
+    else { content = `${replyHtml}<span class="bubble-name" onclick="viewUserProfile('${msg.uid}')"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`; }
+    wrapper.innerHTML = `<div class="reply-hint">↩️</div><div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}" id="bubble-${msgKey}">${content}<div class="bubble-reactions" id="msg-react-${msgKey}"></div></div><div class="react-picker" id="msg-picker-${msgKey}">${REACTIONS.map(r=>`<span onclick="reactToMsg('${msgKey}','${r}')">${r}</span>`).join('')}</div>`;
+    wrapper.addEventListener('touchstart', e => startDrag(e, msgKey), {passive: true});
+    wrapper.addEventListener('touchmove', e => moveDrag(e), {passive: false});
+    wrapper.addEventListener('touchend', e => endDrag(e, msg, msgKey));
+    wrapper.addEventListener('mousedown', e => startDrag(e, msgKey));
+    wrapper.addEventListener('mousemove', e => moveDrag(e));
+    wrapper.addEventListener('mouseup', e => endDrag(e, msg, msgKey));
+    wrapper.addEventListener('mouseleave', e => endDrag(e, msg, msgKey));
+    const reactSum = wrapper.querySelector(`#msg-react-${msgKey}`);
+    const picker = wrapper.querySelector(`#msg-picker-${msgKey}`);
+    let timer; let longPressTriggered = false;
+    reactSum.onmousedown = reactSum.ontouchstart = (e) => { e.stopPropagation(); longPressTriggered = false; timer = setTimeout(()=>{ picker.classList.add('show'); longPressTriggered = true; }, LONG_PRESS); }
+    reactSum.onmouseup = reactSum.ontouchend = reactSum.onmouseleave = () => { clearTimeout(timer); if(!longPressTriggered){ setReaction(`globalChat/${msgKey}/reactions`, '👍') } }
+    document.getElementById('global-chat').appendChild(wrapper);
+    renderReactions(document.getElementById(`msg-react-${msgKey}`), msg.reactions, userReact);
+    onValue(ref(db, `globalChat/${msgKey}/reactions`), (s)=>{ const reacts = s.val() || {}; renderReactions(document.getElementById(`msg-react-${msgKey}`), reacts, reacts[currentUser.uid]); });
+    if(scroll) document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
+  }catch(e){ console.log("Message error:", e) }
 }
-
 window.deleteMsg = async (key) => {
   if(confirm("Delete this message?")) {
     await remove(ref(db, 'globalChat/' + key));
@@ -1345,8 +1401,82 @@ window.removeProfilePhoto = async () => {
     alert("Photo removed");
   }
 }
-window.viewUserProfile = (uid) => alert("View profile: " + uid)
+let viewingUserId = null;
 
+window.viewUserProfile = async (uid) => {
+  viewingUserId = uid;
+  const u = await getUser(uid);
+  const myFriendsSnap = await get(ref(db, `friends/${currentUser.uid}`));
+  const isFollowing = myFriendsSnap.exists() && myFriendsSnap.val()[uid];
+
+  document.getElementById('up-pic').src = u.profilePic || DEFAULT_PIC;
+  document.getElementById('up-name').innerText = u.name;
+  document.getElementById('up-name').style.color = u.color;
+  document.getElementById('up-bio').innerText = u.bio || '';
+  document.getElementById('up-location').innerText = [u.city, u.province, u.country].filter(Boolean).join(', ');
+
+  document.getElementById('up-follow-btn').innerText = isFollowing? 'Following' : 'Follow';
+  document.getElementById('up-follow-btn').style.background = isFollowing? '#2a3942' : '#00C896';
+
+  // Show all their edited info
+  let info = '';
+  if(u.school) info += `<b>School:</b> ${u.school} Grade ${u.grade || ''}<br>`;
+  if(u.favSubject) info += `<b>Fav Subject:</b> ${u.favSubject}<br>`;
+  if(u.hobbies) info += `<b>Hobbies:</b> ${u.hobbies}<br>`;
+  if(u.favMusic) info += `<b>Music:</b> ${u.favMusic}<br>`;
+  if(u.favGames) info += `<b>Games:</b> ${u.favGames}<br>`;
+  if(u.favFoods) info += `<b>Foods:</b> ${u.favFoods}<br>`;
+  if(u.relationship) info += `<b>Status:</b> ${u.relationship}<br>`;
+  document.getElementById('up-tab-content-info').innerHTML = info; 
+
+showUpTab('info'); 
+loadUserPosts(uid);
+loadUserVideos(uid);
+
+  document.getElementById('user-profile-popup').classList.add('show');
+}
+
+window.closeUserProfile = () => {
+  document.getElementById('user-profile-popup').classList.remove('show');
+  viewingUserId = null;
+}
+
+window.followFromProfile = async () => {
+  if(!viewingUserId) return;
+  const btn = document.getElementById('up-follow-btn');
+  const followRef = ref(db, `friends/${currentUser.uid}/${viewingUserId}`);
+  const snap = await get(followRef);
+  if(snap.exists()){
+    await remove(followRef);
+    btn.innerText = "Follow";
+    btn.style.background = '#00C896';
+  }
+  else {
+    await set(followRef, true);
+    btn.innerText = "Following";
+    btn.style.background = '#2a3942';
+  }
+}
+
+window.messageFromProfile = async () => {
+  if(!viewingUserId) return;
+  closeUserProfile();
+  const chatId = [currentUser.uid, viewingUserId].sort().join('_');
+  await set(ref(db, `dmChats/${chatId}/members`), {[currentUser.uid]: true, [viewingUserId]: true});
+  openDM(chatId, viewingUserId);
+}
+
+window.pokeFromProfile = async () => {
+  if(!viewingUserId) return;
+  await push(ref(db, `dmChats/${[currentUser.uid, viewingUserId].sort().join('_')}/messages`), {
+    uid: currentUser.uid,
+    text: "👉 POKED YOU!",
+    timestamp: Date.now(),
+    seen: false
+  });
+  alert("Poked " + (await getUser(viewingUserId)).name + "!");
+  closeUserProfile();
+}
 // LINK SOCIAL ACCOUNTS
 window.linkAccount = (type) => {
   const url = prompt(`Paste your ${type} profile link:`);
@@ -1465,6 +1595,39 @@ async function loadMyProfile(){
   document.getElementById('my-bio').innerText = data.bio || '';
   let loc = [data.city, data.province, data.country].filter(Boolean).join(', ');
   document.getElementById('my-location').innerText = loc;
+}
+function showUpTab(tab){
+  ['info','posts','videos'].forEach(t=>{
+    document.getElementById(`up-tab-content-${t}`).style.display = t===tab? 'block' : 'none';
+    document.getElementById(`up-tab-${t}`).style.borderBottom = t===tab? '2px solid #00C896' : 'none';
+  })
+}
+
+async function loadUserPosts(uid){
+  const box = document.getElementById('up-tab-content-posts');
+  box.innerHTML = 'Loading...';
+  const snap = await get(query(ref(db,'posts'), orderByChild('uid'), equalTo(uid), limitToLast(10)));
+  box.innerHTML = '';
+  snap.forEach(s=>{
+    const p = s.val();
+    box.innerHTML += `<div style="background:#2a3942; padding:8px; border-radius:8px; margin:6px 0">
+      ${p.image? `<img src="${p.image}" style="width:100%; border-radius:8px; margin-bottom:4px">` : ''}
+      <div>${p.text || ''}</div>
+    </div>`;
+  })
+  if(!snap.exists()) box.innerHTML = 'No posts yet';
+}
+
+async function loadUserVideos(uid){
+  const box = document.getElementById('up-tab-content-videos');
+  box.innerHTML = 'Loading...';
+  const snap = await get(query(ref(db,'videos'), orderByChild('uid'), equalTo(uid), limitToLast(10)));
+  box.innerHTML = '';
+  snap.forEach(s=>{
+    const v = s.val();
+    box.innerHTML += `<video src="${v.video}" controls style="width:100%; border-radius:8px; margin:6px 0"></video>`;
+  })
+  if(!snap.exists()) box.innerHTML = 'No videos yet';
 }
 
 // PRIVACY TOGGLE
