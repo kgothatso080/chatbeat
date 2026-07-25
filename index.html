@@ -310,7 +310,8 @@ to{transform:rotate(360deg);}
   margin-bottom: 15px;
   line-height: 1.6;
 }
-
+.reaction{ font-size:16px; position:absolute; margin-top:-15px; margin-left:5px; background:#2a3942; border-radius:12px; padding:2px 6px }
+.bubble{ position:relative }
   </style>
 </head>
 <body>
@@ -1138,22 +1139,117 @@ window.backToDMList = () => {
   document.getElementById('dm-active-chat').style.display = 'none'; // hide chat
   document.getElementById('dm-list').style.display = 'block'; // show list
   document.getElementById('dm-chat-name').innerText = 'DM';
-  loadDMs(); // refresh list when going back
+  document.getElementById('dm-back-btn').onclick = () => backToFeed(); // make back go to feed
+  loadDMs();
 }
 
+window.openDM = async (chatId, otherUid) => {
+  currentDM = {chatId, otherUid};
+  document.getElementById('feed-section').style.display = 'none';
+  document.getElementById('dm-list').style.display = 'none'; 
+  document.getElementById('dm-active-chat').style.display = 'block'; 
+  document.getElementById('dm-chat-section').style.display = 'block';
+  document.getElementById('dm-chat-name').innerText = (await getUser(otherUid)).name;
+  document.getElementById('dm-back-btn').onclick = () => backToDMList(); // make back go to list
+  loadDMChat(chatId);
+}
+
+let replyingTo = null;
+let touchStartX = 0;
+
 function loadDMChat(chatId){
-  off(ref(db, `dmChats/${chatId}/messages`)); 
+  off(ref(db, `dmChats/${chatId}/messages`));
   document.getElementById('dm-messages').innerHTML = '';
-  
+
   onChildAdded(query(ref(db, `dmChats/${chatId}/messages`), orderByChild('timestamp'), limitToLast(50)), async (snap)=>{
     const msg = snap.val(); const isMe = msg.uid === currentUser.uid;
-    const div = document.createElement('div'); div.className = `bubble-wrapper ${isMe? 'me-wrapper' : 'other-wrapper'}`;
+    const div = document.createElement('div');
+    div.className = `bubble-wrapper ${isMe? 'me-wrapper' : 'other-wrapper'}`;
+    div.id = `dm-msg-${snap.key}`;
+
     let content = msg.text || (msg.image? `<img class="bubble-img" src="${msg.image}">` : `<audio controls src="${msg.audio}"></audio>`);
-    div.innerHTML = `<div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}">${content}</div>`;
-    document.getElementById('dm-messages').appendChild(div); 
+
+    // Show quoted message if replying
+    let replyQuote = '';
+    if(msg.replyTo){
+      replyQuote = `<div style="background:#0004; border-left:2px solid #00C896; padding:4px 6px; border-radius:4px; margin-bottom:4px; font-size:12px">
+        <b style="color:#00C896">${msg.replyTo.name}</b><br>${msg.replyTo.text}
+      </div>`;
+    }
+
+    div.innerHTML = `
+      <div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}"
+           ontouchstart="touchStart(event)"
+           ontouchend="touchEnd(event, '${chatId}', '${snap.key}', '${(msg.text||'').replace(/'/g,"\\'")}')"
+           oncontextmenu="event.preventDefault(); deleteDMMessage('${chatId}','${snap.key}')"  // <- DELETE
+           ondblclick="reactDMMessage('${chatId}','${snap.key}')">  // <- REACT
+        ${replyQuote}
+        ${content}
+        ${msg.reaction? `<div class="reaction">${msg.reaction}</div>` : ''}
+      </div>
+    `;
+    document.getElementById('dm-messages').appendChild(div);
     document.getElementById('dm-messages').scrollTop = document.getElementById('dm-messages').scrollHeight;
-    if(msg.uid !== currentUser.uid) set(ref(db, `dmChats/${chatId}/messages/${snap.key}/seen`), true);
+    if(msg.uid!== currentUser.uid) set(ref(db, `dmChats/${chatId}/messages/${snap.key}/seen`), true);
   })
+}
+
+// ADD THESE 2 FUNCTIONS BELOW IT IF YOU DON'T HAVE THEM YET
+window.deleteDMMessage = async (chatId, msgId) => {
+  if(confirm("Delete this message?")){
+    await remove(ref(db, `dmChats/${chatId}/messages/${msgId}`));
+    document.getElementById(`dm-msg-${msgId}`)?.remove();
+  }
+}
+
+window.reactDMMessage = async (chatId, msgId) => {
+  const reactions = ['❤️','😂','😮','😢','🔥','👍'];
+  const choice = prompt("React with: " + reactions.join(' '));
+  if(reactions.includes(choice)){
+    await set(ref(db, `dmChats/${chatId}/messages/${msgId}/reaction`), choice);
+  }
+}
+
+function touchStart(e){
+  touchStartX = e.changedTouches[0].clientX;
+}
+
+function touchEnd(e, chatId, msgId, msgText){
+  let touchEndX = e.changedTouches[0].clientX;
+  let diff = touchEndX - touchStartX;
+  if(diff > 60){ // swiped right more than 60px
+    startReply(chatId, msgId, msgText);
+  }
+}
+
+async function startReply(chatId, msgId, msgText){
+  const u = await getUser(currentDM.otherUid);
+  replyingTo = {msgId, text: msgText, name: u.name};
+  document.getElementById('dm-reply-bar').style.display = 'block';
+  document.getElementById('dm-reply-text').innerText = msgText.substring(0,50) + '...';
+  document.getElementById('dm-input').focus();
+}
+
+window.cancelReply = () => {
+  replyingTo = null;
+  document.getElementById('dm-reply-bar').style.display = 'none';
+}
+
+// UPDATE YOUR SEND BUTTON TO SAVE REPLY
+document.getElementById('send-dm').onclick = async () => {
+  const text = document.getElementById('dm-input').value.trim();
+  if(!text) return;
+  document.getElementById('dm-input').value = '';
+
+  const msgData = {uid: currentUser.uid, text, timestamp: Date.now(), seen: false};
+  if(replyingTo) msgData.replyTo = replyingTo;
+
+  await push(ref(db, `dmChats/${currentDM.chatId}/messages`), msgData);
+  await set(ref(db, `dmChats/${currentDM.chatId}/lastMessage`), text);
+  await set(ref(db, `dmChats/${currentDM.chatId}/lastSender`), currentUser.uid);
+  await set(ref(db, `dmChats/${currentDM.chatId}/lastTimestamp`), Date.now());
+
+  cancelReply();
 }
 
 window.deleteConversation = async (chatId) => {
