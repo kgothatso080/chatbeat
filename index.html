@@ -228,9 +228,6 @@
 .dm-item { display:flex; gap:10px; padding:12px; background:#202c33; border-radius:12px; margin:8px 0; cursor:pointer }
 .dm-item img { width:45px; height:45px; border-radius:50% }
 
-.settings-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#202c33; padding:20px; border-radius:15px; z-index:9999; display:none; border:2px solid #00C896; width:90%; max-width:350px; max-height:90vh; overflow-y:auto }
-.settings-popup.show { display:block }
-
 /* FRIENDS LIST */
 .friends-list { padding:10px }
 .friend-item { display:flex; justify-content:space-between; align-items:center; padding:12px; background:#202c33; border-radius:12px; margin:8px 0 }
@@ -312,6 +309,9 @@ to{transform:rotate(360deg);}
 }
 .reaction{ font-size:16px; position:absolute; margin-top:-15px; margin-left:5px; background:#2a3942; border-radius:12px; padding:2px 6px }
 .bubble{ position:relative }
+
+  .settings-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#202c33; padding:20px; border-radius:15px; z-index:9999; display:none; border:2px solid #00C896; width:90%; max-width:350px; max-height:90vh; overflow-y:auto }
+.settings-popup.show { display:block }
   </style>
 </head>
 <body>
@@ -342,6 +342,7 @@ to{transform:rotate(360deg);}
     <button class="icon-btn" id="friends-btn" onclick="openFriends()">👥<span class="badge" id="friend-badge" style="display:none">0</span></button>
     <button class="icon-btn" id="profile-icon-btn">👤</button>
     <button class="icon-btn" id="chat-icon-btn">💬<span class="badge" id="chat-badge" style="display:none">0</span></button>
+    <button class="icon-btn" id="search-btn" onclick="openSearch()">🔍<span class="badge" id="search-badge" style="display:none">0</span></button>
   </div>
 </div>
     
@@ -360,9 +361,11 @@ to{transform:rotate(360deg);}
 
   <div id="feed-section">
     <div class="post-box">
-      <textarea id="post-text" placeholder="What's on your mind?"></textarea>
+      <textarea id="post-text" placeholder="What's on your mind?"onkeyup="handleMentionsAndTags(event)">></textarea>
       <button id="post-img-btn">📷</button>
       <input id="post-file" type="file" accept="image/*" style="display:none">
+  <div id="mention-suggestions" style="background:#2a3942; border-radius:8px; display:none; position:absolute; top:50px; left:0; width:100%; z-index:10; max-height:200px; overflow-y:auto"></div>
+  <div id="hashtag-suggestions" style="background:#2a3942; border-radius:8px; display:none; position:absolute; top:50px; left:0; width:100%; z-index:9; max-height:200px; overflow-y:auto"></div>
       <button id="post-btn">Post</button>
     </div>
     <div id="feed"></div>
@@ -574,7 +577,27 @@ to{transform:rotate(360deg);}
   <button onclick="deleteAccount()" style="background:#ff3b30">🗑 Delete Account</button>
   <button onclick="closeSettings()">Cancel</button>
 </div>
+    
+<div id="search-popup" class="settings-popup" style="max-width:600px; height:80vh">
+  <div style="display:flex; justify-content:space-between; align-items:center">
+    <h3>🔍 Search ChatBeat</h3>
+    <span onclick="closeSearch()" style="font-size:30px; cursor:pointer">×</span>
+  </div>
+  
+  <input id="search-input" placeholder="Search posts, people, videos..." 
+         style="width:100%; background:#2a3942; color:white; border-radius:20px; padding:12px; border:none; margin:10px 0"
+         onkeyup="handleSearch(event)">
 
+  <div style="display:flex; gap:8px; margin-bottom:10px">
+    <button onclick="setSearchTab('all')" id="s-tab-all" style="flex:1; background:#00C896">All</button>
+    <button onclick="setSearchTab('people')" id="s-tab-people" style="flex:1; background:#2a3942">People</button>
+    <button onclick="setSearchTab('posts')" id="s-tab-posts" style="flex:1; background:#2a3942">Posts</button>
+    <button onclick="setSearchTab('videos')" id="s-tab-videos" style="flex:1; background:#2a3942">Videos</button>
+  </div>
+
+  <div id="search-results" style="overflow-y:auto; height:calc(80vh - 180px)"></div>
+</div>
+    
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
@@ -654,7 +677,7 @@ async function renderReactions(container, reactions, userReact){
     counts[emoji] = (counts[emoji]||0)+1;
     const u = await getUser(uid);
     if(!usersByEmoji[emoji]) usersByEmoji[emoji] = [];
-    usersByEmoji[emoji].push(u.name);
+    usersByEmoji[emoji].push(u.name||"Unknown");
   }
   if(Object.keys(counts).length > 0){
     let html = '<div class="react-bubble">';
@@ -1001,6 +1024,7 @@ function loadPosts() {
       }
     }
   });
+  if(!allPostsCache.find(p=>p.id===postKey)) allPostsCache.push({id: postKey, ...post});
 }
 window.deletePost = async (key) => {
   if(confirm("Delete this post?")) {
@@ -1343,7 +1367,7 @@ function loadFriends(){
     
     allUsersCache = [];
     usersSnap.forEach(uSnap=>{
-      if(uSnap.key !== currentUser.uid && !uSnap.val().isPrivate){
+      if(uSnap.key !== currentUser.uid){
         allUsersCache.push({uid: uSnap.key, ...uSnap.val()});
       }
     })
@@ -1506,6 +1530,8 @@ async function renderMessage(snap, scroll){
     const wrapper = document.createElement('div');
     wrapper.className = `bubble-wrapper ${isMe? 'me-wrapper' : 'other-wrapper'}`; wrapper.id = 'wrapper-' + msgKey;
     let delBtn = isMe? `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>` : '';
+
+    // FIXED: check if repliedMsg exists before using it
     let replyHtml = '';
     if(msg.replyTo && allMessagesCache[msg.replyTo]){
       try{
@@ -1513,10 +1539,12 @@ async function renderMessage(snap, scroll){
         replyHtml = `<div class="reply-quote"><div class="reply-quote-name">${repliedUser.name}</div><div class="reply-quote-text">${repliedMsg.text || 'Media'}</div></div>`;
       }catch(e){}
     }
+
     let content = '';
     if(msg.image) { content = `${replyHtml}<span class="bubble-name" onclick="viewUserProfile('${msg.uid}')"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<img class="bubble-img" src="${msg.image}" onclick="openProfilePopup('${msg.image}')">`; }
     else if(msg.audio) { content = `${replyHtml}<span class="bubble-name" onclick="viewUserProfile('${msg.uid}')"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`; }
     else { content = `${replyHtml}<span class="bubble-name" onclick="viewUserProfile('${msg.uid}')"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`; }
+
     wrapper.innerHTML = `<div class="reply-hint">↩️</div><div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}" id="bubble-${msgKey}">${content}<div class="bubble-reactions" id="msg-react-${msgKey}"></div></div><div class="react-picker" id="msg-picker-${msgKey}">${REACTIONS.map(r=>`<span onclick="reactToMsg('${msgKey}','${r}')">${r}</span>`).join('')}</div>`;
     wrapper.addEventListener('touchstart', e => startDrag(e, msgKey), {passive: true});
     wrapper.addEventListener('touchmove', e => moveDrag(e), {passive: false});
@@ -1534,8 +1562,9 @@ async function renderMessage(snap, scroll){
     renderReactions(document.getElementById(`msg-react-${msgKey}`), msg.reactions, userReact);
     onValue(ref(db, `globalChat/${msgKey}/reactions`), (s)=>{ const reacts = s.val() || {}; renderReactions(document.getElementById(`msg-react-${msgKey}`), reacts, reacts[currentUser.uid]); });
     if(scroll) document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
-  }catch(e){ console.log("Message error:", e) }
+  }catch(e){ console.error("Message error:", e, snap.key) } // <- added console.error
 }
+
 window.deleteMsg = async (key) => {
   if(confirm("Delete this message?")) {
     await remove(ref(db, 'globalChat/' + key));
@@ -1993,6 +2022,15 @@ window.pinVideo = async(videoId) => {
   alert('Video pinned to your profile!');
   document.getElementById('video-share-popup').style.display = 'none';
 }
+window.countVideoView = async (videoId, videoEl) => {
+  // 1. Count the view in Firebase
+  const viewRef = ref(db, `videos/${videoId}/views`);
+  const snap = await get(viewRef);
+  await set(viewRef, (snap.val() || 0) + 1);
+  
+  // 2. Play/Pause
+  videoEl.paused ? videoEl.play() : videoEl.pause();
+}
 function loadVideos(){
   off(ref(db, 'videos')); 
   document.getElementById('video-feed').innerHTML = '';
@@ -2001,8 +2039,9 @@ function loadVideos(){
     document.querySelector(`.video-card[data-id="${snap.key}"]`)?.remove();
   });
 
-  onChildAdded(query(ref(db, 'videos'), orderByChild('timestamp'), limitToLast(20)), async (snap) => {
+  onChildAdded(query(ref(db, 'videos'), orderByChild('views'), limitToLast(20)), async (snap) => {
     const v = snap.val(); 
+    if(!allVideosCache.find(v=>v.id===snap.key)) allVideosCache.push({id: snap.key, ...v});
     const u = await getUser(v.uid);
     const isFollowing = (await get(ref(db, `users/${currentUser.uid}/following/${v.uid}`))).exists();
     const isLiked = (await get(ref(db, `videos/${snap.key}/likes/${currentUser.uid}`))).exists();
@@ -2013,10 +2052,11 @@ function loadVideos(){
     div.className = 'video-card';
     div.setAttribute('data-id', snap.key);
     div.innerHTML = `
-      <video src="${v.video}" loop playsinline onclick="this.paused?this.play():this.pause()"></video>
+      <video src="${v.video}" loop playsinline onclick="countVideoView('${snap.key}', this)"></video>
       <div class="video-info">
         <h4>@${u.name}</h4>
         <p>${v.desc || ""}</p>
+<small style="opacity:0.7">${v.views || 0} views</small>
       </div>
       <div class="video-sidebar">
         <div class="profile-wrap">
@@ -2043,12 +2083,267 @@ function loadVideos(){
 </div>
 
     `;
-    document.getElementById('video-feed').appendChild(div);
+    document.getElementById('video-feed').prepend(div);
     loadVideoComments(snap.key);
     videoObserver.observe(div);
   })
 }
+let searchTab = 'all';
+let allPostsCache = [];
+let allVideosCache = [];
 
+window.openSearch = () => {
+  document.getElementById('search-popup').classList.add('show');
+  document.getElementById('search-input').focus();
+  loadSearchData(); // load posts + videos once
+}
+
+window.closeSearch = () => {
+  document.getElementById('search-popup').classList.remove('show');
+  document.getElementById('search-results').innerHTML = '';
+  document.getElementById('search-input').value = '';
+}
+
+window.setSearchTab = (tab) => {
+  searchTab = tab;
+  ['all','people','posts','videos'].forEach(t=>{
+    document.getElementById(`s-tab-${t}`).style.background = t===tab? '#00C896' : '#2a3942';
+  })
+  handleSearch(); // refresh results
+}
+
+async function loadSearchData(){
+  // Cache all posts and videos so search is fast
+  if(allPostsCache.length === 0){
+    const snap = await get(ref(db, 'posts'));
+    allPostsCache = [];
+    snap.forEach(s=> allPostsCache.push({id: s.key, ...s.val()}));
+  }
+  if(allVideosCache.length === 0){
+    const snap = await get(ref(db, 'videos'));
+    allVideosCache = [];
+    snap.forEach(s=> allVideosCache.push({id: s.key, ...s.val()}));
+  }
+}
+let trendingCache = [];
+
+async function loadTrending(){
+  // Get top 10 hashtags from posts + videos
+  const tagCount = {};
+  allPostsCache.forEach(p => p.hashtags?.forEach(t => tagCount[t] = (tagCount[t]||0)+1));
+  allVideosCache.forEach(v => v.hashtags?.forEach(t => tagCount[t] = (tagCount[t]||0)+1));
+
+  trendingCache = Object.entries(tagCount)
+   .sort((a,b)=>b[1]-a[1])
+   .slice(0,10)
+   .map(([tag, count]) => ({tag, count}));
+}
+
+function showSuggestions(query){
+  const box = document.getElementById('search-suggestions');
+  if(!query){
+    // Show trending when empty
+    if(trendingCache.length === 0) loadTrending();
+    box.innerHTML = `<b>🔥 Trending</b><div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px">
+      ${trendingCache.map(t=>`<span onclick="searchTag('${t.tag}')" style="background:#2a3942; padding:6px 10px; border-radius:20px; cursor:pointer">#${t.tag}</span>`).join('')}
+    </div>`;
+    return;
+  }
+
+  // Predictive: show hashtags and users matching what they type
+  const matchingTags = trendingCache.filter(t => t.tag.includes(query.toLowerCase()));
+  const matchingUsers = allUsersCache.filter(u => u.name.toLowerCase().includes(query.toLowerCase())).slice(0,3);
+
+  let html = '';
+  if(matchingTags.length) html += `<b>Hashtags</b><br>${matchingTags.map(t=>`<div onclick="searchTag('${t.tag}')" style="padding:6px; cursor:pointer">#${t.tag} <small>${t.count} posts</small></div>`).join('')}`;
+  if(matchingUsers.length) html += `<b style="margin-top:8px; display:block">People</b>${matchingUsers.map(u=>`<div onclick="viewUserProfile('${u.uid}'); closeSearch()" style="display:flex; gap:8px; padding:6px; cursor:pointer"><img src="${u.profilePic}" style="width:24px; height:24px; border-radius:50%"> ${u.name}</div>`).join('')}`;
+
+  box.innerHTML = html;
+}
+
+window.searchTag = (tag) => {
+  document.getElementById('search-input').value = '#' + tag;
+  handleSearch();
+}
+
+window.handleSearch = async (e) => {
+  const query = document.getElementById('search-input').value.toLowerCase().trim();
+  showSuggestions(query); // <-- show predictions first
+
+  const results = document.getElementById('search-results');
+  if(!query){ results.innerHTML = ''; return; }
+  //... rest of your handleSearch code
+}
+async function handleSearch(e){
+  const query = document.getElementById('search-input').value.toLowerCase().trim();
+  showSuggestions(query); // if you added predictive search
+
+  const results = document.getElementById('search-results');
+  if(!query){ results.innerHTML = '<p style="text-align:center; opacity:0.6">Type to search...</p>'; return; }
+  
+  results.innerHTML = 'Searching...';
+  let html = '';
+
+  // 1. SEARCH PEOPLE
+  if(searchTab === 'all' || searchTab === 'people'){
+    const people = allUsersCache.filter(u => u.name.toLowerCase().includes(query));
+    if(people.length > 0){
+      html += `<h4>👤 People</h4>`;
+      people.forEach(u=>{
+        html += `
+        <div class="friend-item" onclick="viewUserProfile('${u.uid}'); closeSearch()">
+          <div style="display:flex; gap:10px; align-items:center">
+            <img style="width:40px;height:40px;border-radius:50%" src="${u.profilePic}">
+            <b>${u.name}</b>
+          </div>
+        </div>`;
+      })
+    }
+  }
+
+  // 2. SEARCH POSTS - NOW WITH HASHTAGS + MENTIONS
+  if(searchTab === 'all' || searchTab === 'posts'){
+    const posts = allPostsCache.filter(p => 
+      (p.text && p.text.toLowerCase().includes(query)) ||
+      (p.hashtags && p.hashtags.join(' ').toLowerCase().includes(query)) || // <-- #viral
+      (p.mentions && p.mentions.join(' ').toLowerCase().includes(query))   // <-- @user
+    );
+    if(posts.length > 0){
+      html += `<h4>📝 Posts</h4>`;
+      for(const p of posts){
+        const u = await getUser(p.uid);
+        html += `
+        <div class="card" style="cursor:pointer" onclick="jumpToPost('${p.id}'); closeSearch()">
+          <div class="card-header">
+            <img class="card-avatar" src="${u.profilePic}">
+            <b style="color:${u.color}">${u.name}</b>
+          </div>
+          <div>${linkify(p.text?.substring(0,100) || '')}</div>
+          ${p.image? `<img class="card-post-img" src="${p.image}">` : ''}
+        </div>`;
+      }
+    }
+  }
+
+  // 3. SEARCH VIDEOS - NOW WITH HASHTAGS
+  if(searchTab === 'all' || searchTab === 'videos'){
+    const videos = allVideosCache.filter(v => 
+      (v.desc && v.desc.toLowerCase().includes(query)) ||
+      (v.hashtags && v.hashtags.join(' ').toLowerCase().includes(query)) // <-- #dance
+    );
+    if(videos.length > 0){
+      html += `<h4>🎥 Videos</h4>`;
+      for(const v of videos){
+        const u = await getUser(v.uid);
+        html += `
+        <div class="card" style="cursor:pointer" onclick="jumpToVideo('${v.id}'); closeSearch()">
+          <div class="card-header">
+            <img class="card-avatar" src="${u.profilePic}">
+            <b style="color:${u.color}">${u.name}</b>
+          </div>
+          <video src="${v.video}" style="width:100%; border-radius:8px; max-height:200px"></video>
+          <div>${linkify(v.desc || '')}</div>
+        </div>`;
+      }
+    }
+  }
+
+  // NUMBER 3: NICE NO RESULTS
+  if(html === '') html = `
+    <p style="text-align:center; opacity:0.6">No results for "${query}"</p>
+    <p style="text-align:center; font-size:12px">Try: #viral, @usernames, or keywords</p>
+  `;
+  
+  results.innerHTML = html;
+}
+
+  // 3. SEARCH VIDEOS
+  if(searchTab === 'all' || searchTab === 'videos'){
+    const videos = allVideosCache.filter(v => 
+      (v.desc && v.desc.toLowerCase().includes(query))
+    );
+
+
+// JUMP TO POST
+window.jumpToPost = (postId) => {
+  backToFeed();
+  document.getElementById('feed-section').style.display = 'block';
+  const el = document.getElementById('post-' + postId);
+  if(el){ el.scrollIntoView({behavior: 'smooth', block: 'center'}); el.style.border = '2px solid #00C896'; }
+}
+
+// JUMP TO VIDEO  
+window.jumpToVideo = (videoId) => {
+  openVideos();
+  setTimeout(()=>{
+    const el = document.querySelector(`.video-card[data-id="${videoId}"]`);
+    if(el){ el.scrollIntoView({behavior: 'smooth', block: 'center'}); el.style.border = '2px solid #00C896'; }
+  }, 300)
+}
+function linkify(text){
+  if(!text) return '';
+  return text
+   .replace(/#(\w+)/g, '<span onclick="searchTag(\'$1\')" style="color:#00C896; cursor:pointer">#$1</span>')
+   .replace(/@(\w+)/g, '<span onclick="searchUserByName(\'$1\')" style="color:#00C896; cursor:pointer">@$1</span>')
+}
+window.searchUserByName = async (username) => {
+  const user = allUsersCache.find(u => u.name.toLowerCase() === username.toLowerCase());
+  if(user) viewUserProfile(user.uid);
+  else alert('User @' + username + ' not found');
+}
+let trendingTagsCache = []; // we’ll fill this from posts
+
+window.handleMentionsAndTags = (e) => {
+  const text = e.target.value;
+  const lastWord = text.split(' ').pop();
+
+  const mentionBox = document.getElementById('mention-suggestions');
+  const tagBox = document.getElementById('hashtag-suggestions');
+  mentionBox.style.display = 'none';
+  tagBox.style.display = 'none';
+
+  // 1. @MENTIONS
+  if(lastWord.startsWith('@')){
+    const query = lastWord.slice(1).toLowerCase();
+    const matches = allUsersCache.filter(u => u.name.toLowerCase().includes(query)).slice(0,5);
+    mentionBox.innerHTML = matches.map(u=>`
+      <div onclick="insertMention('${u.name}')" style="padding:8px; cursor:pointer; display:flex; gap:8px; align-items:center">
+        <img src="${u.profilePic}" style="width:24px; height:24px; border-radius:50%"> ${u.name}
+      </div>
+    `).join('');
+    mentionBox.style.display = matches.length? 'block' : 'none';
+  }
+
+  // 2. #HASHTAGS
+  if(lastWord.startsWith('#')){
+    const query = lastWord.slice(1).toLowerCase();
+    loadTrendingTags(); // get trending tags
+    const matches = trendingTagsCache.filter(t => t.includes(query)).slice(0,8);
+    tagBox.innerHTML = matches.map(t=>`
+      <div onclick="insertTag('${t}')" style="padding:8px; cursor:pointer">#${t}</div>
+    `).join('');
+    if(matches.length === 0 && query) tagBox.innerHTML = `<div style="padding:8px; opacity:0.6">Create #${query}</div>`;
+    tagBox.style.display = 'block';
+  }
+}
+
+window.insertMention = (name) => {
+  const input = document.getElementById('post-text');
+  const words = input.value.split(' ');
+  words[words.length-1] = '@' + name;
+  input.value = words.join(' ') + ' ';
+  document.getElementById('mention-suggestions').style.display = 'none';
+  input.focus();
+}
+
+window.insertTag = (tag) => {
+  const input = document.getElementById('post-text');
+  const words = input.value.split(' ');
+  words[words.length-1] = '#' + tag;
+  input.value = words.join(' ') + ' ';
+  document.getElementById('hashtag-suggestions').style.display = 'none';
+  input.focus();
+}
 </script>
 </body>
 </html>
