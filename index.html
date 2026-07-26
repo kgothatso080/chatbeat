@@ -338,6 +338,7 @@ to{transform:rotate(360deg);}
   <div class="topbar-icons">
     <button class="icon-btn" id="settings-btn" onclick="openSettings()">⚙️</button>
     <button class="icon-btn" id="videos-btn" onclick="openVideos()">🎥<span class="badge" id="video-badge" style="display:none">0</span></button>
+<button class="icon-btn" id="feed-icon-btn" onclick="backToFeed()">🏠<span class="badge" id="feed-badge" style="display:none">0</span></button>
     <button class="icon-btn" id="dm-btn" onclick="openDMs()">✉️<span class="badge" id="dm-badge" style="display:none">0</span></button>
     <button class="icon-btn" id="friends-btn" onclick="openFriends()">👥<span class="badge" id="friend-badge" style="display:none">0</span></button>
     <button class="icon-btn" id="profile-icon-btn">👤</button>
@@ -361,7 +362,7 @@ to{transform:rotate(360deg);}
 
   <div id="feed-section">
     <div class="post-box">
-      <textarea id="post-text" placeholder="What's on your mind?"onkeyup="handleMentionsAndTags(event)">></textarea>
+      <textarea id="post-text" placeholder="What's on your mind?"onkeyup="handleMentionsAndTags(event)"></textarea>
       <button id="post-img-btn">📷</button>
       <input id="post-file" type="file" accept="image/*" style="display:none">
   <div id="mention-suggestions" style="background:#2a3942; border-radius:8px; display:none; position:absolute; top:50px; left:0; width:100%; z-index:10; max-height:200px; overflow-y:auto"></div>
@@ -587,6 +588,7 @@ to{transform:rotate(360deg);}
   <input id="search-input" placeholder="Search posts, people, videos..." 
          style="width:100%; background:#2a3942; color:white; border-radius:20px; padding:12px; border:none; margin:10px 0"
          onkeyup="handleSearch(event)">
+  <div id="search-suggestions" style="margin-bottom:10px"></div>
 
   <div style="display:flex; gap:8px; margin-bottom:10px">
     <button onclick="setSearchTab('all')" id="s-tab-all" style="flex:1; background:#00C896">All</button>
@@ -636,6 +638,9 @@ let shareLink = '';
 let currentDM = null; 
 let currentVideoId = null;
 let dmIsRecording = false; let dmMediaRecorder; let dmAudioChunks = [];
+let allPostsCache = [];
+let allVideosCache = [];
+let trendingCache = [];
 const DRAG_THRESHOLD = 70;
 const REACTIONS = ['❤️','😂','😮','😢','😡','👎'];
 const LONG_PRESS = 500;
@@ -813,7 +818,7 @@ function setupNotifications(){
         unread++;
       }
     })
-    updateBadge('video-badge', unread);
+    updateBadge('feed-badge', unread);
   })
 
   // 3. VIDEOS UNREAD
@@ -920,7 +925,9 @@ document.getElementById('post-file').onchange = (e)=>{
 document.getElementById('post-btn').onclick = async () => {
   const text = document.getElementById('post-text').value.trim();
   if(!text &&!postImageData) return;
-  await push(ref(db, 'posts'), { uid: currentUser.uid, text, image: postImageData, timestamp: Date.now(), reactions:{}, comments:{} });
+  const hashtags = [...text.matchAll(/#(\w+)/g)].map(m => m[1].toLowerCase());
+  const mentions = [...text.matchAll(/@(\w+)/g)].map(m => m[1].toLowerCase());
+  await push(ref(db, 'posts'), { uid: currentUser.uid, text, hashtags, mentions, image: postImageData, timestamp: Date.now(), reactions:{}, comments:{},views:0 });
   document.getElementById('post-text').value = '';
   postImageData = null;
   document.getElementById('post-file').value = '';
@@ -965,7 +972,8 @@ function loadComments(postKey){
 function loadPosts() {
   off(ref(db, 'posts')); document.getElementById('feed').innerHTML = '';
   onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50)), async (snap) => {
-    const post = snap.val(); const postKey = snap.key; const user = await getUser(post.uid); const userPic = user.profilePic || DEFAULT_PIC;
+    const post = snap.val(); const postKey = snap.key; 
+  if(!allPostsCache.find(p=>p.id===postKey)) allPostsCache.push({id: postKey, ...post}); const user = await getUser(post.uid); const userPic = user.profilePic || DEFAULT_PIC;
     const userReact = post.reactions?.[currentUser.uid] || null;
     const postDiv = document.createElement('div'); postDiv.className = 'card'; postDiv.id = 'post-' + postKey;
     let delBtn = post.uid === currentUser.uid? `<button class="del-btn" onclick="deletePost('${postKey}')">×</button>` : '';
@@ -978,7 +986,7 @@ function loadPosts() {
       <img class="card-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">
       <div class="name" style="color:${user.color}" onclick="viewUserProfile('${post.uid}')">${user.name}</div>
     </div>
-    <div>${post.text||''}</div>${imgHtml}
+    <div>${linkify(post.text||'')}</div>${imgHtml}
     <div class="post-stats" onclick="toggleComments('${postKey}')">
       <span id="react-count-${postKey}">${reactCount} Reactions</span>
       <span id="comment-count-${postKey}">${commentCount} Comments</span>
@@ -1024,7 +1032,6 @@ function loadPosts() {
       }
     }
   });
-  if(!allPostsCache.find(p=>p.id===postKey)) allPostsCache.push({id: postKey, ...post});
 }
 window.deletePost = async (key) => {
   if(confirm("Delete this post?")) {
@@ -1079,9 +1086,10 @@ async function uploadVideo(fileBlob){
   const reader = new FileReader();
   reader.onload = async ()=>{
     const desc = prompt("Add a description:");
+    const hashtags = [...(desc||'').matchAll(/#(\w+)/g)].map(m => m[1].toLowerCase());
     await push(ref(db, 'videos'), {
-      uid: currentUser.uid, video: reader.result, desc, timestamp: Date.now(),
-      reactions:{}, comments:{}, likes:{}, favorites:{}, shares:{}
+      uid: currentUser.uid, video: reader.result, desc, hashtags, timestamp: Date.now(),
+      reactions:{}, comments:{}, likes:{}, favorites:{}, shares:{}, views:0
     });
     alert("Video posted!")
   }
@@ -1156,17 +1164,6 @@ function loadDMs(){
     if(!hasAny) document.getElementById('dm-list').innerHTML = '<p style="text-align:center; opacity:0.6">No messages yet</p>';
     updateBadge('dm-badge', unread);
   })
-}
-
-window.openDM = async (chatId, otherUid) => {
-  currentDM = {chatId, otherUid};
-  document.getElementById('feed-section').style.display = 'none';
-  document.getElementById('dm-list').style.display = 'none'; // HIDE LIST
-  document.getElementById('dm-active-chat').style.display = 'block'; // SHOW CHAT + INPUT
-  document.getElementById('dm-chat-section').style.display = 'block';
-  const u = await getUser(otherUid); 
-  document.getElementById('dm-chat-name').innerText = u.name;
-  loadDMChat(chatId);
 }
 
 window.backToDMList = () => {
@@ -1374,11 +1371,6 @@ function loadFriends(){
     showFriendTab('friends'); // default to friends tab
   })
 }
-
-window.toggleFollow = async (uid) => {
-  const followRef = ref(db, `friends/${currentUser.uid}/${uid}`);
-  const followingRef = ref(db, `users/${currentUser.uid}/following/${uid}`);
-  const followerRef = ref(db, `users/${uid}/followers/${currentUser.uid}`);
   
   const snap = await get(followRef);
   if(snap.exists()){ 
@@ -1401,7 +1393,7 @@ window.toggleFollow = async (uid) => {
 
 // NAVIGATION - SINGLE COPY ONLY
 window.openVideos = () => {
-  lastSeen.posts = Date.now(); lastSeen.videos = Date.now(); saveLastSeen(); updateBadge('video-badge', 0);
+  lastSeen.videos = Date.now(); saveLastSeen(); updateBadge('video-badge', 0);
   document.getElementById('feed-section').style.display = 'none';
   document.getElementById('chat-section').style.display = 'none';
   document.getElementById('videos-section').style.display = 'block';
@@ -1428,6 +1420,7 @@ window.openFriends = () => {
   document.getElementById('profile-box').style.display = 'none';
 }
 window.backToFeed = () => {
+  lastSeen.posts = Date.now(); saveLastSeen(); updateBadge('feed-badge', 0)
   document.getElementById('feed-section').style.display = 'block';
   document.getElementById('chat-section').style.display = 'none';
   document.getElementById('videos-section').style.display = 'none';
@@ -1533,17 +1526,22 @@ async function renderMessage(snap, scroll){
 
     // FIXED: check if repliedMsg exists before using it
     let replyHtml = '';
-    if(msg.replyTo && allMessagesCache[msg.replyTo]){
-      try{
-        const repliedMsg = allMessagesCache[msg.replyTo]; const repliedUser = await getUser(repliedMsg.uid);
-        replyHtml = `<div class="reply-quote"><div class="reply-quote-name">${repliedUser.name}</div><div class="reply-quote-text">${repliedMsg.text || 'Media'}</div></div>`;
-      }catch(e){}
-    }
+if(msg.replyTo){
+  let repliedMsg = allMessagesCache[msg.replyTo];
+  if(!repliedMsg){
+    const replySnap = await get(ref(db, `globalChat/${msg.replyTo}`));
+    repliedMsg = replySnap.val();
+  }
+  if(repliedMsg){
+    const repliedUser = await getUser(repliedMsg.uid);
+    replyHtml = `<div class="reply-quote"><div class="reply-quote-name">${repliedUser.name}</div><div class="reply-quote-text">${repliedMsg.text || 'Media'}</div></div>`;
+  }
+}
 
     let content = '';
     if(msg.image) { content = `${replyHtml}<span class="bubble-name" onclick="viewUserProfile('${msg.uid}')"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<img class="bubble-img" src="${msg.image}" onclick="openProfilePopup('${msg.image}')">`; }
     else if(msg.audio) { content = `${replyHtml}<span class="bubble-name" onclick="viewUserProfile('${msg.uid}')"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`; }
-    else { content = `${replyHtml}<span class="bubble-name" onclick="viewUserProfile('${msg.uid}')"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<span class="bubble-text">${msg.text}</span>`; }
+    else { content = `${replyHtml}<span class="bubble-name" onclick="viewUserProfile('${msg.uid}')"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<span class="bubble-text">${linkify(msg.text)}</span>`; }
 
     wrapper.innerHTML = `<div class="reply-hint">↩️</div><div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}" id="bubble-${msgKey}">${content}<div class="bubble-reactions" id="msg-react-${msgKey}"></div></div><div class="react-picker" id="msg-picker-${msgKey}">${REACTIONS.map(r=>`<span onclick="reactToMsg('${msgKey}','${r}')">${r}</span>`).join('')}</div>`;
     wrapper.addEventListener('touchstart', e => startDrag(e, msgKey), {passive: true});
@@ -2296,32 +2294,23 @@ let trendingTagsCache = []; // we’ll fill this from posts
 window.handleMentionsAndTags = (e) => {
   const text = e.target.value;
   const lastWord = text.split(' ').pop();
-
   const mentionBox = document.getElementById('mention-suggestions');
   const tagBox = document.getElementById('hashtag-suggestions');
   mentionBox.style.display = 'none';
   tagBox.style.display = 'none';
 
-  // 1. @MENTIONS
   if(lastWord.startsWith('@')){
     const query = lastWord.slice(1).toLowerCase();
     const matches = allUsersCache.filter(u => u.name.toLowerCase().includes(query)).slice(0,5);
-    mentionBox.innerHTML = matches.map(u=>`
-      <div onclick="insertMention('${u.name}')" style="padding:8px; cursor:pointer; display:flex; gap:8px; align-items:center">
-        <img src="${u.profilePic}" style="width:24px; height:24px; border-radius:50%"> ${u.name}
-      </div>
-    `).join('');
+    mentionBox.innerHTML = matches.map(u=>`<div onclick="insertMention('${u.name}')" style="padding:8px; cursor:pointer; display:flex; gap:8px"><img src="${u.profilePic}" style="width:24px; border-radius:50%"> ${u.name}</div>`).join('');
     mentionBox.style.display = matches.length? 'block' : 'none';
   }
 
-  // 2. #HASHTAGS
   if(lastWord.startsWith('#')){
     const query = lastWord.slice(1).toLowerCase();
-    loadTrendingTags(); // get trending tags
-    const matches = trendingTagsCache.filter(t => t.includes(query)).slice(0,8);
-    tagBox.innerHTML = matches.map(t=>`
-      <div onclick="insertTag('${t}')" style="padding:8px; cursor:pointer">#${t}</div>
-    `).join('');
+    if(trendingCache.length === 0) loadTrending();
+    const matches = trendingCache.map(t=>t.tag).filter(t => t.includes(query)).slice(0,8);
+    tagBox.innerHTML = matches.map(t=>`<div onclick="insertTag('${t}')" style="padding:8px; cursor:pointer">#${t}</div>`).join('');
     if(matches.length === 0 && query) tagBox.innerHTML = `<div style="padding:8px; opacity:0.6">Create #${query}</div>`;
     tagBox.style.display = 'block';
   }
