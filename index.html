@@ -349,7 +349,7 @@ to{transform:rotate(360deg);}
   <div class="topbar-icons">
     <button class="icon-btn" id="settings-btn" onclick="openSettings(event)">⚙️</button>
     <button class="icon-btn" id="videos-btn" onclick="openVideos()">🎥<span class="badge" id="video-badge" style="display:none">0</span></button>
-<button class="icon-btn" id="feed-icon-btn" onclick="backToFeed()">🏠<span class="badge" id="feed-badge" style="display:none">0</span></button>
+    <button class="icon-btn" id="feed-icon-btn" onclick="backToFeed()">🏠<span class="badge" id="feed-badge" style="display:none">0</span></button>
     <button class="icon-btn" id="dm-btn" onclick="openDMs()">✉️<span class="badge" id="dm-badge" style="display:none">0</span></button>
     <button class="icon-btn" id="friends-btn" onclick="openFriends()">👥<span class="badge" id="friend-badge" style="display:none">0</span></button>
     <button class="icon-btn" id="profile-icon-btn">👤</button>
@@ -394,7 +394,7 @@ to{transform:rotate(360deg);}
   
   <div id="dm-list" class="dm-list"></div>
 
-  <div id="dm-active-chat" style="display:no
+  <div id="dm-active-chat" style="display:none">
     <div class="chat-header"><button onclick="backToDMList()">← Back</button><h3 id="dm-chat-name">DM</h3></div>
     <div id="dm-messages" style="height: calc(100vh - 200px); overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:2px"></div>
     <div id="dm-reply-bar" style="display:none; background:#1f2c33; padding:8px 12px; border-left:3px solid #00C896">
@@ -653,6 +653,8 @@ let trendingCache = [];
 const DRAG_THRESHOLD = 70;
 const REACTIONS = ['❤️','😂','😮','😢','😡','👎'];
 const LONG_PRESS = 500;
+let currentTheme = localStorage.getItem('chatbeat_theme') || '#00C896';
+let isLightMode = localStorage.getItem('chatbeat_light') === 'true';
 
 function applyTheme(){
   const bg = isLightMode ? '#f0f2f5' : '#0b141a';
@@ -1580,10 +1582,6 @@ window.deleteMsg = async (key) => {
   }
 }
 window.reactToMsg = async (key, emoji) => { await setReaction(`globalChat/${key}/reactions`, emoji); document.getElementById(`msg-picker-${key}`).classList.remove('show'); }
-
-// THEME SYSTEM
-let currentTheme = localStorage.getItem('chatbeat_theme') || '#00C896';
-let isLightMode = localStorage.getItem('chatbeat_light') === 'true';
 
 window.setTheme = (color) => {
   currentTheme = color;
