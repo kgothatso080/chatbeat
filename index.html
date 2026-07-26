@@ -656,6 +656,18 @@ const DRAG_THRESHOLD = 70;
 const REACTIONS = ['❤️','😂','😮','😢','😡','👎'];
 const LONG_PRESS = 500;
 
+function applyTheme(){
+  const bg = isLightMode ? '#f0f2f5' : '#0b141a';
+  const card = isLightMode ? '#ffffff' : '#202c33';
+  const text = isLightMode ? '#000' : '#fff';
+  document.body.style.background = bg;
+  document.body.style.color = text;
+  document.querySelectorAll('.card, .post-box, .profile-box, .settings-popup, .share-popup').forEach(el=>{
+    el.style.background = card;
+    el.style.color = text;
+  })
+}
+
 window.openProfilePopup = (imgSrc) => {
   if(!imgSrc) return;
   document.getElementById('profile-popup-img').src = imgSrc;
@@ -1588,19 +1600,6 @@ window.toggleLightMode = () => {
   localStorage.setItem('chatbeat_light', isLightMode);
   applyTheme();
 }
-
-function applyTheme(){
-  const bg = isLightMode ? '#f0f2f5' : '#0b141a';
-  const card = isLightMode ? '#ffffff' : '#202c33';
-  const text = isLightMode ? '#000' : '#fff';
-  document.body.style.background = bg;
-  document.body.style.color = text;
-  document.querySelectorAll('.card, .post-box, .profile-box, .settings-popup, .share-popup').forEach(el=>{
-    el.style.background = card;
-    el.style.color = text;
-  })
-}
-
 // ACCOUNT FUNCTIONS
 window.changeName = async () => {
   const newName = prompt("Enter new display name:");
