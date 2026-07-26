@@ -219,6 +219,9 @@
 }
 .share-popup button { background:#2a3942; border:none; color:white; padding:10px; border-radius:10px; font-size:12px; cursor:pointer }
 
+.settings-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#202c33; padding:20px; border-radius:15px; z-index:9999; display:none; border:2px solid #00C896; width:90%; max-width:350px; max-height:90vh; overflow-y:auto }
+.settings-popup.show { display:block }
+
 /* 6. OTHER STUFF YOU HAD - KEEP THESE */
 .video-info { position:absolute; bottom:95px; left:10px; right:70px }
 .video-info h4 { margin:5px 0; color:#fff; text-shadow:0 0 5px #000 }
@@ -307,12 +310,23 @@ to{transform:rotate(360deg);}
   margin-bottom: 15px;
   line-height: 1.6;
 }
+.user-profile-popup {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
+  z-index: 99999; /* make sure it's above footer */
+  overflow-y: auto;
+  padding: 20px;
+}
+.user-profile-popup.show {
+  display: block;
+}
 .reaction{ font-size:16px; position:absolute; margin-top:-15px; margin-left:5px; background:#2a3942; border-radius:12px; padding:2px 6px }
 .bubble{ position:relative }
 
-  .settings-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#202c33; padding:20px; border-radius:15px; z-index:9999; display:none; border:2px solid #00C896; width:90%; max-width:350px; max-height:90vh; overflow-y:auto }
-.settings-popup.show { display:block }
-  </style>
+</style>
 </head>
 <body>
 
@@ -500,7 +514,7 @@ to{transform:rotate(360deg);}
 
 <div class="share-popup" id="video-share-popup"></div>
 
-  <div id="user-profile-popup" class="settings-popup" style="max-width:400px">
+<div id="user-profile-popup" class="user-profile-popup" style="max-width:400px">
   <span onclick="closeUserProfile()" style="position:absolute; top:10px; right:15px; font-size:30px; cursor:pointer">×</span>
   <div style="text-align:center">
     <img id="up-pic" src="" style="width:90px; height:90px; border-radius:50%; border:3px solid #00C896; object-fit:cover">
