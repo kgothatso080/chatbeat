@@ -1051,8 +1051,8 @@ window.deleteComment = async (postKey, commentKey) => {
   }
 }
 
-window.openShare = (link) => { shareLink = link; document.getElementById('share-popup').classList.add('show'); }
-window.closeShare = () => document.getElementById('share-popup').classList.remove('show');
+window.openShare = (link) => { shareLink = link; document.getElementById('video-share-popup').style.display = 'block'; }
+window.closeShare = () => document.getElementById('video-share-popup').style.display = 'none';
 window.shareTo = (type) => {
   if(type==='whatsapp') window.open(`https://wa.me/?text=${encodeURIComponent(shareLink)}`,'_blank');
   if(type==='facebook') window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`,'_blank');
@@ -1291,7 +1291,7 @@ window.deleteConversation = async (chatId) => {
 }
 
 // SETTINGS
-window.openSettings(e) => {e.stopPropagation(); document.getElementById('settings-popup').classList.add('show'); }
+window.openSettings=(e) => {e.stopPropagation(); document.getElementById('settings-popup').classList.add('show'); }
 window.closeSettings = () => document.getElementById('settings-popup').classList.remove('show');
 window.signOutUser = () => { signOut(auth); closeSettings(); }
 window.deleteAccount = async () => { if(confirm("Delete account forever?")){ await remove(ref(db, 'users/'+currentUser.uid)); await deleteUser(currentUser); } }
@@ -1370,19 +1370,6 @@ function loadFriends(){
     })
     showFriendTab('friends'); // default to friends tab
   })
-}
-  
-  const snap = await get(followRef);
-  if(snap.exists()){ 
-    await remove(followRef); 
-    await remove(followingRef);
-    await remove(followerRef);
-  } else { 
-    await set(followRef, true); 
-    await set(followingRef, true);
-    await set(followerRef, true);
-  }
-  loadFriends(); // refresh
 }
 window.toggleFollow = async (uid) => {
   const followRef = ref(db, `friends/${currentUser.uid}/${uid}`);
@@ -1851,7 +1838,7 @@ async function loadUserPosts(uid){
     const p = s.val();
     box.innerHTML += `<div style="background:#2a3942; padding:8px; border-radius:8px; margin:6px 0">
       ${p.image? `<img src="${p.image}" style="width:100%; border-radius:8px; margin-bottom:4px">` : ''}
-      <div>${p.text || ''}</div>
+      <div>${linkify(p.text || '')}</div>
     </div>`;
   })
   if(!snap.exists()) box.innerHTML = 'No posts yet';
@@ -2039,7 +2026,7 @@ function loadVideos(){
     document.querySelector(`.video-card[data-id="${snap.key}"]`)?.remove();
   });
 
-  onChildAdded(query(ref(db, 'videos'), orderByChild('views'), limitToLast(20)), async (snap) => {
+  onChildAdded(query(ref(db, 'videos'), orderByChild('timestamp'), limitToLast(20)), async (snap) => {
     const v = snap.val(); 
     if(!allVideosCache.find(v=>v.id===snap.key)) allVideosCache.push({id: snap.key, ...v});
     const u = await getUser(v.uid);
@@ -2166,14 +2153,6 @@ window.searchTag = (tag) => {
   handleSearch();
 }
 
-window.handleSearch = async (e) => {
-  const query = document.getElementById('search-input').value.toLowerCase().trim();
-  showSuggestions(query); // <-- show predictions first
-
-  const results = document.getElementById('search-results');
-  if(!query){ results.innerHTML = ''; return; }
-  //... rest of your handleSearch code
-}
 async function handleSearch(e){
   const query = document.getElementById('search-input').value.toLowerCase().trim();
   showSuggestions(query); // if you added predictive search
@@ -2256,14 +2235,6 @@ async function handleSearch(e){
   
   results.innerHTML = html;
 }
-
-  // 3. SEARCH VIDEOS
-  if(searchTab === 'all' || searchTab === 'videos'){
-    const videos = allVideosCache.filter(v => 
-      (v.desc && v.desc.toLowerCase().includes(query))
-    );
-
-
 // JUMP TO POST
 window.jumpToPost = (postId) => {
   backToFeed();
