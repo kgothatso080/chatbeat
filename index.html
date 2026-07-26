@@ -336,7 +336,7 @@ to{transform:rotate(360deg);}
     <h2 id="logo-btn">ChatBeat</h2>
   </div>
   <div class="topbar-icons">
-    <button class="icon-btn" id="settings-btn" onclick="openSettings()">⚙️</button>
+    <button class="icon-btn" id="settings-btn" onclick="openSettings(event)">⚙️</button>
     <button class="icon-btn" id="videos-btn" onclick="openVideos()">🎥<span class="badge" id="video-badge" style="display:none">0</span></button>
 <button class="icon-btn" id="feed-icon-btn" onclick="backToFeed()">🏠<span class="badge" id="feed-badge" style="display:none">0</span></button>
     <button class="icon-btn" id="dm-btn" onclick="openDMs()">✉️<span class="badge" id="dm-badge" style="display:none">0</span></button>
@@ -1291,7 +1291,7 @@ window.deleteConversation = async (chatId) => {
 }
 
 // SETTINGS
-window.openSettings = () => document.getElementById('settings-popup').classList.add('show');
+window.openSettings(e) => {e.stopPropagation(); document.getElementById('settings-popup').classList.add('show'); }
 window.closeSettings = () => document.getElementById('settings-popup').classList.remove('show');
 window.signOutUser = () => { signOut(auth); closeSettings(); }
 window.deleteAccount = async () => { if(confirm("Delete account forever?")){ await remove(ref(db, 'users/'+currentUser.uid)); await deleteUser(currentUser); } }
@@ -1752,9 +1752,11 @@ document.getElementById('chat-icon-btn').onclick = () => {
 document.getElementById('back-to-feed').onclick = backToFeed;
 document.getElementById('logo-btn').onclick = backToFeed;
 
-document.addEventListener('click', () => {
-  document.querySelectorAll('.react-picker').forEach(p => p.classList.remove('show'));
-  document.querySelectorAll('.react-names-tooltip').forEach(t => t.style.display = 'none');
+document.addEventListener('click', (e) => {
+  if(!e.target.closest('.settings-popup') && !e.target.closest('#settings-btn')){
+    document.querySelectorAll('.react-picker').forEach(p => p.classList.remove('show'));
+    document.querySelectorAll('.react-names-tooltip').forEach(t => t.style.display = 'none');
+  }
 });
 // OPEN EDIT PROFILE AND LOAD DATA
 window.openEditProfile = async () => {
