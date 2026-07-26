@@ -392,12 +392,10 @@ to{transform:rotate(360deg);}
 <div id="dm-chat-section" style="display:none">
 <div class="chat-header"><button id="dm-back-btn" onclick="backToFeed()">← Back</button><h3 id="dm-chat-name">DM</h3></div>
   
-  <!-- THIS IS THE LIST -->
   <div id="dm-list" class="dm-list"></div>
-  <div class="chat-header"><button onclick="backToDMList()">← Back</button><h3 id="dm-chat-name">DM</h3></div>
 
-  <!-- THIS IS THE ACTUAL CHAT WITH INPUT BAR -->
-  <div id="dm-active-chat" style="display:none">
+  <div id="dm-active-chat" style="display:no
+    <div class="chat-header"><button onclick="backToDMList()">← Back</button><h3 id="dm-chat-name">DM</h3></div>
     <div id="dm-messages" style="height: calc(100vh - 200px); overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:2px"></div>
     <div id="dm-reply-bar" style="display:none; background:#1f2c33; padding:8px 12px; border-left:3px solid #00C896">
   <div style="display:flex; justify-content:space-between; align-items:center">
@@ -1235,8 +1233,8 @@ function loadDMChat(chatId){
       <div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}"
            ontouchstart="touchStart(event)"
            ontouchend="touchEnd(event, '${chatId}', '${snap.key}', '${(msg.text||'').replace(/'/g,"\\'")}')"
-           oncontextmenu="event.preventDefault(); deleteDMMessage('${chatId}','${snap.key}')"  // <- DELETE
-           ondblclick="reactDMMessage('${chatId}','${snap.key}')">  // <- REACT
+           oncontextmenu="event.preventDefault(); deleteDMMessage('${chatId}','${snap.key}')"
+           ondblclick="reactDMMessage('${chatId}','${snap.key}')">
         ${replyQuote}
         ${content}
         ${msg.reaction? `<div class="reaction">${msg.reaction}</div>` : ''}
