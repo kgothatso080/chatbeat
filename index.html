@@ -611,10 +611,6 @@ to{transform:rotate(360deg);}
 </div>
     
 <script type="module">
-// ERROR CATCHER - will show any crash
-window.addEventListener('error', function(e) {
-  alert('JS CRASH: ' + e.message + '\nLine: ' + e.lineno);
-});
   
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
@@ -2316,5 +2312,9 @@ window.insertTag = (tag) => {
   input.focus();
 }
 </script>
+  
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>eruda.init();</script>
+  
 </body>
 </html>
