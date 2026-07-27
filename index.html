@@ -2117,7 +2117,6 @@ async function loadSearchData(){
     snap.forEach(s=> allVideosCache.push({id: s.key, ...s.val()}));
   }
 }
-let trendingCache = [];
 
 async function loadTrending(){
   // Get top 10 hashtags from posts + videos
