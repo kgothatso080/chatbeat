@@ -611,6 +611,11 @@ to{transform:rotate(360deg);}
 </div>
     
 <script type="module">
+// ERROR CATCHER - will show any crash
+window.addEventListener('error', function(e) {
+  alert('JS CRASH: ' + e.message + '\nLine: ' + e.lineno);
+});
+  
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser, sendPasswordResetEmail, updateEmail, updatePassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
@@ -630,9 +635,6 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getDatabase(app);
-  
-window.onerror = function(msg, url, line){ alert("BUG ON LINE " + line + ": " + msg) }
-
 const colors = ['#00C896', '#0077FF', '#00FFD1', '#FF6B6B', '#F7DC6F', '#9B59B6', '#E67E22', '#1ABC9C'];
 const DEFAULT_PIC = 'https://ui-avatars.com/api/?name=U&background=00C896&color=fff';
 let currentUser = null;
