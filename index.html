@@ -1351,9 +1351,10 @@ window.deleteConversation = async (chatId) => {
 window.openMyProfile = () => {
   hideAllSections();
   document.getElementById('profile-box').style.display = 'block';
+  setCurrentSection('profile-box');
   }
 // SETTINGS
-window.openSettings = () => {hideAllSections(); document.getElementById('settings-section').classList.add('show'); }
+window.openSettings = () => {hideAllSections(); document.getElementById('settings-section').classList.add('show'); setCurrentSection('settings-section'); }
 window.closeSettings = () => document.getElementById('settings-section').classList.remove('show');
 window.signOutUser = () => { signOut(auth); closeSettings(); }
 window.deleteAccount = async () => { if(confirm("Delete account forever?")){ await remove(ref(db, 'users/'+currentUser.uid)); await deleteUser(currentUser); } }
@@ -1469,6 +1470,7 @@ window.openFriends = () => {
   document.getElementById('profile-box').style.display = 'none';
 }
 window.backToFeed = () => {
+  setCurrentSection('feed-section');
   lastSeen.posts = Date.now(); saveLastSeen(); updateBadge('feed-badge', 0)
   document.getElementById('feed-section').style.display = 'block';
   document.getElementById('chat-section').style.display = 'none';
@@ -1702,6 +1704,7 @@ showUpTab('info');
 loadUserPosts(uid);
 loadUserVideos(uid);
 hideAllSections();
+setCurrentSection('user-profile-section');
   document.getElementById('user-profile-section').classList.add('show');
 }
 
@@ -1821,6 +1824,7 @@ window.openEditProfile = async () => {
   document.getElementById('tiktok-input').value = data.tiktok || '';
   document.getElementById('facebook-input').value = data.facebook || '';
   document.getElementById('private-toggle').checked = data.isPrivate || false;
+  setCurrentSection('edit-profile-section');
 }
 
 window.closeEditProfile = () => {
@@ -2126,7 +2130,8 @@ window.openSearch = () => {
   hideAllSections();
   document.getElementById('search-section').classList.add('show');
   document.getElementById('search-input').focus();
-  loadSearchData(); // load posts + videos once
+  loadSearchData(); 
+  setCurrentSection('search-section');
 }
 
 window.closeSearch = () => {
