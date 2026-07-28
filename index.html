@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
+    .section { display:none }
+.section.show { display:block }
+    
         * { box-sizing: border-box; }
     body { margin:0; font-family: 'Roboto', sans-serif; background: #0b141a; color: white; touch-action: pan-y; }
     .topbar { 
@@ -347,14 +350,14 @@ to{transform:rotate(360deg);}
     <h2 id="logo-btn">ChatBeat</h2>
   </div>
   <div class="topbar-icons">
-    <button class="icon-btn" id="settings-btn" onclick="openSettings(event)">⚙️</button>
-    <button class="icon-btn" id="videos-btn" onclick="openVideos()">🎥<span class="badge" id="video-badge" style="display:none">0</span></button>
     <button class="icon-btn" id="feed-icon-btn" onclick="backToFeed()">🏠<span class="badge" id="feed-badge" style="display:none">0</span></button>
-    <button class="icon-btn" id="dm-btn" onclick="openDMs()">✉️<span class="badge" id="dm-badge" style="display:none">0</span></button>
     <button class="icon-btn" id="friends-btn" onclick="openFriends()">👥<span class="badge" id="friend-badge" style="display:none">0</span></button>
-    <button class="icon-btn" id="profile-icon-btn">👤</button>
+    <button class="icon-btn" id="dm-btn" onclick="openDMs()">✉️<span class="badge" id="dm-badge" style="display:none">0</span></button>
     <button class="icon-btn" id="chat-icon-btn">💬<span class="badge" id="chat-badge" style="display:none">0</span></button>
+    <button class="icon-btn" id="videos-btn" onclick="openVideos()">🎥<span class="badge" id="video-badge" style="display:none">0</span></button>
+    <button class="icon-btn" id="profile-icon-btn" onclick="openMyProfile()">👤</button>
     <button class="icon-btn" id="search-btn" onclick="openSearch()">🔍<span class="badge" id="search-badge" style="display:none">0</span></button>
+    <button class="icon-btn" id="settings-btn" onclick="openSettings(event)">⚙️</button>
   </div>
 </div>
     
@@ -465,7 +468,8 @@ to{transform:rotate(360deg);}
   <img id="profile-popup-img" src="" alt="popup image" onclick="event.stopPropagation()">
 </div>
 
-  <div id="edit-profile-popup" class="settings-popup">
+<div id="edit-profile-section" class="section settings-section">
+  <button onclick="openMyProfile()" style="width:auto; margin-bottom:10px">← Back</button>
   <h3>✏️ Edit Profile</h3>
   
   <h4>About Me</h4>
@@ -509,8 +513,8 @@ to{transform:rotate(360deg);}
 
 <div class="share-popup" id="video-share-popup"></div>
 
-<div id="user-profile-popup" class="user-profile-popup" style="max-width:400px">
-  <span onclick="closeUserProfile()" style="position:absolute; top:10px; right:15px; font-size:30px; cursor:pointer">×</span>
+<div id="user-profile-section" class="section profile-section">
+  <button onclick="goBack()" style="width:auto; margin-bottom:10px">← Back</button>
   <div style="text-align:center">
     <img id="up-pic" src="" alt="user profile" style="width:90px; height:90px; border-radius:50%; border:3px solid #00C896; object-fit:cover">
     <h2 id="up-name" style="margin:8px 0 4px 0">Loading...</h2>
@@ -535,7 +539,8 @@ to{transform:rotate(360deg);}
 <div id="up-tab-content-posts" style="display:none; max-height:200px; overflow-y:auto; margin-top:10px"></div>
 <div id="up-tab-content-videos" style="display:none; max-height:200px; overflow-y:auto; margin-top:10px"></div>
   
-<div id="settings-popup" class="settings-popup">
+<div id="settings-section" class="section settings-section">
+  <button onclick="goBack()" style="width:auto; margin-bottom:10px">← Back</button>
   <h3>⚙️ Settings</h3>
   
   <h4 style="text-align:left; margin-top:15px">👤 Account</h4>
@@ -589,7 +594,8 @@ to{transform:rotate(360deg);}
   <button onclick="closeSettings()">Cancel</button>
 </div>
     
-<div id="search-popup" class="settings-popup" style="max-width:600px; height:80vh">
+<div id="search-section" class="section search-section">
+  <button onclick="goBack()" style="width:auto; margin-bottom:10px">← Back</button>
   <div style="display:flex; justify-content:space-between; align-items:center">
     <h3>🔍 Search ChatBeat</h3>
     <span onclick="closeSearch()" style="font-size:30px; cursor:pointer">×</span>
@@ -611,6 +617,35 @@ to{transform:rotate(360deg);}
 </div>
     
 <script type="module">
+
+function hideAllSections(){
+  if(currentSection) sectionHistory.push(currentSection); // save where we are
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('show'));
+  document.getElementById('profile-box').style.display = 'none';
+  document.getElementById('feed-section').style.display = 'none';
+  document.getElementById('videos-section').style.display = 'none';
+  document.getElementById('dm-chat-section').style.display = 'none';
+  document.getElementById('friends-section').style.display = 'none';
+  document.getElementById('chat-section').style.display = 'none';
+}
+
+window.goBack = () => {
+  const lastSection = sectionHistory.pop(); // get last page
+  hideAllSections(); // clear all
+  sectionHistory.pop(); // remove the duplicate push
+  
+  if(!lastSection || lastSection === 'feed-section') {
+    backToFeed(); // if nothing in history, go home
+  } else {
+    document.getElementById(lastSection).style.display = 'block';
+    document.getElementById(lastSection).classList.add('show');
+    currentSection = lastSection;
+  }
+}
+
+function setCurrentSection(id){
+  currentSection = id;
+}
   
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
@@ -1313,10 +1348,13 @@ window.deleteConversation = async (chatId) => {
     document.getElementById('dm-' + chatId)?.remove();
   }
 }
-
+window.openMyProfile = () => {
+  hideAllSections();
+  document.getElementById('profile-box').style.display = 'block';
+  }
 // SETTINGS
-window.openSettings=(e) => {e.stopPropagation(); document.getElementById('settings-popup').classList.add('show'); }
-window.closeSettings = () => document.getElementById('settings-popup').classList.remove('show');
+window.openSettings = () => {hideAllSections(); document.getElementById('settings-section').classList.add('show'); }
+window.closeSettings = () => document.getElementById('settings-section').classList.remove('show');
 window.signOutUser = () => { signOut(auth); closeSettings(); }
 window.deleteAccount = async () => { if(confirm("Delete account forever?")){ await remove(ref(db, 'users/'+currentUser.uid)); await deleteUser(currentUser); } }
 
@@ -1663,12 +1701,12 @@ window.viewUserProfile = async (uid) => {
 showUpTab('info'); 
 loadUserPosts(uid);
 loadUserVideos(uid);
-
-  document.getElementById('user-profile-popup').classList.add('show');
+hideAllSections();
+  document.getElementById('user-profile-section').classList.add('show');
 }
 
 window.closeUserProfile = () => {
-  document.getElementById('user-profile-popup').classList.remove('show');
+  document.getElementById('user-profile-section').classList.remove('show');
   viewingUserId = null;
 }
 
@@ -1754,8 +1792,8 @@ document.addEventListener('click', (e) => {
 });
 // OPEN EDIT PROFILE AND LOAD DATA
 window.openEditProfile = async () => {
-  document.getElementById('profile-box').style.display = 'none';
-  document.getElementById('edit-profile-popup').classList.add('show');
+  hideAllSections();
+  document.getElementById('edit-profile-section').classList.add('show');
   
   const snap = await get(ref(db, 'users/'+currentUser.uid));
   const data = snap.val() || {};
@@ -1786,7 +1824,7 @@ window.openEditProfile = async () => {
 }
 
 window.closeEditProfile = () => {
-  document.getElementById('edit-profile-popup').classList.remove('show');
+  document.getElementById('edit-profile-section').classList.remove('show');
   document.getElementById('profile-box').style.display = 'block';
 }
 
@@ -2085,13 +2123,14 @@ function loadVideos(){
 let searchTab = 'all';
 
 window.openSearch = () => {
-  document.getElementById('search-popup').classList.add('show');
+  hideAllSections();
+  document.getElementById('search-section').classList.add('show');
   document.getElementById('search-input').focus();
   loadSearchData(); // load posts + videos once
 }
 
 window.closeSearch = () => {
-  document.getElementById('search-popup').classList.remove('show');
+  document.getElementById('search-section').classList.remove('show');
   document.getElementById('search-results').innerHTML = '';
   document.getElementById('search-input').value = '';
 }
