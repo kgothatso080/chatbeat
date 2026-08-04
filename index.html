@@ -336,6 +336,8 @@ to{transform:rotate(360deg);}
   <div class="topbar">
   <div class="topbar-brand">
     <h2 id="logo-btn">ChatBeat</h2>
+    <button class="icon-btn" id="search-btn" onclick="openSearch()">🔍<span class="badge" id="search-badge" style="display:none">0</span></button>
+    <button class="icon-btn" id="settings-btn" onclick="openSettings()">⚙️</button>
   </div>
   <div class="topbar-icons">
     <button class="icon-btn" id="feed-icon-btn" onclick="backToFeed()">🏠<span class="badge" id="feed-badge" style="display:none">0</span></button>
@@ -344,8 +346,6 @@ to{transform:rotate(360deg);}
     <button class="icon-btn" id="chat-icon-btn">💬<span class="badge" id="chat-badge" style="display:none">0</span></button>
     <button class="icon-btn" id="videos-btn" onclick="openVideos()">🎥<span class="badge" id="video-badge" style="display:none">0</span></button>
     <button class="icon-btn" id="profile-icon-btn" onclick="openMyProfile()">👤</button>
-    <button class="icon-btn" id="search-btn" onclick="openSearch()">🔍<span class="badge" id="search-badge" style="display:none">0</span></button>
-    <button class="icon-btn" id="settings-btn" onclick="openSettings()">⚙️</button>
   </div>
 </div>
     
@@ -445,12 +445,6 @@ to{transform:rotate(360deg);}
     </div>
   </div>
 
-  <div class="footer">
-    Website created by <a href="#">Kgothatso Swafo</a> from Limpopo, Burgersfort, Moroke at age of 18. ✨<br>
-    Version 2.1.2 - FACEBOOK STYLE
-  </div>
-</div>
-
 <div id="profile-popup" class="profile-popup">
   <span class="profile-popup-close" onclick="closeProfilePopup()">×</span>
   <img id="profile-popup-img" src="" alt="popup image" onclick="event.stopPropagation()">
@@ -527,7 +521,7 @@ to{transform:rotate(360deg);}
 <div id="up-tab-content-videos" style="display:none; max-height:200px; overflow-y:auto; margin-top:10px"></div>
 </div>
   
-<div id="settings-section" class="section settings-section">
+  <div id="settings-section" class="section settings-section">
   <button onclick="goBack()" style="width:auto; margin-bottom:10px">← Back</button>
   <h3>⚙️ Settings</h3>
   
