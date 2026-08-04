@@ -509,13 +509,13 @@ to{transform:rotate(360deg);}
     <p id="up-bio" style="font-size:13px; opacity:0.8"></p>
     <p id="up-location" style="font-size:12px; opacity:0.7"></p>
   </div>
-</div>
 
   <div style="display:flex; gap:8px; margin:15px 0">
     <button id="up-follow-btn" onclick="followFromProfile()" style="flex:1">Follow</button>
     <button onclick="messageFromProfile()" style="flex:1; background:#0077FF">Message</button>
     <button onclick="pokeFromProfile()" style="width:50px">👉</button>
   </div>
+</div>
 
   <div style="display:flex; gap:5px; margin-top:10px; border-bottom:1px solid #2a3942">
   <button onclick="showUpTab('info')" id="up-tab-info" style="flex:1; background:transparent; border-bottom:2px solid #00C896">About</button>
@@ -590,8 +590,8 @@ to{transform:rotate(360deg);}
   </div>
   
   <input id="search-input" placeholder="Search posts, people, videos..." 
-         style="width:100%; background:#2a3942; color:white; border-radius:20px; padding:12px; border:none; margin:10px 0"
-         onkeyup="handleSearch(event)">
+       style="width:100%; background:#2a3942; color:white; border-radius:20px; padding:12px; border:none; margin:10px 0"
+       onkeyup="handleSearch(event)" onfocus="showSuggestions(this.value)">
   <div id="search-suggestions" style="margin-bottom:10px"></div>
 
   <div style="display:flex; gap:8px; margin-bottom:10px">
@@ -2172,26 +2172,27 @@ async function loadTrending(){
    .map(([tag, count]) => ({tag, count}));
 }
 
-function showSuggestions(query){
+async function showSuggestions(query){
   const box = document.getElementById('search-suggestions');
   if(!query){
-    // Show trending when empty
-    if(trendingCache.length === 0) loadTrending();
+    if(trendingCache.length === 0) await loadTrending();
     box.innerHTML = `<b>🔥 Trending</b><div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px">
       ${trendingCache.map(t=>`<span onclick="searchTag('${t.tag}')" style="background:#2a3942; padding:6px 10px; border-radius:20px; cursor:pointer">#${t.tag}</span>`).join('')}
     </div>`;
+    box.style.display = 'block';
     return;
   }
 
-  // Predictive: show hashtags and users matching what they type
-  const matchingTags = trendingCache.filter(t => t.tag.includes(query.toLowerCase()));
-  const matchingUsers = allUsersCache.filter(u => u.name.toLowerCase().includes(query.toLowerCase())).slice(0,3);
+  const q = query.toLowerCase();
+  const matchingTags = trendingCache.filter(t => t.tag.includes(q));
+  const matchingUsers = allUsersCache.filter(u => u.name.toLowerCase().includes(q)).slice(0,5);
 
   let html = '';
-  if(matchingTags.length) html += `<b>Hashtags</b><br>${matchingTags.map(t=>`<div onclick="searchTag('${t.tag}')" style="padding:6px; cursor:pointer">#${t.tag} <small>${t.count} posts</small></div>`).join('')}`;
+  if(matchingTags.length) html += `<b>Hashtags</b><br>${matchingTags.map(t=>`<div onclick="searchTag('${t.tag}')" style="padding:6px; cursor:pointer">#${t.tag} <small style="opacity:0.6">${t.count} posts</small></div>`).join('')}`;
   if(matchingUsers.length) html += `<b style="margin-top:8px; display:block">People</b>${matchingUsers.map(u=>`<div onclick="viewUserProfile('${u.uid}'); closeSearch()" style="display:flex; gap:8px; padding:6px; cursor:pointer"><img src="${u.profilePic}" style="width:24px; height:24px; border-radius:50%"> ${u.name}</div>`).join('')}`;
 
-  box.innerHTML = html;
+  box.innerHTML = html || '<p style="opacity:0.6; padding:6px">No suggestions</p>';
+  box.style.display = 'block';
 }
 
 window.searchTag = (tag) => {
@@ -2199,9 +2200,18 @@ window.searchTag = (tag) => {
   handleSearch();
 }
 
+function fuzzyMatch(text, query){
+  if(!text) return false;
+  text = text.toLowerCase(); query = query.toLowerCase();
+  if(text.includes(query)) return true;
+  if(text.split(' ').some(word => word.startsWith(query))) return true;
+  if(text.replace(/\s/g,'').includes(query.replace(/\s/g,''))) return true;
+  return false;
+}
+
 async function handleSearch(e){
   const query = document.getElementById('search-input').value.toLowerCase().trim();
-  showSuggestions(query); // if you added predictive search
+  await showSuggestions(query);
 
   const results = document.getElementById('search-results');
   if(!query){ results.innerHTML = '<p style="text-align:center; opacity:0.6">Type to search...</p>'; return; }
@@ -2209,84 +2219,36 @@ async function handleSearch(e){
   results.innerHTML = 'Searching...';
   let html = '';
 
-  // 1. SEARCH PEOPLE
   if(searchTab === 'all' || searchTab === 'people'){
-    const people = allUsersCache.filter(u => u.name.toLowerCase().includes(query));
+    const people = allUsersCache.filter(u => fuzzyMatch(u.name, query));
     if(people.length > 0){
       html += `<h4>👤 People</h4>`;
-      people.forEach(u=>{
-        html += `
-        <div class="friend-item" onclick="viewUserProfile('${u.uid}'); closeSearch()">
-          <div style="display:flex; gap:10px; align-items:center">
-            <img style="width:40px;height:40px;border-radius:50%" src="${u.profilePic}">
-            <b>${u.name}</b>
-          </div>
-        </div>`;
-      })
+      people.forEach(u=>{ html += `<div class="friend-item" onclick="viewUserProfile('${u.uid}'); closeSearch()"><div style="display:flex; gap:10px; align-items:center"><img style="width:40px;height:40px;border-radius:50%" src="${u.profilePic}"><b>${u.name}</b></div></div>`; })
     }
   }
 
-  // 2. SEARCH POSTS - NOW WITH HASHTAGS + MENTIONS
   if(searchTab === 'all' || searchTab === 'posts'){
-    const posts = allPostsCache.filter(p => 
-      (p.text && p.text.toLowerCase().includes(query)) ||
-      (p.hashtags && p.hashtags.join(' ').toLowerCase().includes(query)) || // <-- #viral
-      (p.mentions && p.mentions.join(' ').toLowerCase().includes(query))   // <-- @user
-    );
+    const posts = allPostsCache.filter(p => fuzzyMatch(p.text, query) || (p.hashtags && p.hashtags.some(tag => fuzzyMatch(tag, query))) || (p.mentions && p.mentions.some(m => fuzzyMatch(m, query))));
     if(posts.length > 0){
       html += `<h4>📝 Posts</h4>`;
-      for(const p of posts){
-        const u = await getUser(p.uid);
-        html += `
-        <div class="card" style="cursor:pointer" onclick="jumpToPost('${p.id}'); closeSearch()">
-          <div class="card-header">
-            <img class="card-avatar" src="${u.profilePic}">
-            <b style="color:${u.color}">${u.name}</b>
-          </div>
-          <div>${linkify(p.text?.substring(0,100) || '')}</div>
-          ${p.image? `<img class="card-post-img" src="${p.image}">` : ''}
-        </div>`;
-      }
+      for(const p of posts){ const u = await getUser(p.uid); html += `<div class="card" style="cursor:pointer" onclick="jumpToPost('${p.id}'); closeSearch()"><div class="card-header"><img class="card-avatar" src="${u.profilePic}"><b style="color:${u.color}">${u.name}</b></div><div>${linkify(p.text?.substring(0,100) || '')}</div>${p.image? `<img class="card-post-img" src="${p.image}">` : ''}</div>`; }
     }
   }
 
-  // 3. SEARCH VIDEOS - NOW WITH HASHTAGS
   if(searchTab === 'all' || searchTab === 'videos'){
-    const videos = allVideosCache.filter(v => 
-      (v.desc && v.desc.toLowerCase().includes(query)) ||
-      (v.hashtags && v.hashtags.join(' ').toLowerCase().includes(query)) // <-- #dance
-    );
+    const videos = allVideosCache.filter(v => fuzzyMatch(v.desc, query) || (v.hashtags && v.hashtags.some(tag => fuzzyMatch(tag, query))));
     if(videos.length > 0){
       html += `<h4>🎥 Videos</h4>`;
-      for(const v of videos){
-        const u = await getUser(v.uid);
-        html += `
-        <div class="card" style="cursor:pointer" onclick="jumpToVideo('${v.id}'); closeSearch()">
-          <div class="card-header">
-            <img class="card-avatar" src="${u.profilePic}">
-            <b style="color:${u.color}">${u.name}</b>
-          </div>
-          <video src="${v.video}" style="width:100%; border-radius:8px; max-height:200px"></video>
-          <div>${linkify(v.desc || '')}</div>
-        </div>`;
-      }
+      for(const v of videos){ const u = await getUser(v.uid); html += `<div class="card" style="cursor:pointer" onclick="jumpToVideo('${v.id}'); closeSearch()"><div class="card-header"><img class="card-avatar" src="${u.profilePic}"><b style="color:${u.color}">${u.name}</b></div><video src="${v.video}" style="width:100%; border-radius:8px; max-height:200px"></video><div>${linkify(v.desc || '')}</div></div>`; }
     }
   }
 
-  // NUMBER 3: NICE NO RESULTS
-  if(html === '') html = `
-    <p style="text-align:center; opacity:0.6">No results for "${query}"</p>
-    <p style="text-align:center; font-size:12px">Try: #viral, @usernames, or keywords</p>
-  `;
+  if(html === '') {
+    const similar = trendingCache.filter(t => t.tag.includes(query.slice(0,3))).slice(0,3);
+    html = `<p style="text-align:center; opacity:0.6">No results for "${query}"</p>${similar.length ? `<p style="text-align:center"><b>Did you mean:</b></p><div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap">${similar.map(t=>`<span onclick="searchTag('${t.tag}')" style="background:#2a3942; padding:6px 10px; border-radius:20px; cursor:pointer">#${t.tag}</span>`).join('')}</div>` : ''}`;
+  }
   
   results.innerHTML = html;
-}
-// JUMP TO POST
-window.jumpToPost = (postId) => {
-  backToFeed();
-  document.getElementById('feed-section').style.display = 'block';
-  const el = document.getElementById('post-' + postId);
-  if(el){ el.scrollIntoView({behavior: 'smooth', block: 'center'}); el.style.border = '2px solid #00C896'; }
 }
 
 // JUMP TO VIDEO  
