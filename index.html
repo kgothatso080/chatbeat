@@ -333,6 +333,11 @@ to{transform:rotate(360deg);}
 .reaction{ font-size:16px; position:absolute; margin-top:-15px; margin-left:5px; background:#2a3942; border-radius:12px; padding:2px 6px }
 .bubble{ position:relative }
 
+.notif-item { padding:10px; border-bottom:1px solid #2a3942; display:flex; gap:10px; cursor:pointer }
+.notif-item:hover { background:#2a3942 }
+.notif-item.unread { background:#1f2c33; border-left:3px solid #00C896 }
+.notif-avatar { width:36px; height:36px; border-radius:50% }
+
 </style>
 </head>
 <body>
@@ -368,6 +373,7 @@ to{transform:rotate(360deg);}
     <button class="icon-btn" id="chat-icon-btn">💬<span class="badge" id="chat-badge" style="display:none">0</span></button>
     <button class="icon-btn" id="videos-btn" onclick="openVideos()">🎥<span class="badge" id="video-badge" style="display:none">0</span></button>
     <button class="icon-btn" id="profile-icon-btn" onclick="openMyProfile()">👤</button>
+    <button class="icon-btn" id="notif-btn" onclick="openNotifications()">🔔<span class="badge" id="notif-badge" style="display:none">0</span></button>
   </div>
 </div>
     
@@ -705,6 +711,8 @@ const REACTIONS = ['❤️','😂','😮','😢','😡','👎'];
 const LONG_PRESS = 500;
 let currentTheme = localStorage.getItem('chatbeat_theme') || '#00C896';
 let isLightMode = localStorage.getItem('chatbeat_light') === 'true';
+let analytics;
+try { analytics = getAnalytics(app); } catch(e){ console.log("Analytics blocked") }
 
 function applyTheme(){
   const bg = isLightMode ? '#f0f2f5' : '#0b141a';
@@ -745,6 +753,8 @@ async function setReaction(path, emoji){
   const snap = await get(userReactRef);
   if(snap.exists() && snap.val() === emoji){ await remove(userReactRef); }
   else { await set(userReactRef, emoji); }
+  await setReaction(`posts/${postKey}/reactions`, emoji);
+if(post.uid !== currentUser.uid) createNotification(post.uid, 'like', {postId: postKey});
 }
 
 async function renderReactions(container, reactions, userReact){
@@ -946,6 +956,11 @@ onAuthStateChanged(auth, async (user) => {
    loadFriends();
    setupNotifications();
    loadMyProfile();
+   loadNotifications();
+   get(ref(db, 'users')).then(usersSnap=>{
+  allUsersCache = [];
+  usersSnap.forEach(uSnap=>{ if(uSnap.key !== currentUser.uid) allUsersCache.push({uid: uSnap.key, ...uSnap.val()}); })
+})
  } else {
    document.getElementById('cover').style.display = 'flex';
    document.getElementById('app').style.display = 'none';
@@ -1000,12 +1015,30 @@ document.getElementById('post-btn').onclick = async () => {
   if(!text &&!postImageData) return;
   const hashtags = [...text.matchAll(/#(\w+)/g)].map(m => m[1].toLowerCase());
   const mentions = [...text.matchAll(/@(\w+)/g)].map(m => m[1].toLowerCase());
-  await push(ref(db, 'posts'), { uid: currentUser.uid, text, hashtags, mentions, image: postImageData, timestamp: Date.now(), reactions:{}, comments:{},views:0 });
+
+  const newPostRef = await push(ref(db, 'posts'), {
+    uid: currentUser.uid, text, hashtags, mentions,
+    image: postImageData, timestamp: Date.now(), reactions:{}, comments:{},views:0
+  });
+
+  // NOTIFY FOLLOWERS
+  const myFollowersSnap = await get(ref(db, `users/${currentUser.uid}/followers`));
+  if(myFollowersSnap.exists()){
+    Object.keys(myFollowersSnap.val()).forEach(uid => {
+      createNotification(uid, 'post', {postId: newPostRef.key, text});
+    })
+  }
+
+  // NOTIFY MENTIONS - you already have this
+  mentions.forEach(async mName => {
+    const user = allUsersCache.find(u => u.name.toLowerCase() === mName);
+    if(user) createNotification(user.uid, 'mention', {postId: newPostRef.key});
+  })
+
   document.getElementById('post-text').value = '';
   postImageData = null;
   document.getElementById('post-file').value = '';
 }
-
 async function getUser(uid){
   if(userCache[uid]) return userCache[uid];
   const userSnap = await get(ref(db, 'users/' + uid));
@@ -1115,7 +1148,9 @@ window.deletePost = async (key) => {
 }
 window.reactToPost = async (key, emoji) => { await setReaction(`posts/${key}/reactions`, emoji); document.getElementById(`picker-${key}`).classList.remove('show'); }
 window.toggleComments = (key) => document.getElementById(`comments-${key}`).classList.toggle('show');
-window.addComment = async (key) => { const input = document.getElementById(`comment-input-${key}`); const text = input.value.trim(); if(!text) return; await push(ref(db, `posts/${key}/comments`), {uid: currentUser.uid, text, timestamp: Date.now()}); input.value = ''; }
+window.addComment = async (key) => { const input = document.getElementById(`comment-input-${key}`); const text = input.value.trim(); if(!text) return; await push(ref(db, `posts/${key}/comments`), {uid: currentUser.uid, text, timestamp: Date.now()}); input.value = ''; await push(ref(db, `posts/${key}/comments`), {...});
+const post = (await get(ref(db, `posts/${key}`))).val();
+if(post.uid !== currentUser.uid) createNotification(post.uid, 'comment', {postId: key, text}); }
 window.deleteComment = async (postKey, commentKey) => {
   if(confirm("Delete this comment?")) {
     await remove(ref(db, `posts/${postKey}/comments/${commentKey}`));
@@ -1160,15 +1195,24 @@ async function uploadVideo(fileBlob){
   reader.onload = async ()=>{
     const desc = prompt("Add a description:");
     const hashtags = [...(desc||'').matchAll(/#(\w+)/g)].map(m => m[1].toLowerCase());
-    await push(ref(db, 'videos'), {
+
+    const newVideoRef = await push(ref(db, 'videos'), {
       uid: currentUser.uid, video: reader.result, desc, hashtags, timestamp: Date.now(),
       reactions:{}, comments:{}, likes:{}, favorites:{}, shares:{}, views:0
     });
+
+    // NOTIFY FOLLOWERS
+    const myFollowersSnap = await get(ref(db, `users/${currentUser.uid}/followers`));
+    if(myFollowersSnap.exists()){
+      Object.keys(myFollowersSnap.val()).forEach(uid => {
+        createNotification(uid, 'video', {videoId: newVideoRef.key, desc});
+      })
+    }
+
     alert("Video posted!")
   }
   reader.readAsDataURL(fileBlob);
 }
-
 function compressVideo(file){
   return new Promise((resolve)=>{
     const video = document.createElement('video');
@@ -1452,7 +1496,8 @@ window.toggleFollow = async (uid) => {
   const followRef = ref(db, `friends/${currentUser.uid}/${uid}`);
   const snap = await get(followRef);
   if(snap.exists()){ await remove(followRef); alert("Unfollowed"); document.getElementById(`follow-${uid}`).innerText = "Follow"; }
-  else { await set(followRef, true); alert("Following!"); document.getElementById(`follow-${uid}`).innerText = "Following"; }
+  else { await set(followRef, true); alert("Following!"); document.getElementById(`follow-${uid}`).innerText = "Following"; await set(followRef, true);
+createNotification(uid, 'follow', {}); }
 }
 
 // NAVIGATION - SINGLE COPY ONLY
@@ -1760,6 +1805,7 @@ window.pokeFromProfile = async () => {
     timestamp: Date.now(),
     seen: false
   });
+  createNotification(viewingUserId, 'poke',{chatId})
   alert("Poked " + (await getUser(viewingUserId)).name + "!");
   closeUserProfile();
 }
@@ -2330,6 +2376,100 @@ window.insertTag = (tag) => {
   document.getElementById('hashtag-suggestions').style.display = 'none';
   input.focus();
 }
+// 1. CREATE NOTIFICATION FUNCTION - call this whenever something happens
+async function createNotification(toUid, type, data){
+  if(toUid === currentUser.uid) return; // don't notify yourself
+  
+  await push(ref(db, `notifications/${toUid}`), {
+    type: type, // 'like', 'comment', 'follow', 'dm', 'mention'
+    from: currentUser.uid,
+    data: data, // {postId, commentText, etc}
+    timestamp: Date.now(),
+    read: false
+  })
+}
+
+window.openNotifications = () => {
+  hideAllSections();
+  document.getElementById('notifications-section').style.display = 'block';
+  setCurrentSection('notifications-section');
+  updateBadge('notif-badge', 0); // clear badge when they open it
+  lastSeen.notifs = Date.now(); 
+  saveLastSeen();
+}
+
+function loadNotifications(){
+  onValue(ref(db, `notifications/${currentUser.uid}`), async (snap)=>{
+    const list = document.getElementById('notifications-list');
+    list.innerHTML = '';
+    let unread = 0;
+    const notifs = [];
+    
+    snap.forEach(child => notifs.push({id: child.key, ...child.val()}))
+    notifs.sort((a,b)=>b.timestamp-a.timestamp);
+    
+    if(notifs.length === 0){
+      list.innerHTML = '<p style="text-align:center; opacity:0.6; padding:20px">No notifications yet</p>';
+    }
+
+    for(const n of notifs){
+      if(!n.read) unread++;
+      const user = await getUser(n.from);
+      let text = '';
+      if(n.type === 'like') text = `liked your post`;
+      if(n.type === 'comment') text = `commented: "${n.data.text}"`;
+      if(n.type === 'follow') text = `started following you`;
+      if(n.type === 'mention') text = `mentioned you in a post`;
+      if(n.type === 'poke') text = `poked you 👉`;
+if(n.type === 'post') text = `posted: "${n.data.text?.substring(0,40)}..."`;
+if(n.type === 'video') text = `posted a new video: "${n.data.desc?.substring(0,40)}..."`;
+      
+      const div = document.createElement('div');
+      div.className = `dm-item ${n.read?'':'unread'}`; // reuse dm-item style
+      div.style.borderLeft = n.read ? 'none' : '3px solid #00C896';
+      div.onclick = () => { markRead(n.id); handleNotifClick(n) }
+      div.innerHTML = `
+        <img src="${user.profilePic}">
+        <div style="flex:1">
+          <b style="color:${user.color}">${user.name}</b> ${text}<br>
+          <small style="opacity:0.6">${timeAgo(n.timestamp)}</small>
+        </div>
+      `;
+      list.appendChild(div);
+    }
+    updateBadge('notif-badge', unread);
+  })
+}
+
+// MARK ALL READ
+window.markAllRead = async () => {
+  const snap = await get(ref(db, `notifications/${currentUser.uid}`));
+  snap.forEach(child => {
+    if(!child.val().read) set(ref(db, `notifications/${currentUser.uid}/${child.key}/read`), true);
+  })
+}
+
+
+// 4. CLICK ACTION
+function handleNotifClick(n){
+  if(n.type === 'like' || n.type === 'comment' || n.type === 'post' || n.type === 'mention') jumpToPost(n.data.postId);
+  if(n.type === 'video') jumpToVideo(n.data.videoId); // you already have this function
+  if(n.type === 'follow') viewUserProfile(n.from);
+  if(n.type === 'poke') openDM(n.data.chatId, n.from); // poke happens in DM
+  toggleNotif(); // or closeNotifications() if you used section
+}
+
+window.toggleNotif = () => {
+  const popup = document.getElementById('notif-popup');
+  popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
+}
+
+// close when click outside
+document.addEventListener('click', e=>{
+  if(!e.target.closest('#notif-popup') && !e.target.closest('#notif-btn')){
+    document.getElementById('notif-popup').style.display = 'none';
+  }
+})
 </script>
   
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
