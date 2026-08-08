@@ -711,8 +711,6 @@ const REACTIONS = ['❤️','😂','😮','😢','😡','👎'];
 const LONG_PRESS = 500;
 let currentTheme = localStorage.getItem('chatbeat_theme') || '#00C896';
 let isLightMode = localStorage.getItem('chatbeat_light') === 'true';
-let analytics;
-try { analytics = getAnalytics(app); } catch(e){ console.log("Analytics blocked") }
 
 function applyTheme(){
   const bg = isLightMode ? '#f0f2f5' : '#0b141a';
