@@ -5,10 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
-    .section { display:none }
-.section.show { display:block }
     
-        * { box-sizing: border-box; }
+ * { box-sizing: border-box; }
     body { margin:0; font-family: 'Roboto', sans-serif; background: #0b141a; color: white; touch-action: pan-y; }
     .topbar { 
   background: #111b21; 
@@ -625,6 +623,15 @@ to{transform:rotate(360deg);}
 
   <div id="search-results" style="overflow-y:auto; height:calc(80vh - 180px)"></div>
 </div>
+  
+  <div id="notifications-section" class="section">
+  <div class="chat-header">
+    <button onclick="backToFeed()">← Back</button>
+    <h3>Notifications</h3>
+    <button onclick="markAllRead()" style="background:transparent; width:auto; font-size:12px">Mark all read</button>
+  </div>
+  <div id="notifications-list" style="padding:10px"></div>
+  </div>
     
 <script type="module">
 let sectionHistory = [];
@@ -751,9 +758,7 @@ async function setReaction(path, emoji){
   const snap = await get(userReactRef);
   if(snap.exists() && snap.val() === emoji){ await remove(userReactRef); }
   else { await set(userReactRef, emoji); }
-  await setReaction(`posts/${postKey}/reactions`, emoji);
-if(post.uid !== currentUser.uid) createNotification(post.uid, 'like', {postId: postKey});
-}
+    }
 
 async function renderReactions(container, reactions, userReact){
   if(!container) return;
@@ -853,7 +858,8 @@ let lastSeen = {
   posts: 0,
   chat: 0,
   videos: 0,
-  dms: 0
+  dms: 0,
+  notifs: 0
 }
 
 // Helper to show/hide badge
@@ -1146,9 +1152,15 @@ window.deletePost = async (key) => {
 }
 window.reactToPost = async (key, emoji) => { await setReaction(`posts/${key}/reactions`, emoji); document.getElementById(`picker-${key}`).classList.remove('show'); }
 window.toggleComments = (key) => document.getElementById(`comments-${key}`).classList.toggle('show');
-window.addComment = async (key) => { const input = document.getElementById(`comment-input-${key}`); const text = input.value.trim(); if(!text) return; await push(ref(db, `posts/${key}/comments`), {uid: currentUser.uid, text, timestamp: Date.now()}); input.value = ''; await push(ref(db, `posts/${key}/comments`), {...});
-const post = (await get(ref(db, `posts/${key}`))).val();
-if(post.uid !== currentUser.uid) createNotification(post.uid, 'comment', {postId: key, text}); }
+window.addComment = async (key) => { 
+  const input = document.getElementById(`comment-input-${key}`); 
+  const text = input.value.trim(); 
+  if(!text) return; 
+  await push(ref(db, `posts/${key}/comments`), {uid: currentUser.uid, text, timestamp: Date.now()}); 
+  input.value = '';
+  const post = (await get(ref(db, `posts/${key}`))).val();
+  if(post.uid !== currentUser.uid) createNotification(post.uid, 'comment', {postId: key, text}); 
+}
 window.deleteComment = async (postKey, commentKey) => {
   if(confirm("Delete this comment?")) {
     await remove(ref(db, `posts/${postKey}/comments/${commentKey}`));
