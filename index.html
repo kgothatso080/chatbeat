@@ -339,7 +339,20 @@ to{transform:rotate(360deg);}
 .notif-item:hover { background:#2a3942 }
 .notif-item.unread { background:#1f2c33; border-left:3px solid #00C896 }
 .notif-avatar { width:36px; height:36px; border-radius:50% }
-
+/* FULL SCREEN OVERLAY SECTIONS */
+#chat-section, #videos-section, #dm-chat-section, #friends-section, 
+#edit-profile-section, #user-profile-section, #search-section, #settings-section {
+  position:fixed; top:60px; left:0; right:0; bottom:0;
+  background:#0B141A; z-index:99; 
+  display:none; overflow-y:auto;
+}
+.profile-box{
+  position:fixed; top:60px; left:0; right:0; bottom:0;
+  background:#0B141A; z-index:99; 
+  display:none; overflow-y:auto; padding:20px;
+  margin:0; max-width:100%; width:100%; border-radius:0;
+  }
+  
 </style>
 </head>
 <body>
@@ -648,15 +661,12 @@ function hideAllSections(){
   document.getElementById('dm-chat-section').style.display = 'none';
   document.getElementById('friends-section').style.display = 'none';
   document.getElementById('profile-box').style.display = 'none';
-  document.getElementById('edit-profile-section').classList.remove('show');
-  document.getElementById('user-profile-section').classList.remove('show');
-  document.getElementById('search-section').classList.remove('show');
-  document.getElementById('settings-section').classList.remove('show');
-  
-  // ADD THIS LINE
-  document.getElementById('notifications-section').style.disply = 'none'; 
+  document.getElementById('edit-profile-section').style.display = 'none';
+  document.getElementById('user-profile-section').style.display = 'none';
+  document.getElementById('search-section').style.display = 'none';
+  document.getElementById('settings-section').style.display = 'none';
+  document.getElementById('notifications-section').style.display = 'none';
 }
-
 window.goBack = () => {
   const lastSection = sectionHistory.pop(); // pop only ONCE
   
@@ -1432,7 +1442,11 @@ window.openMyProfile = () => {
   setCurrentSection('profile-box');
   }
 // SETTINGS
-window.openSettings = () => {hideAllSections(); document.getElementById('settings-section').classList.add('show'); setCurrentSection('settings-section'); }
+window.openSettings = () => {
+  hideAllSections(); 
+  document.getElementById('settings-section').style.display = 'block'; 
+  setCurrentSection('settings-section'); 
+  }
 window.closeSettings = () => document.getElementById('settings-section').classList.remove('show');
 window.signOutUser = () => { signOut(auth); closeSettings(); }
 window.deleteAccount = async () => { if(confirm("Delete account forever?")){ await remove(ref(db, 'users/'+currentUser.uid)); await deleteUser(currentUser); } }
@@ -1522,31 +1536,30 @@ createNotification(uid, 'follow', {}); }
 
 // NAVIGATION - SINGLE COPY ONLY
 window.openVideos = () => {
-  lastSeen.videos = Date.now(); saveLastSeen(); updateBadge('video-badge', 0);
-  document.getElementById('feed-section').style.display = 'none';
-  document.getElementById('chat-section').style.display = 'none';
+  lastSeen.videos = Date.now(); 
+  saveLastSeen(); 
+  updateBadge('video-badge', 0);
+  
+  hideAllSections(); // <- 1 line to hide everything
   document.getElementById('videos-section').style.display = 'block';
-  document.getElementById('dm-chat-section').style.display = 'none';
-  document.getElementById('friends-section').style.display = 'none';
-  document.getElementById('profile-box').style.display = 'none';
+  setCurrentSection('videos-section');
 }
+
 window.openDMs = () => {
-  lastSeen.dms = Date.now(); saveLastSeen(); updateBadge('dm-badge', 0);
-  document.getElementById('feed-section').style.display = 'none';
-  document.getElementById('chat-section').style.display = 'none';
-  document.getElementById('videos-section').style.display = 'none';
+  lastSeen.dms = Date.now(); 
+  saveLastSeen(); 
+  updateBadge('dm-badge', 0);
+  
+  hideAllSections(); // <- 1 line to hide everything
   document.getElementById('dm-chat-section').style.display = 'block';
-  document.getElementById('friends-section').style.display = 'none';
-  document.getElementById('profile-box').style.display = 'none';
+  setCurrentSection('dm-chat-section');
   loadDMs();
 }
+
 window.openFriends = () => {
-  document.getElementById('feed-section').style.display = 'none';
-  document.getElementById('chat-section').style.display = 'none';
-  document.getElementById('videos-section').style.display = 'none';
-  document.getElementById('dm-chat-section').style.display = 'none';
+  hideAllSections(); // <- 1 line to hide everything
   document.getElementById('friends-section').style.display = 'block';
-  document.getElementById('profile-box').style.display = 'none';
+  setCurrentSection('friends-section');
 }
 window.backToFeed = () => {
   setCurrentSection('feed-section');
@@ -1783,8 +1796,8 @@ showUpTab('info');
 loadUserPosts(uid);
 loadUserVideos(uid);
 hideAllSections();
-setCurrentSection('user-profile-section');
-  document.getElementById('user-profile-section').classList.add('show');
+  setCurrentSection('user-profile-section');
+  document.getElementById('user-profile-section').style.display = 'block';
 }
 
 window.closeUserProfile = () => {
@@ -1876,7 +1889,7 @@ document.addEventListener('click', (e) => {
 // OPEN EDIT PROFILE AND LOAD DATA
 window.openEditProfile = async () => {
   hideAllSections();
-  document.getElementById('edit-profile-section').classList.add('show');
+  document.getElementById('edit-profile-section').style.display = 'block';
   
   const snap = await get(ref(db, 'users/'+currentUser.uid));
   const data = snap.val() || {};
@@ -2208,12 +2221,11 @@ let searchTab = 'all';
 
 window.openSearch = () => {
   hideAllSections();
-  document.getElementById('search-section').classList.add('show');
+  document.getElementById('search-section').style.display = 'block';
   document.getElementById('search-input').focus();
   loadSearchData(); 
   setCurrentSection('search-section');
 }
-
 window.closeSearch = () => {
   document.getElementById('search-section').classList.remove('show');
   document.getElementById('search-results').innerHTML = '';
