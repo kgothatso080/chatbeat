@@ -330,7 +330,11 @@ to{transform:rotate(360deg);}
 
 .reaction{ font-size:16px; position:absolute; margin-top:-15px; margin-left:5px; background:#2a3942; border-radius:12px; padding:2px 6px }
 .bubble{ position:relative }
-
+#notifications-section{
+  position:fixed; top:60px; left:0; right:0; bottom:0;
+  background:#0B141A; z-index:999; 
+  display:none; overflow-y:auto;
+    }
 .notif-item { padding:10px; border-bottom:1px solid #2a3942; display:flex; gap:10px; cursor:pointer }
 .notif-item:hover { background:#2a3942 }
 .notif-item.unread { background:#1f2c33; border-left:3px solid #00C896 }
@@ -650,7 +654,7 @@ function hideAllSections(){
   document.getElementById('settings-section').classList.remove('show');
   
   // ADD THIS LINE
-  document.getElementById('notifications-section').classList.remove('show'); 
+  document.getElementById('notifications-section').style.disply = 'none'; 
 }
 
 window.goBack = () => {
@@ -2407,9 +2411,9 @@ async function createNotification(toUid, type, data){
 
 window.openNotifications = () => {
   hideAllSections();
-  document.getElementById('notifications-section').style.display = 'block';
+  document.getElementById('notifications-section').style.display = 'block'; // use display not class
   setCurrentSection('notifications-section');
-  updateBadge('notif-badge', 0); // clear badge when they open it
+  updateBadge('notif-badge', 0);
   lastSeen.notifs = Date.now(); 
   saveLastSeen();
 }
@@ -2473,11 +2477,11 @@ function handleNotifClick(n){
   if(n.type === 'poke') openDM(n.data.chatId, n.from);
   closeNotifications(); // close section instead
 }
-
 window.closeNotifications = () => {
-  hideAllSections();
+  document.getElementById('notifications-section').style.display = 'none'; // hide it properly
   backToFeed();
-}
+  }
+
 </script>
   
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
