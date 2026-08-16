@@ -2802,7 +2802,20 @@ window.closeNotifications = () => {
   document.getElementById('notifications-section').style.display = 'none'; // hide it properly
   backToFeed();
   }
-
+function showPostSuggestions(text){
+  if(!text) return;
+  const lastWord = text.split(' ').pop();
+  
+  if(lastWord.startsWith('#')){
+    const suggestions = ['#chatbeat', '#trending', '#fun', '#coding', '#music'];
+    const filtered = suggestions.filter(s => s.includes(lastWord.toLowerCase()));
+    console.log("Post hashtag suggestions:", filtered);
+  }
+  if(lastWord.startsWith('@')){
+    // mention logic here
+  }
+  }
+  
 </script>
   
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
