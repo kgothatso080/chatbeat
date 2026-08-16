@@ -1222,32 +1222,32 @@ function loadComments(postKey){
 function loadPosts() {
   off(ref(db, 'posts'));
   const feed = document.getElementById('feed');
+  feed.innerHTML = '<p style="text-align:center; opacity:0.6">Loading posts...</p>';
 
-  // 1. SHOW CACHE FIRST - INSTANT
+  // 1. SHOW CACHE FIRST
   const cachedPosts = loadFromCache('posts');
   if(cachedPosts && cachedPosts.length){
     feed.innerHTML = '';
-    cachedPosts.forEach(p => renderPostFromData(p)); // render from cache
-  } else {
-    feed.innerHTML = '<p style="text-align:center; opacity:0.6">Loading posts...</p>';
+    cachedPosts.forEach(p => renderPostFromData(p));
   }
 
-  // 2. FETCH NEW FROM FIREBASE IN BACKGROUND
-  let newPosts = [];
-  onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50)), async (snap) => {
-    const post = {id: snap.key,...snap.val()};
-    if(!newPosts.find(p=>p.id===post.id)) newPosts.push(post);
-  });
+  // 2. GET FRESH FROM FIREBASE
+  get(query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50))).then(async (snapshot) => {
+    let newPosts = [];
+    snapshot.forEach((snap) => newPosts.push({id: snap.key, ...snap.val()}));
+    newPosts.sort((a,b)=>b.timestamp-a.timestamp);
+    
+    feed.innerHTML = '';
+    for(const p of newPosts) await renderPostFromData(p);
+    saveToCache('posts', newPosts);
+  })
 
-  // 3. AFTER 2 SECONDS, REPLACE WITH FRESH DATA + SAVE TO CACHE
-  setTimeout(async ()=>{
-    if(newPosts.length){
-      feed.innerHTML = '';
-      newPosts.sort((a,b)=>b.timestamp-a.timestamp);
-      for(const p of newPosts) await renderPostFromData(p);
-      saveToCache('posts', newPosts); // save for next login
+  // 3. LIVE LISTENER FOR NEW POSTS
+  onChildAdded(ref(db, 'posts'), async (snap) => {
+    if(!document.getElementById('post-' + snap.key)){
+      await renderPostFromData({id: snap.key, ...snap.val()});
     }
-  }, 2000);
+  });
 }
 
 // NEW HELPER: render 1 post from data
@@ -1663,26 +1663,91 @@ window.showFriendTab = function(tab){
   renderFriendList(tab);
 }
 
+async function loadFriends(){
+  const [followingSnap, followersSnap, usersSnap] = await Promise.all([
+    get(ref(db, `following/${currentUser.uid}`)),
+    get(ref(db, `followers/${currentUser.uid}`)),
+    get(ref(db, 'users'))
+  ]);
+  
+  myFollowing = followingSnap.exists()? Object.keys(followingSnap.val()) : [];
+  myFollowers = followersSnap.exists()? Object.keys(followersSnap.val()) : [];
+  
+  allUsersCache = [];
+  usersSnap.forEach(uSnap=>{
+    if(uSnap.key !== currentUser.uid){
+      allUsersCache.push({uid: uSnap.key, ...uSnap.val()});
+    }
+  })
+  showFriendTab('friends');
+}
+
+window.toggleFollow = async (uid) => {
+  const followingRef = ref(db, `following/${currentUser.uid}/${uid}`);
+  const followerRef = ref(db, `followers/${uid}/${currentUser.uid}`);
+  const snap = await get(followingRef);
+  
+  if(snap.exists()){ // UNFOLLOW
+    await remove(followingRef); 
+    await remove(followerRef);
+    myFollowing = myFollowing.filter(id => id !== uid);
+    document.getElementById(`follow-${uid}`).innerText = "Follow";
+    document.getElementById(`follow-${uid}`).style.background = '#00C896';
+  } else { // FOLLOW
+    await set(followingRef, true); 
+    await set(followerRef, true);
+    myFollowing.push(uid);
+    document.getElementById(`follow-${uid}`).innerText = "Following";
+    document.getElementById(`follow-${uid}`).style.background = '#2a3942';
+    createNotification(uid, 'follow', {}); 
+  }
+}
+
 function renderFriendList(tab){
   const list = document.getElementById('friends-list');
   list.innerHTML = '';
   let users = [];
+  const seen = new Set(); // FIX DUPLICATES
 
-  if(tab === 'friends') users = allUsersCache.filter(u => myFriends.includes(u.uid));
-  if(tab === 'mutuals') users = allUsersCache.filter(u => myFriends.includes(u.uid) && myFollowing.includes(u.uid));
+  if(tab === 'friends') {
+    users = allUsersCache.filter(u => myFollowing.includes(u.uid) && myFollowers.includes(u.uid));
+  }
+  if(tab === 'mutuals') {
+    // Friends of friends: people followed by my friends
+    let fof = new Set();
+    myFollowing.forEach(fid => {
+      // This would need another DB call for real "friends of friends" but for now:
+    })
+    users = allUsersCache.filter(u => myFollowing.includes(u.uid) && myFollowers.includes(u.uid));
+  }
   if(tab === 'followers') users = allUsersCache.filter(u => myFollowers.includes(u.uid));
   if(tab === 'following') users = allUsersCache.filter(u => myFollowing.includes(u.uid));
-  if(tab === 'suggested') users = allUsersCache.filter(u => !myFriends.includes(u.uid) && !myFollowing.includes(u.uid));
+  if(tab === 'suggested') users = allUsersCache.filter(u => !myFollowing.includes(u.uid));
 
-  // Sort suggested by location - people close to you first
-  if(tab === 'suggested'){
-    const myData = allUsersCache.find(u=>u.uid===currentUser.uid) || {};
-    users.sort((a,b)=>{
-      const aScore = (a.city === myData.city? 10 : 0) + (a.province === myData.province? 5 : 0);
-      const bScore = (b.city === myData.city? 10 : 0) + (b.province === myData.province? 5 : 0);
-      return bScore - aScore;
-    })
-  }
+  users.forEach(u=>{
+    if(seen.has(u.uid)) return; // REMOVE DUPLICATES
+    seen.add(u.uid);
+    
+    const isFriend = myFollowing.includes(u.uid) && myFollowers.includes(u.uid);
+    const isFollowing = myFollowing.includes(u.uid);
+    const locationTag = u.city? `📍 ${u.city}` : '';
+    const div = document.createElement('div');
+    div.className = 'friend-item';
+    div.innerHTML = `
+      <div onclick="viewUserProfile('${u.uid}')" style="display:flex; gap:10px; align-items:center; cursor:pointer">
+        <img style="width:40px;height:40px;border-radius:50%" src="${u.profilePic}">
+        <div>
+          <b>${u.name}</b><br>
+          <small style="opacity:0.7">${locationTag}</small>
+        </div>
+      </div>
+      <button id="follow-${u.uid}" onclick="toggleFollow('${u.uid}')" style="background:${isFollowing? '#2a3942':'#00C896'}">${isFriend? 'Friends' : isFollowing? 'Following' : 'Follow'}</button>
+    `;
+    list.appendChild(div);
+  })
+  
+  if(users.length === 0) list.innerHTML = '<p style="text-align:center; opacity:0.6">No one here</p>';
+}
 
   users.forEach(u=>{
     const isFriend = myFriends.includes(u.uid);
@@ -1705,41 +1770,7 @@ function renderFriendList(tab){
   if(users.length === 0) list.innerHTML = '<p style="text-align:center; opacity:0.6">No one here</p>';
 }
 
-function loadFriends(){
-  Promise.all([
-    get(ref(db, `friends/${currentUser.uid}`)),
-    get(ref(db, `users/${currentUser.uid}/following`)),
-    get(ref(db, `users/${currentUser.uid}/followers`)),
-    get(ref(db, 'users'))
-  ]).then(([friendsSnap, followingSnap, followersSnap, usersSnap])=>{
-    myFriends = friendsSnap.exists()? Object.keys(friendsSnap.val()) : [];
-    myFollowing = followingSnap.exists()? Object.keys(followingSnap.val()) : [];
-    myFollowers = followersSnap.exists()? Object.keys(followersSnap.val()) : [];
-    
-    allUsersCache = [];
-    usersSnap.forEach(uSnap=>{
-      if(uSnap.key !== currentUser.uid){
-        allUsersCache.push({uid: uSnap.key, ...uSnap.val()});
-      }
-    })
-    showFriendTab('friends'); // default to friends tab
-  })
-}
-window.toggleFollow = async (uid) => {
-  const followRef = ref(db, `friends/${currentUser.uid}/${uid}`);
-  const snap = await get(followRef);
-  if(snap.exists()){ 
-    await remove(followRef); 
-    myFriends = myFriends.filter(id => id !== uid); // update array
-    document.getElementById(`follow-${uid}`).innerText = "Follow"; 
-  }
-  else { 
-    await set(followRef, true); 
-    myFriends.push(uid); // update array
-    document.getElementById(`follow-${uid}`).innerText = "Following"; 
-    createNotification(uid, 'follow', {}); 
-  }
-}
+
 
 // NAVIGATION - SINGLE COPY ONLY
 window.openVideos = () => {
@@ -2362,16 +2393,22 @@ window.favoriteVideo = async(id, el)=>{
 
 // 8. REAL FOLLOW BUTTON
 window.followUserFromVideo = async(uid, el) => {
-  const r = ref(db, `users/${currentUser.uid}/following/${uid}`);
-  const s = await get(r);
-  if(s.exists()){
-    await remove(r);
-    el.innerText = 'Follow';
+  const followingRef = ref(db, `following/${currentUser.uid}/${uid}`);
+  const followerRef = ref(db, `followers/${uid}/${currentUser.uid}`);
+  const s = await get(followingRef);
+  
+  if(s.exists()){ // UNFOLLOW
+    await remove(followingRef);
+    await remove(followerRef);
+    el.innerText = '+';
     el.style.background = '#00C896';
-  } else {
-    await set(r, true);
-    el.innerText = 'Following';
+    myFollowing = myFollowing.filter(id => id !== uid);
+  } else { // FOLLOW
+    await set(followingRef, true);
+    await set(followerRef, true);
+    el.innerText = '✓';
     el.style.background = '#2a3942';
+    myFollowing.push(uid);
   }
 }
 
@@ -2421,52 +2458,54 @@ window.countVideoView = async (videoId, videoEl) => {
 function loadVideos(){
   off(ref(db, 'videos'));
   const videoFeed = document.getElementById('video-feed');
+  videoFeed.innerHTML = '<p style="text-align:center; opacity:0.6; padding:20px">Loading videos...</p>';
 
   // 1. SHOW CACHE FIRST - INSTANT
   const cachedVideos = loadFromCache('videos');
   if(cachedVideos && cachedVideos.length){
     videoFeed.innerHTML = '';
     cachedVideos.forEach(v => renderVideoFromData(v));
-  } else {
-    videoFeed.innerHTML = '<p style="text-align:center; opacity:0.6; padding:20px">Loading videos...</p>';
   }
 
-  // 2. FETCH NEW FROM FIREBASE
-  let newVideos = [];
+  // 2. GET FRESH FROM FIREBASE
+  get(query(ref(db, 'videos'), orderByChild('timestamp'), limitToLast(20))).then(async (snapshot) => {
+    let newVideos = [];
+    snapshot.forEach((snap) => newVideos.push({id: snap.key, ...snap.val()}));
+    newVideos.sort((a,b)=>b.timestamp-a.timestamp);
+    
+    videoFeed.innerHTML = '';
+    for(const v of newVideos) await renderVideoFromData(v);
+    saveToCache('videos', newVideos);
+  })
+
+  // 3. LIVE LISTENER FOR NEW VIDEOS
+  onChildAdded(ref(db, 'videos'), async (snap) => {
+    if(!document.querySelector(`.video-card[data-id="${snap.key}"]`)){
+      await renderVideoFromData({id: snap.key, ...snap.val()});
+    }
+  });
+
   onChildRemoved(ref(db, 'videos'), (snap) => {
     document.querySelector(`.video-card[data-id="${snap.key}"]`)?.remove();
   });
-
-  onChildAdded(query(ref(db, 'videos'), orderByChild('timestamp'), limitToLast(20)), async (snap) => {
-    const v = {id: snap.key, ...snap.val()};
-    if(!newVideos.find(x=>x.id===v.id)) newVideos.push(v);
-  });
-
-  // 3. AFTER 2s UPDATE + SAVE CACHE
-  setTimeout(async ()=>{
-    if(newVideos.length){
-      videoFeed.innerHTML = '';
-      newVideos.sort((a,b)=>b.timestamp-a.timestamp);
-      for(const v of newVideos) await renderVideoFromData(v);
-      saveToCache('videos', newVideos);
-    }
-  }, 2000);
 }
-
 async function renderVideoFromData(v){
   if(document.querySelector(`.video-card[data-id="${v.id}"]`)) return;
 
   const u = await getUser(v.uid);
-  const isFollowing = (await get(ref(db, `users/${currentUser.uid}/following/${v.uid}`))).exists();
-  const isLiked = (await get(ref(db, `videos/${v.id}/likes/${currentUser.uid}`))).exists();
-  const isFav = (await get(ref(db, `videos/${v.id}/favorites/${currentUser.uid}`))).exists();
+  const isFollowingSnap = await get(ref(db, `following/${currentUser.uid}/${v.uid}`));
+  const isFollowing = isFollowingSnap.exists();
+  const isLikedSnap = await get(ref(db, `videos/${v.id}/likes/${currentUser.uid}`));
+  const isLiked = isLikedSnap.exists();
+  const isFavSnap = await get(ref(db, `videos/${v.id}/favorites/${currentUser.uid}`));
+  const isFav = isFavSnap.exists();
   const isOwner = v.uid === currentUser.uid;
 
   // CHECK IF WE HAVE CACHED VIDEO IN INDEXEDDB
-  let videoSrc = v.video || v.videoUrl; // from firebase
-  if(v.cached){ // if it was <=5MB
+  let videoSrc = v.video || v.videoUrl; 
+  if(v.cached){ 
     const cached = await getVideoFromDB(v.id);
-    if(cached) videoSrc = cached; // use offline version
+    if(cached) videoSrc = cached; 
   }
 
   const div = document.createElement('div');
@@ -2507,27 +2546,8 @@ async function renderVideoFromData(v){
   loadVideoComments(v.id);
   videoObserver.observe(div);
 }
-let searchTab = 'all';
-window.downloadVideoForOffline = async (videoId) => {
-  const snap = await get(ref(db, `videos/${videoId}`));
-  const v = snap.val();
-  if(v.size > 5 * 1024 * 1024) return alert("Video too big. Max 5MB for offline");
 
-  if(!v.video){ // big video, download it now
-    const res = await fetch(v.videoUrl);
-    const blob = await res.blob();
-    const reader = new FileReader();
-    reader.onload = async () => {
-      await saveVideoToDB(videoId, reader.result);
-      await set(ref(db, `videos/${videoId}/cached`), true);
-      alert("Video saved for offline!")
-    }
-    reader.readAsDataURL(blob);
-  } else {
-    await saveVideoToDB(videoId, v.video);
-    alert("Video saved for offline!")
-  }
-}
+     
 window.openSearch = () => {
   hideAllSections();
   document.getElementById('search-section').style.display = 'block';
@@ -2675,8 +2695,9 @@ window.searchUserByName = async (username) => {
 }
 let trendingTagsCache = []; // we’ll fill this from posts
 
-window.handleMentionsAndTags = (e) => {
-  const text = e.target.value;
+window.handleMentionsAndTags = async (e) => {
+  const textarea = e.target;
+  const text = textarea.value;
   const lastWord = text.split(' ').pop();
   const mentionBox = document.getElementById('mention-suggestions');
   const tagBox = document.getElementById('hashtag-suggestions');
@@ -2692,10 +2713,9 @@ window.handleMentionsAndTags = (e) => {
 
   if(lastWord.startsWith('#')){
     const query = lastWord.slice(1).toLowerCase();
-    if(trendingCache.length === 0) loadTrending();
+    if(trendingCache.length === 0) await loadTrending();
     const matches = trendingCache.map(t=>t.tag).filter(t => t.includes(query)).slice(0,8);
     tagBox.innerHTML = matches.map(t=>`<div onclick="insertTag('${t}')" style="padding:8px; cursor:pointer">#${t}</div>`).join('');
-    if(matches.length === 0 && query) tagBox.innerHTML = `<div style="padding:8px; opacity:0.6">Create #${query}</div>`;
     tagBox.style.display = 'block';
   }
 }
