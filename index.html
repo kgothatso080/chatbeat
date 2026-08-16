@@ -1323,70 +1323,90 @@ function compressVideo(file){
   });
 }
 
-// DMs
+// DMs - FIXED VERSION
 function loadDMs(){
-  off(ref(db, 'dmChats')); 
-  document.getElementById('dm-list').innerHTML = '<p style="text-align:center; opacity:0.6">Loading chats...</p>';
-  document.getElementById('dm-active-chat').style.display = 'none'; // hide chat
-  document.getElementById('dm-list').style.display = 'block'; // show list
-  
+  off(ref(db, 'dmChats'));
+  const dmList = document.getElementById('dm-list');
+  dmList.innerHTML = '<p style="text-align:center; opacity:0.6">Loading chats...</p>';
+  document.getElementById('dm-active-chat').style.display = 'none';
+  document.getElementById('dm-list').style.display = 'block';
+
   onValue(ref(db, 'dmChats'), async (snap)=>{
-    document.getElementById('dm-list').innerHTML = ''; 
+    dmList.innerHTML = '';
     let unread = 0;
     let hasAny = false;
     const promises = [];
 
     snap.forEach(chatSnap=>{
-      const chatId = chatSnap.key; 
-      const chat = chatSnap.val(); 
-      
-      // ONLY SHOW IF: you are in chat AND there is at least 1 message
+      const chatId = chatSnap.key;
+      const chat = chatSnap.val();
+
+      // FIX 1: Safety for old chats without members
+      let members = chat.members || {};
+      if(Object.keys(members).length === 0){
+        const ids = chatId.split('_');
+        members = {[ids[0]]: true, [ids[1]]: true};
+      }
+
       if(chatId.includes(currentUser.uid) && chat.lastMessage){
         hasAny = true;
-        const otherUid = Object.keys(chat.members).find(id => id !== currentUser.uid);
-        
+        const otherUid = Object.keys(members).find(id => id!== currentUser.uid);
+        if(!otherUid) return;
+
         promises.push(getUser(otherUid).then(u=>{
-          if(chat.lastTimestamp > lastSeen.dms && chat.lastSender !== currentUser.uid) unread++;
-          
-          const div = document.createElement('div'); 
+          if(chat.lastTimestamp > lastSeen.dms && chat.lastSender!== currentUser.uid) unread++;
+
+          const div = document.createElement('div');
           div.className = 'dm-item';
           div.id = 'dm-' + chatId;
           div.innerHTML = `
             <img src="${u.profilePic}" onclick="openProfilePopup('${u.profilePic}')">
             <div style="flex:1; cursor:pointer" onclick="openDM('${chatId}', '${otherUid}')">
               <b>${u.name}</b><br>
-              <small style="opacity:0.8">${chat.lastSender === currentUser.uid ? 'You: ' : ''}${chat.lastMessage}</small>
+              <small style="opacity:0.8">${chat.lastSender === currentUser.uid? 'You: ' : ''}${chat.lastMessage}</small>
             </div>
             <button onclick="event.stopPropagation(); deleteConversation('${chatId}')" style="background:#ff3b30; width:28px; height:28px; border-radius:50%; font-size:14px; padding:0">×</button>
           `;
-          document.getElementById('dm-list').appendChild(div);
-        }))
+          dmList.appendChild(div);
+        }).catch(e=>console.error("DM load error", e)))
       }
-    }); 
-    
+    });
+
     await Promise.all(promises);
-    if(!hasAny) document.getElementById('dm-list').innerHTML = '<p style="text-align:center; opacity:0.6">No messages yet</p>';
+    if(!hasAny) dmList.innerHTML = '<p style="text-align:center; opacity:0.6">No messages yet</p>';
     updateBadge('dm-badge', unread);
   })
 }
 
 window.backToDMList = () => {
-  document.getElementById('dm-active-chat').style.display = 'none'; // hide chat
-  document.getElementById('dm-list').style.display = 'block'; // show list
-  document.getElementById('dm-chat-name').innerText = 'DM';
-  document.getElementById('dm-back-btn').onclick = () => backToFeed(); // make back go to feed
+  document.getElementById('dm-active-chat').style.display = 'none';
+  document.getElementById('dm-list').style.display = 'block';
   loadDMs();
 }
 
 window.openDM = async (chatId, otherUid) => {
   currentDM = {chatId, otherUid};
-  document.getElementById('feed-section').style.display = 'none';
-  document.getElementById('dm-list').style.display = 'none'; 
-  document.getElementById('dm-active-chat').style.display = 'block'; 
+  hideAllSections();
   document.getElementById('dm-chat-section').style.display = 'block';
-  document.getElementById('dm-chat-name').innerText = (await getUser(otherUid)).name;
-  document.getElementById('dm-back-btn').onclick = () => backToDMList(); // make back go to list
+  document.getElementById('dm-list').style.display = 'none';
+  document.getElementById('dm-active-chat').style.display = 'block';
+
+  // FIX 2: Use the correct ID from your HTML
+  const u = await getUser(otherUid);
+  document.getElementById('dm-chat-name-2').innerText = u.name;
   loadDMChat(chatId);
+}
+window.openDMs = () => {
+  lastSeen.dms = Date.now(); 
+  saveLastSeen(); 
+  updateBadge('dm-badge', 0);
+  
+  hideAllSections(); 
+  document.getElementById('dm-chat-section').style.display = 'block';
+  document.getElementById('dm-list').style.display = 'block'; // <-- ADD THIS LINE
+  document.getElementById('dm-active-chat').style.display = 'none'; // <-- AND THIS LINE
+  setCurrentSection('dm-chat-section');
+  loadDMs();
 }
 
 let replyingTo = null;
@@ -1608,17 +1628,6 @@ window.openVideos = () => {
   hideAllSections(); // <- 1 line to hide everything
   document.getElementById('videos-section').style.display = 'block';
   setCurrentSection('videos-section');
-}
-
-window.openDMs = () => {
-  lastSeen.dms = Date.now(); 
-  saveLastSeen(); 
-  updateBadge('dm-badge', 0);
-  
-  hideAllSections(); // <- 1 line to hide everything
-  document.getElementById('dm-chat-section').style.display = 'block';
-  setCurrentSection('dm-chat-section');
-  loadDMs();
 }
 
 window.openFriends = () => {
