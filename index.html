@@ -77,7 +77,56 @@
   text-align: center;
   border: 2px solid #111b21;
 }
-    
+ /* UNIFORM HEADER BAR FOR ALL SECTIONS */
+.chat-header { 
+  display: flex; 
+  align-items: center; 
+  gap: 12px;
+  padding: 10px 12px; 
+  height: 50px;
+  background: #111b21; 
+  border-bottom: 1px solid #2a3942; 
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.chat-header h3 { 
+  margin: 0; 
+  font-size: 18px;
+  font-weight: 500;
+  flex: 1;
+  text-align: center;
+}
+
+/* SMALL BACK BUTTON */
+.chat-header button {
+  background: transparent !important;
+  border: none !important;
+  color: #00C896 !important;
+  font-size: 16px !important;
+  font-weight: 500;
+  width: auto !important;
+  padding: 6px 8px !important;
+  margin: 0 !important;
+  border-radius: 8px !important;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.chat-header button:hover {
+  background: #2a3942 !important;
+}
+
+/* RIGHT SIDE BUTTONS LIKE "MARK ALL READ" */
+.chat-header .right-btn {
+  background: transparent !important;
+  color: #00C896 !important;
+  font-size: 13px !important;
+  width: auto !important;
+  padding: 6px 8px !important;
+}   
     
     #cover { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; text-align:center; padding:20px; background: linear-gradient(135deg, #00C896 0%, #0077FF 50%, #000 100%); }
     #cover h1 { font-size: 3em; text-shadow: 0 0 20px #00C896; }
@@ -113,9 +162,7 @@
   z-index: 2 !important;
   display: block !important;
 }
-.chat-header { display: flex; align-items: center; padding: 10px; background: #202c33; border-bottom: 1px solid #2a3942; }
-.chat-header h3 { margin: 0 auto; }
-    #back-to-feed { background: transparent; width: auto; }
+
 
     #reply-bar { display: none; padding: 8px 12px; background: #1f2c33; border-left: 4px solid #00C896; align-items: center; gap: 10px; }
     #reply-bar.show { display: flex; }
@@ -424,12 +471,19 @@ to{transform:rotate(360deg);}
   </div>
 
 <div id="dm-chat-section" style="display:none">
-<div class="chat-header"><button id="dm-back-btn" onclick="backToFeed()">← Back</button><h3 id="dm-chat-name">DM</h3></div>
-  
+  <!-- DM LIST HEADER -->
+  <div class="chat-header" id="dm-list-header">
+    <button onclick="backToFeed()">← Back</button>
+    <h3>Messages</h3>
+  </div>
   <div id="dm-list" class="dm-list"></div>
 
+  <!-- ACTIVE CHAT HEADER -->
   <div id="dm-active-chat" style="display:none">
-    <div class="chat-header"><button onclick="backToDMList()">← Back</button><h3 id="dm-chat-name-2">DM</h3></div>
+    <div class="chat-header">
+      <button onclick="backToDMList()">← Back</button>
+      <h3 id="dm-chat-name-2">DM</h3>
+    </div>
     <div id="dm-messages" style="height: calc(100vh - 200px); overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:2px"></div>
     <div id="dm-reply-bar" style="display:none; background:#1f2c33; padding:8px 12px; border-left:3px solid #00C896">
   <div style="display:flex; justify-content:space-between; align-items:center">
@@ -451,7 +505,10 @@ to{transform:rotate(360deg);}
 </div>
   
   <div id="friends-section" style="display:none">
-  <div class="chat-header"><button onclick="backToFeed()">← Back</button><h3>Friends</h3></div>
+<div class="chat-header">
+  <button onclick="backToFeed()">← Back</button>
+  <h3>Friends</h3>
+</div>
   
   <div style="display:flex; gap:4px; padding:8px; overflow-x:auto">
     <button onclick="showFriendTab('friends')" id="f-tab-friends" style="flex:1; background:#00C896; padding:8px 4px; font-size:12px">Friends</button>
@@ -645,7 +702,7 @@ to{transform:rotate(360deg);}
   <div class="chat-header">
     <button onclick="closeNotifications()">← Back</button>
     <h3>Notifications</h3>
-    <button onclick="markAllRead()" style="background:transparent; width:auto; font-size:12px; color:#00C896">Mark all read</button>
+    <button class="right-btn" onclick="markAllRead()">Mark all read</button>
   </div>
   <div id="notifications-list" style="padding:10px"></div>
 </div>
@@ -1529,9 +1586,17 @@ function loadFriends(){
 window.toggleFollow = async (uid) => {
   const followRef = ref(db, `friends/${currentUser.uid}/${uid}`);
   const snap = await get(followRef);
-  if(snap.exists()){ await remove(followRef); alert("Unfollowed"); document.getElementById(`follow-${uid}`).innerText = "Follow"; }
-  else { await set(followRef, true); alert("Following!"); document.getElementById(`follow-${uid}`).innerText = "Following"; await set(followRef, true);
-createNotification(uid, 'follow', {}); }
+  if(snap.exists()){ 
+    await remove(followRef); 
+    myFriends = myFriends.filter(id => id !== uid); // update array
+    document.getElementById(`follow-${uid}`).innerText = "Follow"; 
+  }
+  else { 
+    await set(followRef, true); 
+    myFriends.push(uid); // update array
+    document.getElementById(`follow-${uid}`).innerText = "Following"; 
+    createNotification(uid, 'follow', {}); 
+  }
 }
 
 // NAVIGATION - SINGLE COPY ONLY
@@ -1562,14 +1627,10 @@ window.openFriends = () => {
   setCurrentSection('friends-section');
 }
 window.backToFeed = () => {
+  hideAllSections(); // use this instead of hiding 1 by 1
+  document.getElementById('feed-section').style.display = 'block';
   setCurrentSection('feed-section');
   lastSeen.posts = Date.now(); saveLastSeen(); updateBadge('feed-badge', 0)
-  document.getElementById('feed-section').style.display = 'block';
-  document.getElementById('chat-section').style.display = 'none';
-  document.getElementById('videos-section').style.display = 'none';
-  document.getElementById('dm-chat-section').style.display = 'none';
-  document.getElementById('friends-section').style.display = 'none';
-  document.getElementById('profile-box').style.display = 'none';
 }
 
 document.getElementById('chat-img-btn').onclick = () => document.getElementById('chat-file').click();
@@ -1801,7 +1862,7 @@ hideAllSections();
 }
 
 window.closeUserProfile = () => {
-  document.getElementById('user-profile-section').classList.remove('show');
+  document.getElementById('user-profile-section').style.display = 'none';
   viewingUserId = null;
 }
 
@@ -1812,36 +1873,44 @@ window.followFromProfile = async () => {
   const snap = await get(followRef);
   if(snap.exists()){
     await remove(followRef);
+    myFriends = myFriends.filter(id => id !== viewingUserId);
     btn.innerText = "Follow";
     btn.style.background = '#00C896';
   }
   else {
     await set(followRef, true);
+    myFriends.push(viewingUserId);
     btn.innerText = "Following";
     btn.style.background = '#2a3942';
+    createNotification(viewingUserId, 'follow', {});
   }
 }
-
 window.messageFromProfile = async () => {
   if(!viewingUserId) return;
-  closeUserProfile();
   const chatId = [currentUser.uid, viewingUserId].sort().join('_');
   await set(ref(db, `dmChats/${chatId}/members`), {[currentUser.uid]: true, [viewingUserId]: true});
-  openDM(chatId, viewingUserId);
+  closeUserProfile(); // close first
+  openDM(chatId, viewingUserId); // then open DM
 }
 
 window.pokeFromProfile = async () => {
   if(!viewingUserId) return;
-  await push(ref(db, `dmChats/${[currentUser.uid, viewingUserId].sort().join('_')}/messages`), {
+  const chatId = [currentUser.uid, viewingUserId].sort().join('_'); // <- DEFINE THIS FIRST
+  await push(ref(db, `dmChats/${chatId}/messages`), {
     uid: currentUser.uid,
     text: "👉 POKED YOU!",
     timestamp: Date.now(),
     seen: false
   });
-  createNotification(viewingUserId, 'poke',{chatId})
+  await set(ref(db, `dmChats/${chatId}/lastMessage`), "👉 POKED YOU!");
+  await set(ref(db, `dmChats/${chatId}/lastSender`), currentUser.uid);
+  await set(ref(db, `dmChats/${chatId}/lastTimestamp`), Date.now());
+  
+  createNotification(viewingUserId, 'poke', {chatId})
   alert("Poked " + (await getUser(viewingUserId)).name + "!");
   closeUserProfile();
 }
+
 // LINK SOCIAL ACCOUNTS
 window.linkAccount = (type) => {
   const url = prompt(`Paste your ${type} profile link:`);
@@ -1970,7 +2039,6 @@ function showUpTab(tab){
     document.getElementById(`up-tab-${t}`).style.borderBottom = t===tab? '2px solid #00C896' : 'none';
   })
 }
-
 async function loadUserPosts(uid){
   const box = document.getElementById('up-tab-content-posts');
   box.innerHTML = 'Loading...';
