@@ -2459,27 +2459,28 @@ window.markAllRead = async () => {
   })
 }
 
-
+<div id="notifications-section">
+  <div style="padding:15px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; background:#0B141A; z-index:1">
+    <h2>Notifications</h2>
+    <button onclick="markAllRead()" style="background:none; border:none; color:#00C896">Mark all read</button>
+    <button onclick="closeNotifications()" style="background:none; border:none; color:white; font-size:24px">×</button>
+  </div>
+  <div id="notifications-list"></div>
+</div>
 // 4. CLICK ACTION
 function handleNotifClick(n){
+  markRead(n.id);
   if(n.type === 'like' || n.type === 'comment' || n.type === 'post' || n.type === 'mention') jumpToPost(n.data.postId);
-  if(n.type === 'video') jumpToVideo(n.data.videoId); // you already have this function
+  if(n.type === 'video') jumpToVideo(n.data.videoId);
   if(n.type === 'follow') viewUserProfile(n.from);
-  if(n.type === 'poke') openDM(n.data.chatId, n.from); // poke happens in DM
-  toggleNotif(); // or closeNotifications() if you used section
+  if(n.type === 'poke') openDM(n.data.chatId, n.from);
+  closeNotifications(); // close section instead
 }
 
-window.toggleNotif = () => {
-  const popup = document.getElementById('notif-popup');
-  popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
+window.closeNotifications = () => {
+  hideAllSections();
+  backToFeed();
 }
-
-// close when click outside
-document.addEventListener('click', e=>{
-  if(!e.target.closest('#notif-popup') && !e.target.closest('#notif-btn')){
-    document.getElementById('notif-popup').style.display = 'none';
-  }
-})
 </script>
   
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
