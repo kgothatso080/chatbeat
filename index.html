@@ -638,13 +638,19 @@ let sectionHistory = [];
 let currentSection = 'feed-section';
 
 function hideAllSections(){
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('show'));
-  document.getElementById('profile-box').style.display = 'none';
   document.getElementById('feed-section').style.display = 'none';
+  document.getElementById('chat-section').style.display = 'none';
   document.getElementById('videos-section').style.display = 'none';
   document.getElementById('dm-chat-section').style.display = 'none';
   document.getElementById('friends-section').style.display = 'none';
-  document.getElementById('chat-section').style.display = 'none';
+  document.getElementById('profile-box').style.display = 'none';
+  document.getElementById('edit-profile-section').classList.remove('show');
+  document.getElementById('user-profile-section').classList.remove('show');
+  document.getElementById('search-section').classList.remove('show');
+  document.getElementById('settings-section').classList.remove('show');
+  
+  // ADD THIS LINE
+  document.getElementById('notifications-section').classList.remove('show'); 
 }
 
 window.goBack = () => {
@@ -1433,7 +1439,7 @@ let myFriends = [];
 let myFollowing = [];
 let myFollowers = [];
 
-function showFriendTab(tab){
+window.showFriendTab = function(tab){
   ['friends','mutuals','followers','following','suggested'].forEach(t=>{
     document.getElementById(`f-tab-${t}`).style.background = t===tab? '#00C896' : '#2a3942';
   })
