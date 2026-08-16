@@ -1061,7 +1061,26 @@ function setupNotifications(){
     updateBadge('dm-badge', unread);
   })
 }
+async function createNotification(toUid, type, data){
+  if(toUid === currentUser.uid) return;
+  await push(ref(db, `notifications/${toUid}`), {
+    type, from: currentUser.uid, data,
+    timestamp: Date.now(), read: false
+  })
+}
 
+async function markRead(notifId){
+  await set(ref(db, `notifications/${currentUser.uid}/${notifId}/read`), true);
+}
+
+window.jumpToPost = (postId) => {
+  backToFeed();
+  setTimeout(()=>{
+    const el = document.getElementById(`post-${postId}`);
+    if(el){ el.scrollIntoView({behavior: 'smooth', block: 'center'}); el.style.border = '2px solid #00C896'; }
+  }, 300)
+  }
+  
 onAuthStateChanged(auth, async (user) => {
  if(user) {
    currentUser = user;
@@ -1652,7 +1671,6 @@ window.deleteAccount = async () => { if(confirm("Delete account forever?")){ awa
 
 // FOLLOWING
 let allUsersCache = [];
-let myFriends = [];
 let myFollowing = [];
 let myFollowers = [];
 
@@ -1748,29 +1766,6 @@ function renderFriendList(tab){
   
   if(users.length === 0) list.innerHTML = '<p style="text-align:center; opacity:0.6">No one here</p>';
 }
-
-  users.forEach(u=>{
-    const isFriend = myFriends.includes(u.uid);
-    const locationTag = u.city? `📍 ${u.city}` : '';
-    const div = document.createElement('div');
-    div.className = 'friend-item';
-    div.innerHTML = `
-      <div onclick="viewUserProfile('${u.uid}')" style="display:flex; gap:10px; align-items:center; cursor:pointer">
-        <img style="width:40px;height:40px;border-radius:50%" src="${u.profilePic}">
-        <div>
-          <b>${u.name}</b><br>
-          <small style="opacity:0.7">${locationTag}</small>
-        </div>
-      </div>
-      <button id="follow-${u.uid}" onclick="toggleFollow('${u.uid}')">${isFriend? 'Friends' : 'Follow'}</button>
-    `;
-    list.appendChild(div);
-  })
-  
-  if(users.length === 0) list.innerHTML = '<p style="text-align:center; opacity:0.6">No one here</p>';
-}
-
-
 
 // NAVIGATION - SINGLE COPY ONLY
 window.openVideos = () => {
@@ -2051,9 +2046,8 @@ let viewingUserId = null;
 window.viewUserProfile = async (uid) => {
   viewingUserId = uid;
   const u = await getUser(uid);
-  const myFriendsSnap = await get(ref(db, `friends/${currentUser.uid}`));
-  const isFollowing = myFriendsSnap.exists() && myFriendsSnap.val()[uid];
-
+  const myFollowingSnap = await get(ref(db, `following/${currentUser.uid}`));
+const isFollowing = myFollowingSnap.exists() && myFollowingSnap.val()[uid];
   document.getElementById('up-pic').src = u.profilePic || DEFAULT_PIC;
   document.getElementById('up-name').innerText = u.name;
   document.getElementById('up-name').style.color = u.color;
@@ -2090,17 +2084,21 @@ window.closeUserProfile = () => {
 window.followFromProfile = async () => {
   if(!viewingUserId) return;
   const btn = document.getElementById('up-follow-btn');
-  const followRef = ref(db, `friends/${currentUser.uid}/${viewingUserId}`);
-  const snap = await get(followRef);
-  if(snap.exists()){
-    await remove(followRef);
-    myFriends = myFriends.filter(id => id !== viewingUserId);
+
+  const followingRef = ref(db, `following/${currentUser.uid}/${viewingUserId}`);
+  const followerRef = ref(db, `followers/${viewingUserId}/${currentUser.uid}`);
+  const snap = await get(followingRef);
+
+  if(snap.exists()){ // UNFOLLOW
+    await remove(followingRef);
+    await remove(followerRef);
+    myFollowing = myFollowing.filter(id => id!== viewingUserId); // <-- use myFollowing not myFriends
     btn.innerText = "Follow";
     btn.style.background = '#00C896';
-  }
-  else {
-    await set(followRef, true);
-    myFriends.push(viewingUserId);
+  } else { // FOLLOW
+    await set(followingRef, true);
+    await set(followerRef, true);
+    myFollowing.push(viewingUserId);
     btn.innerText = "Following";
     btn.style.background = '#2a3942';
     createNotification(viewingUserId, 'follow', {});
