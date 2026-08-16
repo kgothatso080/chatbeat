@@ -1061,25 +1061,6 @@ function setupNotifications(){
     updateBadge('dm-badge', unread);
   })
 }
-async function createNotification(toUid, type, data){
-  if(toUid === currentUser.uid) return;
-  await push(ref(db, `notifications/${toUid}`), {
-    type, from: currentUser.uid, data,
-    timestamp: Date.now(), read: false
-  })
-}
-
-async function markRead(notifId){
-  await set(ref(db, `notifications/${currentUser.uid}/${notifId}/read`), true);
-}
-
-window.jumpToPost = (postId) => {
-  backToFeed();
-  setTimeout(()=>{
-    const el = document.getElementById(`post-${postId}`);
-    if(el){ el.scrollIntoView({behavior: 'smooth', block: 'center'}); el.style.border = '2px solid #00C896'; }
-  }, 300)
-  }
   
 onAuthStateChanged(auth, async (user) => {
  if(user) {
@@ -2747,7 +2728,17 @@ async function createNotification(toUid, type, data){
     read: false
   })
 }
+async function markRead(notifId){
+  await set(ref(db, `notifications/${currentUser.uid}/${notifId}/read`), true);
+}
 
+window.jumpToPost = (postId) => {
+  backToFeed();
+  setTimeout(()=>{
+    const el = document.getElementById(`post-${postId}`);
+    if(el){ el.scrollIntoView({behavior: 'smooth', block: 'center'}); el.style.border = '2px solid #00C896'; }
+  }, 300)
+  }
 window.openNotifications = () => {
   hideAllSections();
   document.getElementById('notifications-section').style.display = 'block'; // use display not class
