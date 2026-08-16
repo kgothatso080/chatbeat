@@ -780,6 +780,33 @@ let loadedMessages = new Set();
 let postImageData = null;
 let chatImageData = null;
 let userCache = {};
+// OFFLINE CACHE SYSTEM
+const CACHE_VERSION = "chatbeat_v1"; // change this to force refresh cache
+
+function saveToCache(key, data){
+  try {
+    localStorage.setItem(CACHE_VERSION + '_' + key + '_' + currentUser.uid, JSON.stringify({
+      data: data,
+      timestamp: Date.now()
+    }));
+  } catch(e){ console.log("Cache save failed", e) }
+}
+
+function loadFromCache(key, maxAge = 1000 * 60 * 10){ // 10 min default
+  try {
+    const raw = localStorage.getItem(CACHE_VERSION + '_' + key + '_' + currentUser.uid);
+    if(!raw) return null;
+    const parsed = JSON.parse(raw);
+    if(Date.now() - parsed.timestamp > maxAge) return null; // expired
+    return parsed.data;
+  } catch(e){ return null }
+}
+
+function clearCache(){
+  Object.keys(localStorage).forEach(k=>{
+    if(k.startsWith(CACHE_VERSION)) localStorage.removeItem(k);
+  })
+}
 let allMessagesCache = {};
 let replyToMsg = null;
 let dragging = null;
@@ -795,7 +822,34 @@ const REACTIONS = ['❤️','😂','😮','😢','😡','👎'];
 const LONG_PRESS = 500;
 let currentTheme = localStorage.getItem('chatbeat_theme') || '#00C896';
 let isLightMode = localStorage.getItem('chatbeat_light') === 'true';
+// INDEXEDDB FOR BIG FILES
+let dbPromise;
+function openVideoDB(){
+  if(!dbPromise){
+    dbPromise = new Promise((resolve, reject)=>{
+      const request = indexedDB.open('ChatBeatVideos', 1);
+      request.onupgradeneeded = e => {
+        const db = e.target.result;
+        if(!db.objectStoreNames.contains('videos')) db.createObjectStore('videos');
+      };
+      request.onsuccess = e => resolve(e.target.result);
+      request.onerror = e => reject(e);
+    })
+  }
+  return dbPromise;
+}
 
+async function saveVideoToDB(id, base64){
+  const db = await openVideoDB();
+  const tx = db.transaction('videos', 'readwrite');
+  tx.objectStore('videos').put(base64, id);
+  return tx.complete;
+}
+
+async function getVideoFromDB(id){
+  const db = await openVideoDB();
+  return db.transaction('videos').objectStore('videos').get(id);
+}
 function applyTheme(){
   const bg = isLightMode ? '#f0f2f5' : '#0b141a';
   const card = isLightMode ? '#ffffff' : '#202c33';
@@ -1122,9 +1176,18 @@ document.getElementById('post-btn').onclick = async () => {
 }
 async function getUser(uid){
   if(userCache[uid]) return userCache[uid];
+
+  // Check cache first
+  const cached = loadFromCache('user_' + uid, 1000 * 60 * 60 * 24); // 24h
+  if(cached) {
+    userCache[uid] = cached;
+    return cached;
+  }
+
   const userSnap = await get(ref(db, 'users/' + uid));
   const user = userSnap.exists()? userSnap.val() : {name: "Deleted User", color: "#888", profilePic:DEFAULT_PIC};
   userCache[uid] = user;
+  saveToCache('user_' + uid, user); // cache for 24h
   return user;
 }
 function loadComments(postKey){
@@ -1157,69 +1220,100 @@ function loadComments(postKey){
   })
 }
 function loadPosts() {
-  off(ref(db, 'posts')); document.getElementById('feed').innerHTML = '';
+  off(ref(db, 'posts'));
+  const feed = document.getElementById('feed');
+
+  // 1. SHOW CACHE FIRST - INSTANT
+  const cachedPosts = loadFromCache('posts');
+  if(cachedPosts && cachedPosts.length){
+    feed.innerHTML = '';
+    cachedPosts.forEach(p => renderPostFromData(p)); // render from cache
+  } else {
+    feed.innerHTML = '<p style="text-align:center; opacity:0.6">Loading posts...</p>';
+  }
+
+  // 2. FETCH NEW FROM FIREBASE IN BACKGROUND
+  let newPosts = [];
   onChildAdded(query(ref(db, 'posts'), orderByChild('timestamp'), limitToLast(50)), async (snap) => {
-    const post = snap.val(); const postKey = snap.key; 
-  if(!allPostsCache.find(p=>p.id===postKey)) allPostsCache.push({id: postKey, ...post}); const user = await getUser(post.uid); const userPic = user.profilePic || DEFAULT_PIC;
-    const userReact = post.reactions?.[currentUser.uid] || null;
-    const postDiv = document.createElement('div'); postDiv.className = 'card'; postDiv.id = 'post-' + postKey;
-    let delBtn = post.uid === currentUser.uid? `<button class="del-btn" onclick="deletePost('${postKey}')">×</button>` : '';
-    let imgHtml = post.image? `<img class="card-post-img" src="${post.image}" onclick="openProfilePopup('${post.image}')">` : '';
-    const reactCount = Object.keys(post.reactions||{}).length;
-    const commentCount = Object.keys(post.comments||{}).length;
-
-    postDiv.innerHTML = `${delBtn}
-    <div class="card-header">
-      <img class="card-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">
-      <div class="name" style="color:${user.color}" onclick="viewUserProfile('${post.uid}')">${user.name}</div>
-    </div>
-    <div>${linkify(post.text||'')}</div>${imgHtml}
-    <div class="post-stats" onclick="toggleComments('${postKey}')">
-      <span id="react-count-${postKey}">${reactCount} Reactions</span>
-      <span id="comment-count-${postKey}">${commentCount} Comments</span>
-    </div>
-    <div class="react-summary" id="react-sum-${postKey}"></div>
-    <div class="actions-row">
-      <button class="action-btn ${userReact? 'active' : ''}" id="like-btn-${postKey}">${userReact || '👍'}</button>
-      <button class="action-btn" onclick="toggleComments('${postKey}')">💬</button>
-      <button class="action-btn" onclick="openShare('${window.location.origin}#post-${postKey}')">↗️</button>
-    </div>
-    <div class="react-picker" id="picker-${postKey}">${REACTIONS.map(r=>`<span onclick="reactToPost('${postKey}','${r}')">${r}</span>`).join('')}</div>
-    <div class="comments-section" id="comments-${postKey}"><div id="comment-list-${postKey}"></div><div class="comment-input-row"><input id="comment-input-${postKey}" placeholder="Write a comment..."><button onclick="addComment('${postKey}')">➤</button></div></div>`;
-    document.getElementById('feed').prepend(postDiv);
-
-    renderReactions(document.getElementById(`react-sum-${postKey}`), post.reactions, userReact);
-    loadComments(postKey);
-    onValue(ref(db, `posts/${postKey}/reactions`), (s)=>{
-      const reacts = s.val() || {};
-      renderReactions(document.getElementById(`react-sum-${postKey}`), reacts, reacts[currentUser.uid]);
-      document.getElementById(`react-count-${postKey}`).innerText = `${Object.keys(reacts).length} Reactions`;
-      const btn = document.getElementById(`like-btn-${postKey}`);
-      if(reacts[currentUser.uid]){ btn.classList.add('active'); btn.innerHTML = reacts[currentUser.uid]; }
-      else { btn.classList.remove('active'); btn.innerHTML = '👍'; }
-    });
-    onValue(ref(db, `posts/${postKey}/comments`), (s)=>{
-      document.getElementById(`comment-count-${postKey}`).innerText = `${s.size} Comments`;
-    })
-
-    const likeBtn = document.getElementById(`like-btn-${postKey}`);
-    const picker = document.getElementById(`picker-${postKey}`);
-    let timer;
-    let longPressTriggered = false;
-
-    likeBtn.onmousedown = likeBtn.ontouchstart = (e) => {
-      e.stopPropagation();
-      longPressTriggered = false;
-      timer = setTimeout(()=>{ picker.classList.add('show'); longPressTriggered = true; }, LONG_PRESS);
-    }
-    likeBtn.onmouseup = likeBtn.ontouchend = likeBtn.onmouseleave = () => {
-      clearTimeout(timer);
-      if(!longPressTriggered){
-        setReaction(`posts/${postKey}/reactions`, '👍')
-      }
-    }
+    const post = {id: snap.key,...snap.val()};
+    if(!newPosts.find(p=>p.id===post.id)) newPosts.push(post);
   });
+
+  // 3. AFTER 2 SECONDS, REPLACE WITH FRESH DATA + SAVE TO CACHE
+  setTimeout(async ()=>{
+    if(newPosts.length){
+      feed.innerHTML = '';
+      newPosts.sort((a,b)=>b.timestamp-a.timestamp);
+      for(const p of newPosts) await renderPostFromData(p);
+      saveToCache('posts', newPosts); // save for next login
+    }
+  }, 2000);
 }
+
+// NEW HELPER: render 1 post from data
+async function renderPostFromData(post){
+  const postKey = post.id;
+  if(document.getElementById('post-' + postKey)) return; // don't duplicate
+
+  const user = await getUser(post.uid);
+  const userPic = user.profilePic || DEFAULT_PIC;
+  const userReact = post.reactions?.[currentUser.uid] || null;
+  const postDiv = document.createElement('div');
+  postDiv.className = 'card';
+  postDiv.id = 'post-' + postKey;
+  let delBtn = post.uid === currentUser.uid? `<button class="del-btn" onclick="deletePost('${postKey}')">×</button>` : '';
+  let imgHtml = post.image? `<img class="card-post-img" src="${post.image}" onclick="openProfilePopup('${post.image}')">` : '';
+  const reactCount = Object.keys(post.reactions||{}).length;
+  const commentCount = Object.keys(post.comments||{}).length;
+
+  postDiv.innerHTML = `${delBtn}
+  <div class="card-header">
+    <img class="card-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">
+    <div class="name" style="color:${user.color}" onclick="viewUserProfile('${post.uid}')">${user.name}</div>
+  </div>
+  <div>${linkify(post.text||'')}</div>${imgHtml}
+  <div class="post-stats" onclick="toggleComments('${postKey}')">
+    <span id="react-count-${postKey}">${reactCount} Reactions</span>
+    <span id="comment-count-${postKey}">${commentCount} Comments</span>
+  </div>
+  <div class="react-summary" id="react-sum-${postKey}"></div>
+  <div class="actions-row">
+    <button class="action-btn ${userReact? 'active' : ''}" id="like-btn-${postKey}">${userReact || '👍'}</button>
+    <button class="action-btn" onclick="toggleComments('${postKey}')">💬</button>
+    <button class="action-btn" onclick="openShare('${window.location.origin}#post-${postKey}')">↗️</button>
+  </div>
+  <div class="react-picker" id="picker-${postKey}">${REACTIONS.map(r=>`<span onclick="reactToPost('${postKey}','${r}')">${r}</span>`).join('')}</div>
+  <div class="comments-section" id="comments-${postKey}"><div id="comment-list-${postKey}"></div><div class="comment-input-row"><input id="comment-input-${postKey}" placeholder="Write a comment..."><button onclick="addComment('${postKey}')">➤</button></div></div>`;
+
+  document.getElementById('feed').prepend(postDiv);
+  renderReactions(document.getElementById(`react-sum-${postKey}`), post.reactions, userReact);
+  loadComments(postKey);
+
+  // LIVE UPDATES
+  onValue(ref(db, `posts/${postKey}/reactions`), (s)=>{
+    const reacts = s.val() || {};
+    renderReactions(document.getElementById(`react-sum-${postKey}`), reacts, reacts[currentUser.uid]);
+    document.getElementById(`react-count-${postKey}`).innerText = `${Object.keys(reacts).length} Reactions`;
+    const btn = document.getElementById(`like-btn-${postKey}`);
+    if(reacts[currentUser.uid]){ btn.classList.add('active'); btn.innerHTML = reacts[currentUser.uid]; }
+    else { btn.classList.remove('active'); btn.innerHTML = '👍'; }
+  });
+  onValue(ref(db, `posts/${postKey}/comments`), (s)=>{
+    document.getElementById(`comment-count-${postKey}`).innerText = `${s.size} Comments`;
+  })
+
+  const likeBtn = document.getElementById(`like-btn-${postKey}`);
+  const picker = document.getElementById(`picker-${postKey}`);
+  let timer; let longPressTriggered = false;
+  likeBtn.onmousedown = likeBtn.ontouchstart = (e) => {
+    e.stopPropagation(); longPressTriggered = false;
+    timer = setTimeout(()=>{ picker.classList.add('show'); longPressTriggered = true; }, LONG_PRESS);
+  }
+  likeBtn.onmouseup = likeBtn.ontouchend = likeBtn.onmouseleave = () => {
+    clearTimeout(timer);
+    if(!longPressTriggered){ setReaction(`posts/${postKey}/reactions`, '👍') }
+  }
+  }
 window.deletePost = async (key) => {
   if(confirm("Delete this post?")) {
     const el = document.getElementById('post-' + key); 
@@ -1278,15 +1372,32 @@ document.getElementById('video-upload').onchange = async (e)=>{
 
 async function uploadVideo(fileBlob){
   alert("Uploading video...");
+  const isSmall = fileBlob.size <= 5 * 1024 * 1024; // 5MB
   const reader = new FileReader();
+
   reader.onload = async ()=>{
+    const base64Video = reader.result;
     const desc = prompt("Add a description:");
     const hashtags = [...(desc||'').matchAll(/#(\w+)/g)].map(m => m[1].toLowerCase());
+    const thumb = await generateThumbnail(fileBlob);
 
-    const newVideoRef = await push(ref(db, 'videos'), {
-      uid: currentUser.uid, video: reader.result, desc, hashtags, timestamp: Date.now(),
-      reactions:{}, comments:{}, likes:{}, favorites:{}, shares:{}, views:0
-    });
+    const videoData = {
+      uid: currentUser.uid,
+      video: isSmall? base64Video : null, // only save small ones to DB
+      videoUrl:!isSmall? base64Video : null, // big ones stay as url
+      thumbnail: thumb,
+      desc, hashtags, timestamp: Date.now(),
+      reactions:{}, comments:{}, likes:{}, favorites:{}, shares:{}, views:0,
+      size: fileBlob.size,
+      cached: isSmall // flag
+    };
+
+    const newVideoRef = await push(ref(db, 'videos'), videoData);
+
+    // If small video, also save to IndexedDB for offline
+    if(isSmall){
+      await saveVideoToDB(newVideoRef.key, base64Video);
+    }
 
     // NOTIFY FOLLOWERS
     const myFollowersSnap = await get(ref(db, `users/${currentUser.uid}/followers`));
@@ -1295,7 +1406,6 @@ async function uploadVideo(fileBlob){
         createNotification(uid, 'video', {videoId: newVideoRef.key, desc});
       })
     }
-
     alert("Video posted!")
   }
   reader.readAsDataURL(fileBlob);
@@ -1327,12 +1437,22 @@ function compressVideo(file){
 function loadDMs(){
   off(ref(db, 'dmChats'));
   const dmList = document.getElementById('dm-list');
-  dmList.innerHTML = '<p style="text-align:center; opacity:0.6">Loading chats...</p>';
+
+  // 1. SHOW CACHE FIRST - INSTANT
+  const cachedDMs = loadFromCache('dms');
+  if(cachedDMs){
+    dmList.innerHTML = '';
+    cachedDMs.forEach(divHTML => dmList.innerHTML += divHTML);
+  } else {
+    dmList.innerHTML = '<p style="text-align:center; opacity:0.6">Loading chats...</p>';
+  }
+
   document.getElementById('dm-active-chat').style.display = 'none';
   document.getElementById('dm-list').style.display = 'block';
 
+  // 2. FETCH FRESH FROM FIREBASE
   onValue(ref(db, 'dmChats'), async (snap)=>{
-    dmList.innerHTML = '';
+    let html = '';
     let unread = 0;
     let hasAny = false;
     const promises = [];
@@ -1341,7 +1461,7 @@ function loadDMs(){
       const chatId = chatSnap.key;
       const chat = chatSnap.val();
 
-      // FIX 1: Safety for old chats without members
+      // Safety for old chats without members
       let members = chat.members || {};
       if(Object.keys(members).length === 0){
         const ids = chatId.split('_');
@@ -1356,28 +1476,30 @@ function loadDMs(){
         promises.push(getUser(otherUid).then(u=>{
           if(chat.lastTimestamp > lastSeen.dms && chat.lastSender!== currentUser.uid) unread++;
 
-          const div = document.createElement('div');
-          div.className = 'dm-item';
-          div.id = 'dm-' + chatId;
-          div.innerHTML = `
-            <img src="${u.profilePic}" onclick="openProfilePopup('${u.profilePic}')">
-            <div style="flex:1; cursor:pointer" onclick="openDM('${chatId}', '${otherUid}')">
-              <b>${u.name}</b><br>
-              <small style="opacity:0.8">${chat.lastSender === currentUser.uid? 'You: ' : ''}${chat.lastMessage}</small>
+          html += `
+            <div class="dm-item" id="dm-${chatId}">
+              <img src="${u.profilePic}" onclick="openProfilePopup('${u.profilePic}')">
+              <div style="flex:1; cursor:pointer" onclick="openDM('${chatId}', '${otherUid}')">
+                <b>${u.name}</b><br>
+                <small style="opacity:0.8">${chat.lastSender === currentUser.uid? 'You: ' : ''}${chat.lastMessage}</small>
+              </div>
+              <button onclick="event.stopPropagation(); deleteConversation('${chatId}')" style="background:#ff3b30; width:28px; height:28px; border-radius:50%; font-size:14px; padding:0">×</button>
             </div>
-            <button onclick="event.stopPropagation(); deleteConversation('${chatId}')" style="background:#ff3b30; width:28px; height:28px; border-radius:50%; font-size:14px; padding:0">×</button>
           `;
-          dmList.appendChild(div);
         }).catch(e=>console.error("DM load error", e)))
       }
     });
 
     await Promise.all(promises);
-    if(!hasAny) dmList.innerHTML = '<p style="text-align:center; opacity:0.6">No messages yet</p>';
+    if(html){
+      dmList.innerHTML = html;
+      saveToCache('dms', [html]); // save to cache
+    } else if(!cachedDMs) {
+      dmList.innerHTML = '<p style="text-align:center; opacity:0.6">No messages yet</p>';
+    }
     updateBadge('dm-badge', unread);
   })
 }
-
 window.backToDMList = () => {
   document.getElementById('dm-active-chat').style.display = 'none';
   document.getElementById('dm-list').style.display = 'block';
@@ -1660,10 +1782,21 @@ document.getElementById('send-chat').onclick = async () => {
   const text = document.getElementById('chat-input').value.trim();
   if(!text) return;
   document.getElementById('chat-input').value = '';
-  await push(ref(db, 'globalChat'), { uid: currentUser.uid, text, replyTo: replyToMsg?.key || null, timestamp: Date.now(), reactions:{} });
+
+  const newMsg = {
+    uid: currentUser.uid, text, replyTo: replyToMsg?.key || null,
+    timestamp: Date.now(), reactions:{}
+  };
+
+  const ref = await push(ref(db, 'globalChat'), newMsg);
+
+  let cache = loadFromCache('globalChat') || [];
+  cache.push({key: ref.key,...newMsg});
+  if(cache.length > 50) cache.shift();
+  saveToCache('globalChat', cache);
+
   cancelReply();
 }
-
 const recordBtn = document.getElementById('record-btn');
 recordBtn.onclick = async () => {
   if(!isRecording) {
@@ -1712,70 +1845,118 @@ function endDrag(e, msgData, msgKey){
 
 function loadChat() {
   off(ref(db, 'globalChat'));
-  document.getElementById('global-chat').innerHTML = '<p style="text-align:center; opacity:0.6">Loading messages...</p>';
+  const chatBox = document.getElementById('global-chat');
+
+  // 1. SHOW CACHE FIRST - INSTANT
+  const cachedChat = loadFromCache('globalChat');
+  if(cachedChat && cachedChat.length){
+    chatBox.innerHTML = '';
+    cachedChat.forEach(msg => renderMessageFromData(msg, false));
+  } else {
+    chatBox.innerHTML = '<p style="text-align:center; opacity:0.6">Loading messages...</p>';
+  }
+
+  // 2. FETCH NEW FROM FIREBASE
+  let newMessages = [];
   loadedMessages.clear();
+
   get(query(ref(db, 'globalChat'), orderByChild('timestamp'), limitToLast(50))).then(async (snapshot) => {
-    document.getElementById('global-chat').innerHTML = '';
-    const promises = [];
-    snapshot.forEach((snap) => { promises.push(renderMessage(snap, false)); })
-    await Promise.all(promises);
-    document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
-    onChildAdded(query(ref(db, 'globalChat'), orderByChild('timestamp'), limitToLast(1)), (snap) => {
-      if(!loadedMessages.has(snap.key)){ renderMessage(snap, true); }
+    chatBox.innerHTML = '';
+    snapshot.forEach((snap) => {
+      let msg = {key: snap.key,...snap.val()};
+      // don't cache big images/audio
+      const cacheableMsg = {...msg};
+      if(cacheableMsg.image) cacheableMsg.image = null, cacheableMsg.text = "📷 Image";
+      if(cacheableMsg.audio) cacheableMsg.audio = null, cacheableMsg.text = "🎤 Voice Note";
+      newMessages.push(cacheableMsg);
     });
+    newMessages.sort((a,b)=>a.timestamp-b.timestamp);
+    for(const msg of newMessages) await renderMessageFromData(msg, false);
+    document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
+    saveToCache('globalChat', newMessages.slice(-50));
+  });
+
+  // 3. LISTEN FOR NEW MESSAGES LIVE
+  onChildAdded(query(ref(db, 'globalChat'), orderByChild('timestamp'), limitToLast(1)), async (snap) => {
+    if(!loadedMessages.has(snap.key)){
+      let msg = {key: snap.key,...snap.val()};
+      await renderMessageFromData(msg, true);
+
+      // Update cache
+      const cacheableMsg = {...msg};
+      if(cacheableMsg.image) cacheableMsg.image = null, cacheableMsg.text = "📷 Image";
+      if(cacheableMsg.audio) cacheableMsg.audio = null, cacheableMsg.text = "🎤 Voice Note";
+
+      let cache = loadFromCache('globalChat') || [];
+      cache.push(cacheableMsg);
+      if(cache.length > 50) cache.shift();
+      saveToCache('globalChat', cache);
+    }
   });
 }
 
-async function renderMessage(snap, scroll){
-  try{
-    const msg = snap.val(); const msgKey = snap.key;
-    if(loadedMessages.has(msgKey)) return;
-    loadedMessages.add(msgKey); allMessagesCache[msgKey] = msg;
-    const user = await getUser(msg.uid); const userPic = user.profilePic || DEFAULT_PIC;
-    const isMe = msg.uid === currentUser.uid; const userReact = msg.reactions?.[currentUser.uid] || null; msg.name = user.name;
-    const wrapper = document.createElement('div');
-    wrapper.className = `bubble-wrapper ${isMe? 'me-wrapper' : 'other-wrapper'}`; wrapper.id = 'wrapper-' + msgKey;
-    let delBtn = isMe? `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>` : '';
+async function renderMessageFromData(msg, scroll){
+  const msgKey = msg.key;
+  if(loadedMessages.has(msgKey)) return;
+  loadedMessages.add(msgKey);
+  allMessagesCache[msgKey] = msg;
 
-    // FIXED: check if repliedMsg exists before using it
-    let replyHtml = '';
-if(msg.replyTo){
-  let repliedMsg = allMessagesCache[msg.replyTo];
-  if(!repliedMsg){
-    const replySnap = await get(ref(db, `globalChat/${msg.replyTo}`));
-    repliedMsg = replySnap.val();
+  const user = await getUser(msg.uid);
+  const userPic = user.profilePic || DEFAULT_PIC;
+  const isMe = msg.uid === currentUser.uid;
+  const userReact = msg.reactions?.[currentUser.uid] || null;
+  msg.name = user.name;
+
+  const wrapper = document.createElement('div');
+  wrapper.className = `bubble-wrapper ${isMe? 'me-wrapper' : 'other-wrapper'}`;
+  wrapper.id = 'wrapper-' + msgKey;
+  let delBtn = isMe? `<button class="bubble-del" onclick="deleteMsg('${msgKey}')">×</button>` : '';
+
+  let replyHtml = '';
+  if(msg.replyTo){
+    let repliedMsg = allMessagesCache[msg.replyTo];
+    if(!repliedMsg){
+      const replySnap = await get(ref(db, `globalChat/${msg.replyTo}`));
+      repliedMsg = replySnap.val();
+    }
+    if(repliedMsg){
+      const repliedUser = await getUser(repliedMsg.uid);
+      replyHtml = `<div class="reply-quote"><div class="reply-quote-name">${repliedUser.name}</div><div class="reply-quote-text">${repliedMsg.text || 'Media'}</div></div>`;
+    }
   }
-  if(repliedMsg){
-    const repliedUser = await getUser(repliedMsg.uid);
-    replyHtml = `<div class="reply-quote"><div class="reply-quote-name">${repliedUser.name}</div><div class="reply-quote-text">${repliedMsg.text || 'Media'}</div></div>`;
-  }
+
+  let content = '';
+  if(msg.image) { content = `${replyHtml}<span class="bubble-name" onclick="viewUserProfile('${msg.uid}')"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<img class="bubble-img" src="${msg.image}" onclick="openProfilePopup('${msg.image}')">`; }
+  else if(msg.audio) { content = `${replyHtml}<span class="bubble-name" onclick="viewUserProfile('${msg.uid}')"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`; }
+  else { content = `${replyHtml}<span class="bubble-name" onclick="viewUserProfile('${msg.uid}')"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<span class="bubble-text">${linkify(msg.text)}</span>`; }
+
+  wrapper.innerHTML = `<div class="reply-hint">↩️</div><div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}" id="bubble-${msgKey}">${content}<div class="bubble-reactions" id="msg-react-${msgKey}"></div></div><div class="react-picker" id="msg-picker-${msgKey}">${REACTIONS.map(r=>`<span onclick="reactToMsg('${msgKey}','${r}')">${r}</span>`).join('')}</div>`;
+
+  // drag to reply listeners
+  wrapper.addEventListener('touchstart', e => startDrag(e, msgKey), {passive: true});
+  wrapper.addEventListener('touchmove', e => moveDrag(e), {passive: false});
+  wrapper.addEventListener('touchend', e => endDrag(e, msg, msgKey));
+  wrapper.addEventListener('mousedown', e => startDrag(e, msgKey));
+  wrapper.addEventListener('mousemove', e => moveDrag(e));
+  wrapper.addEventListener('mouseup', e => endDrag(e, msg, msgKey));
+  wrapper.addEventListener('mouseleave', e => endDrag(e, msg, msgKey));
+
+  const reactSum = wrapper.querySelector(`#msg-react-${msgKey}`);
+  const picker = wrapper.querySelector(`#msg-picker-${msgKey}`);
+  let timer; let longPressTriggered = false;
+  reactSum.onmousedown = reactSum.ontouchstart = (e) => { e.stopPropagation(); longPressTriggered = false; timer = setTimeout(()=>{ picker.classList.add('show'); longPressTriggered = true; }, LONG_PRESS); }
+  reactSum.onmouseup = reactSum.ontouchend = reactSum.onmouseleave = () => { clearTimeout(timer); if(!longPressTriggered){ setReaction(`globalChat/${msgKey}/reactions`, '👍') } }
+
+  document.getElementById('global-chat').appendChild(wrapper);
+  renderReactions(document.getElementById(`msg-react-${msgKey}`), msg.reactions, userReact);
+  onValue(ref(db, `globalChat/${msgKey}/reactions`), (s)=>{ const reacts = s.val() || {}; renderReactions(document.getElementById(`msg-react-${msgKey}`), reacts, reacts[currentUser.uid]); });
+  if(scroll) document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
 }
-
-    let content = '';
-    if(msg.image) { content = `${replyHtml}<span class="bubble-name" onclick="viewUserProfile('${msg.uid}')"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<img class="bubble-img" src="${msg.image}" onclick="openProfilePopup('${msg.image}')">`; }
-    else if(msg.audio) { content = `${replyHtml}<span class="bubble-name" onclick="viewUserProfile('${msg.uid}')"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<audio controls src="${msg.audio}"></audio>`; }
-    else { content = `${replyHtml}<span class="bubble-name" onclick="viewUserProfile('${msg.uid}')"><img class="bubble-avatar" src="${userPic}" onclick="openProfilePopup('${userPic}')">${user.name}</span>${delBtn}<span class="bubble-text">${linkify(msg.text)}</span>`; }
-
-    wrapper.innerHTML = `<div class="reply-hint">↩️</div><div class="bubble ${isMe? 'me-bubble' : 'other-bubble'}" id="bubble-${msgKey}">${content}<div class="bubble-reactions" id="msg-react-${msgKey}"></div></div><div class="react-picker" id="msg-picker-${msgKey}">${REACTIONS.map(r=>`<span onclick="reactToMsg('${msgKey}','${r}')">${r}</span>`).join('')}</div>`;
-    wrapper.addEventListener('touchstart', e => startDrag(e, msgKey), {passive: true});
-    wrapper.addEventListener('touchmove', e => moveDrag(e), {passive: false});
-    wrapper.addEventListener('touchend', e => endDrag(e, msg, msgKey));
-    wrapper.addEventListener('mousedown', e => startDrag(e, msgKey));
-    wrapper.addEventListener('mousemove', e => moveDrag(e));
-    wrapper.addEventListener('mouseup', e => endDrag(e, msg, msgKey));
-    wrapper.addEventListener('mouseleave', e => endDrag(e, msg, msgKey));
-    const reactSum = wrapper.querySelector(`#msg-react-${msgKey}`);
-    const picker = wrapper.querySelector(`#msg-picker-${msgKey}`);
-    let timer; let longPressTriggered = false;
-    reactSum.onmousedown = reactSum.ontouchstart = (e) => { e.stopPropagation(); longPressTriggered = false; timer = setTimeout(()=>{ picker.classList.add('show'); longPressTriggered = true; }, LONG_PRESS); }
-    reactSum.onmouseup = reactSum.ontouchend = reactSum.onmouseleave = () => { clearTimeout(timer); if(!longPressTriggered){ setReaction(`globalChat/${msgKey}/reactions`, '👍') } }
-    document.getElementById('global-chat').appendChild(wrapper);
-    renderReactions(document.getElementById(`msg-react-${msgKey}`), msg.reactions, userReact);
-    onValue(ref(db, `globalChat/${msgKey}/reactions`), (s)=>{ const reacts = s.val() || {}; renderReactions(document.getElementById(`msg-react-${msgKey}`), reacts, reacts[currentUser.uid]); });
-    if(scroll) document.getElementById('global-chat').scrollTop = document.getElementById('global-chat').scrollHeight;
-  }catch(e){ console.error("Message error:", e, snap.key) } // <- added console.error
-}
-
+window.addEventListener('online', () => {
+  const queue = JSON.parse(localStorage.getItem('chatQueue') || '[]');
+  queue.forEach(msg => push(ref(db, 'globalChat'), msg));
+  localStorage.removeItem('chatQueue');
+})
 window.deleteMsg = async (key) => {
   if(confirm("Delete this message?")) {
     await remove(ref(db, 'globalChat/' + key));
@@ -2238,64 +2419,115 @@ window.countVideoView = async (videoId, videoEl) => {
   videoEl.paused ? videoEl.play() : videoEl.pause();
 }
 function loadVideos(){
-  off(ref(db, 'videos')); 
-  document.getElementById('video-feed').innerHTML = '';
+  off(ref(db, 'videos'));
+  const videoFeed = document.getElementById('video-feed');
 
+  // 1. SHOW CACHE FIRST - INSTANT
+  const cachedVideos = loadFromCache('videos');
+  if(cachedVideos && cachedVideos.length){
+    videoFeed.innerHTML = '';
+    cachedVideos.forEach(v => renderVideoFromData(v));
+  } else {
+    videoFeed.innerHTML = '<p style="text-align:center; opacity:0.6; padding:20px">Loading videos...</p>';
+  }
+
+  // 2. FETCH NEW FROM FIREBASE
+  let newVideos = [];
   onChildRemoved(ref(db, 'videos'), (snap) => {
     document.querySelector(`.video-card[data-id="${snap.key}"]`)?.remove();
   });
 
   onChildAdded(query(ref(db, 'videos'), orderByChild('timestamp'), limitToLast(20)), async (snap) => {
-    const v = snap.val(); 
-    if(!allVideosCache.find(v=>v.id===snap.key)) allVideosCache.push({id: snap.key, ...v});
-    const u = await getUser(v.uid);
-    const isFollowing = (await get(ref(db, `users/${currentUser.uid}/following/${v.uid}`))).exists();
-    const isLiked = (await get(ref(db, `videos/${snap.key}/likes/${currentUser.uid}`))).exists();
-    const isFav = (await get(ref(db, `videos/${snap.key}/favorites/${currentUser.uid}`))).exists();
-    const isOwner = v.uid === currentUser.uid;
+    const v = {id: snap.key, ...snap.val()};
+    if(!newVideos.find(x=>x.id===v.id)) newVideos.push(v);
+  });
 
-    const div = document.createElement('div'); 
-    div.className = 'video-card';
-    div.setAttribute('data-id', snap.key);
-    div.innerHTML = `
-      <video src="${v.video}" loop playsinline onclick="countVideoView('${snap.key}', this)"></video>
-      <div class="video-info">
-        <h4>@${u.name}</h4>
-        <p>${v.desc || ""}</p>
-<small style="opacity:0.7">${v.views || 0} views</small>
-      </div>
-      <div class="video-sidebar">
-        <div class="profile-wrap">
-          <img class="side-profile" src="${u.profilePic}" onclick="viewUserProfile('${v.uid}')">
-          ${!isOwner ? `<button class="plus-badge" onclick="followUserFromVideo('${v.uid}', this)">${isFollowing ? '✓' : '+'}</button>` : ''}
-        </div>
-        <div class="video-action" onclick="likeVideo('${snap.key}', this)" style="color:${isLiked?'#FF0050':'white'}">❤️<span>${Object.keys(v.likes || {}).length}</span></div>
-        <div class="video-action" onclick="toggleVideoComments('${snap.key}')">💬<span>${Object.keys(v.comments || {}).length}</span></div>
-        <div class="video-action" onclick="favoriteVideo('${snap.key}', this)" style="color:${isFav?'#00C896':'white'}">🔖<span>${Object.keys(v.favorites || {}).length}</span></div>
-        <div class="video-action" onclick="openVideoShare('${snap.key}')">↗<span>${Object.keys(v.shares || {}).length}</span></div>
-        <div class="music-disc">🎵</div>
-      </div>
-      
-      <div class="video-comments-section" id="v-comments-${snap.key}">
-  <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #333; position:sticky; top:0; background:#111; z-index:2">
-    <b>Comments</b>
-    <button onclick="closeComments('${snap.key}')" style="background:none; border:none; color:white; font-size:20px; cursor:pointer">×</button>
-  </div>
-  <div id="v-comment-list-${snap.key}"></div> 
-  <div class="video-comment-input-row">
-    <input id="v-comment-input-${snap.key}" placeholder="Add comment...">
-    <button onclick="sendVideoComment('${snap.key}')">➤</button>
-  </div>
-</div>
+  // 3. AFTER 2s UPDATE + SAVE CACHE
+  setTimeout(async ()=>{
+    if(newVideos.length){
+      videoFeed.innerHTML = '';
+      newVideos.sort((a,b)=>b.timestamp-a.timestamp);
+      for(const v of newVideos) await renderVideoFromData(v);
+      saveToCache('videos', newVideos);
+    }
+  }, 2000);
+}
 
-    `;
-    document.getElementById('video-feed').prepend(div);
-    loadVideoComments(snap.key);
-    videoObserver.observe(div);
-  })
+async function renderVideoFromData(v){
+  if(document.querySelector(`.video-card[data-id="${v.id}"]`)) return;
+
+  const u = await getUser(v.uid);
+  const isFollowing = (await get(ref(db, `users/${currentUser.uid}/following/${v.uid}`))).exists();
+  const isLiked = (await get(ref(db, `videos/${v.id}/likes/${currentUser.uid}`))).exists();
+  const isFav = (await get(ref(db, `videos/${v.id}/favorites/${currentUser.uid}`))).exists();
+  const isOwner = v.uid === currentUser.uid;
+
+  // CHECK IF WE HAVE CACHED VIDEO IN INDEXEDDB
+  let videoSrc = v.video || v.videoUrl; // from firebase
+  if(v.cached){ // if it was <=5MB
+    const cached = await getVideoFromDB(v.id);
+    if(cached) videoSrc = cached; // use offline version
+  }
+
+  const div = document.createElement('div');
+  div.className = 'video-card';
+  div.setAttribute('data-id', v.id);
+  div.innerHTML = `
+    <video src="${videoSrc}" poster="${v.thumbnail || u.profilePic}" loop playsinline muted preload="metadata" onclick="countVideoView('${v.id}', this)"></video>
+    <div class="video-info">
+      <h4>@${u.name}</h4>
+      <p>${v.desc || ""}</p>
+      <small style="opacity:0.7">${v.views || 0} views</small>
+    </div>
+    <div class="video-sidebar">
+      <div class="profile-wrap">
+        <img class="side-profile" src="${u.profilePic}" onclick="viewUserProfile('${v.uid}')">
+        ${!isOwner ? `<button class="plus-badge" onclick="followUserFromVideo('${v.uid}', this)">${isFollowing ? '✓' : '+'}</button>` : ''}
+      </div>
+      <div class="video-action" onclick="likeVideo('${v.id}', this)" style="color:${isLiked?'#FF0050':'white'}">❤️<span>${Object.keys(v.likes || {}).length}</span></div>
+      <div class="video-action" onclick="toggleVideoComments('${v.id}')">💬<span>${Object.keys(v.comments || {}).length}</span></div>
+      <div class="video-action" onclick="favoriteVideo('${v.id}', this)" style="color:${isFav?'#00C896':'white'}">🔖<span>${Object.keys(v.favorites || {}).length}</span></div>
+      <div class="video-action" onclick="downloadVideoForOffline('${v.id}')">⬇️<span>Save</span></div>
+      <div class="video-action" onclick="openVideoShare('${v.id}')">↗<span>${Object.keys(v.shares || {}).length}</span></div>
+      <div class="music-disc">🎵</div>
+    </div>
+    <div class="video-comments-section" id="v-comments-${v.id}">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #333; position:sticky; top:0; background:#111; z-index:2">
+        <b>Comments</b>
+        <button onclick="closeComments('${v.id}')" style="background:none; border:none; color:white; font-size:20px; cursor:pointer">×</button>
+      </div>
+      <div id="v-comment-list-${v.id}"></div> 
+      <div class="video-comment-input-row">
+        <input id="v-comment-input-${v.id}" placeholder="Add comment...">
+        <button onclick="sendVideoComment('${v.id}')">➤</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('video-feed').prepend(div);
+  loadVideoComments(v.id);
+  videoObserver.observe(div);
 }
 let searchTab = 'all';
+window.downloadVideoForOffline = async (videoId) => {
+  const snap = await get(ref(db, `videos/${videoId}`));
+  const v = snap.val();
+  if(v.size > 5 * 1024 * 1024) return alert("Video too big. Max 5MB for offline");
 
+  if(!v.video){ // big video, download it now
+    const res = await fetch(v.videoUrl);
+    const blob = await res.blob();
+    const reader = new FileReader();
+    reader.onload = async () => {
+      await saveVideoToDB(videoId, reader.result);
+      await set(ref(db, `videos/${videoId}/cached`), true);
+      alert("Video saved for offline!")
+    }
+    reader.readAsDataURL(blob);
+  } else {
+    await saveVideoToDB(videoId, v.video);
+    alert("Video saved for offline!")
+  }
+}
 window.openSearch = () => {
   hideAllSections();
   document.getElementById('search-section').style.display = 'block';
