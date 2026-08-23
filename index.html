@@ -761,7 +761,8 @@ window.backToFeed = () => {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser, sendPasswordResetEmail, updateEmail, updatePassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-import { getDatabase, ref, set, get, query, orderByChild, equalTo, push, onChildAdded, onChildRemoved, remove, off, limitToLast, onValue } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
+import { getDatabase, ref, set, get, query, orderByChild, equalTo, push, onChildAdded, onChildRemoved, remove, off, limitToLast, onValue, increment,
+update } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD97-el91-ISWGkOhxWy4V_wXyOK6MJl0k",
@@ -846,17 +847,45 @@ function openVideoDB(){
   return dbPromise;
 }
 
-async function saveVideoToDB(id, base64){
-  const db = await openVideoDB();
-  const tx = db.transaction('videos', 'readwrite');
-  tx.objectStore('videos').put(base64, id);
-  return tx.complete;
+async function saveVideoToDB(id, base64) {
+    const database = await openVideoDB();
+
+    return new Promise((resolve, reject) => {
+        const tx = database.transaction('videos', 'readwrite');
+        const store = tx.objectStore('videos');
+
+        store.put(base64, id);
+
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => reject(tx.error);
+    });
 }
 
-async function getVideoFromDB(id){
-  const db = await openVideoDB();
-  return db.transaction('videos').objectStore('videos').get(id);
+async function getVideoFromDB(id) {
+    const database = await openVideoDB();
+
+    return new Promise((resolve, reject) => {
+        const tx = database.transaction('videos', 'readonly');
+        const request = tx.objectStore('videos').get(id);
+
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => reject(request.error);
+    });
 }
+
+async function deleteVideoFromDB(id) {
+    const database = await openVideoDB();
+
+    return new Promise((resolve, reject) => {
+        const tx = database.transaction('videos', 'readwrite');
+
+        tx.objectStore('videos').delete(id);
+
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => reject(tx.error);
+    });
+  }
+  
 function applyTheme(){
   const bg = isLightMode ? '#f0f2f5' : '#0b141a';
   const card = isLightMode ? '#ffffff' : '#202c33';
@@ -1250,11 +1279,20 @@ function loadPosts() {
   })
 
   // 3. LIVE LISTENER FOR NEW POSTS
-  onChildAdded(ref(db, 'posts'), async (snap) => {
-    if(!document.getElementById('post-' + snap.key)){
-      await renderPostFromData({id: snap.key, ...snap.val()});
-    }
-  });
+  const latestPostsQuery = query(
+    ref(db, 'posts'),
+    orderByChild('timestamp'),
+    limitToLast(50)
+);
+
+onChildAdded(latestPostsQuery, async (snap) => {
+    if (document.getElementById('post-' + snap.key)) return;
+
+    await renderPostFromData({
+        id: snap.key,
+        ...snap.val()
+    });
+});
 }
 
 // NEW HELPER: render 1 post from data
@@ -1294,7 +1332,6 @@ async function renderPostFromData(post){
 
   document.getElementById('feed').prepend(postDiv);
   renderReactions(document.getElementById(`react-sum-${postKey}`), post.reactions, userReact);
-  loadComments(postKey);
 
   // LIVE UPDATES
   onValue(ref(db, `posts/${postKey}/reactions`), (s)=>{
@@ -1329,7 +1366,22 @@ window.deletePost = async (key) => {
   }
 }
 window.reactToPost = async (key, emoji) => { await setReaction(`posts/${key}/reactions`, emoji); document.getElementById(`picker-${key}`).classList.remove('show'); }
-window.toggleComments = (key) => document.getElementById(`comments-${key}`).classList.toggle('show');
+window.toggleComments = async (key) => {
+
+    const section =
+        document.getElementById(`comments-${key}`);
+
+    if (!section) return;
+
+    const opening =
+        !section.classList.contains('show');
+
+    section.classList.toggle('show');
+
+    if (opening) {
+        await loadComments(key);
+    }
+};
 window.addComment = async (key) => { 
   const input = document.getElementById(`comment-input-${key}`); 
   const text = input.value.trim(); 
@@ -1458,44 +1510,11 @@ function loadDMs(){
   document.getElementById('dm-list').style.display = 'block';
 
   // 2. FETCH FRESH FROM FIREBASE
-  onValue(ref(db, 'dmChats'), async (snap)=>{
+  const snap = await get(ref(db, 'dmChats'));
     let html = '';
     let unread = 0;
     let hasAny = false;
     const promises = [];
-
-    snap.forEach(chatSnap=>{
-      const chatId = chatSnap.key;
-      const chat = chatSnap.val();
-
-      // Safety for old chats without members
-      let members = chat.members || {};
-      if(Object.keys(members).length === 0){
-        const ids = chatId.split('_');
-        members = {[ids[0]]: true, [ids[1]]: true};
-      }
-
-      if(chatId.includes(currentUser.uid) && chat.lastMessage){
-        hasAny = true;
-        const otherUid = Object.keys(members).find(id => id!== currentUser.uid);
-        if(!otherUid) return;
-
-        promises.push(getUser(otherUid).then(u=>{
-          if(chat.lastTimestamp > lastSeen.dms && chat.lastSender!== currentUser.uid) unread++;
-
-          html += `
-            <div class="dm-item" id="dm-${chatId}">
-              <img src="${u.profilePic}" onclick="openProfilePopup('${u.profilePic}')">
-              <div style="flex:1; cursor:pointer" onclick="openDM('${chatId}', '${otherUid}')">
-                <b>${u.name}</b><br>
-                <small style="opacity:0.8">${chat.lastSender === currentUser.uid? 'You: ' : ''}${chat.lastMessage}</small>
-              </div>
-              <button onclick="event.stopPropagation(); deleteConversation('${chatId}')" style="background:#ff3b30; width:28px; height:28px; border-radius:50%; font-size:14px; padding:0">×</button>
-            </div>
-          `;
-        }).catch(e=>console.error("DM load error", e)))
-      }
-    });
 
     await Promise.all(promises);
     if(html){
@@ -2433,14 +2452,26 @@ window.pinVideo = async(videoId) => {
   document.getElementById('video-share-popup').style.display = 'none';
 }
 window.countVideoView = async (videoId, videoEl) => {
-  // 1. Count the view in Firebase
-  const viewRef = ref(db, `videos/${videoId}/views`);
-  const snap = await get(viewRef);
-  await set(viewRef, (snap.val() || 0) + 1);
-  
-  // 2. Play/Pause
-  videoEl.paused ? videoEl.play() : videoEl.pause();
-}
+
+    try {
+
+        await update(
+            ref(db, `videos/${videoId}`),
+            {
+                views: increment(1)
+            }
+        );
+
+    } catch (error) {
+        console.error("View count failed:", error);
+    }
+
+    if (videoEl.paused) {
+        videoEl.play().catch(() => {});
+    } else {
+        videoEl.pause();
+    }
+};
 function loadVideos(){
   off(ref(db, 'videos'));
   const videoFeed = document.getElementById('video-feed');
