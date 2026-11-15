@@ -1811,6 +1811,7 @@ document.getElementById('chat-file').onchange = async (e)=>{
   }
 }
 
+// ✅ FIXED - Rename ref -> msgRef
 document.getElementById('send-chat').onclick = async () => {
   const text = document.getElementById('chat-input').value.trim();
   if(!text) return;
@@ -1821,10 +1822,10 @@ document.getElementById('send-chat').onclick = async () => {
     timestamp: Date.now(), reactions:{}
   };
 
-  const ref = await push(ref(db, 'globalChat'), newMsg);
+  const msgRef = await push(ref(db, 'globalChat'), newMsg);
 
   let cache = loadFromCache('globalChat') || [];
-  cache.push({key: ref.key,...newMsg});
+  cache.push({key: msgRef.key, ...newMsg});
   if(cache.length > 50) cache.shift();
   saveToCache('globalChat', cache);
 
