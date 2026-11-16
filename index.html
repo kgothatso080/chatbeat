@@ -716,6 +716,11 @@ to{transform:rotate(360deg);}
 </div>
     
 <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser, sendPasswordResetEmail, updateEmail, updatePassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, set, get, query, orderByChild, equalTo, push, onChildAdded, onChildRemoved, remove, off, limitToLast, onValue, increment, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
 let sectionHistory = [];
 let currentSection = 'feed-section';
 
@@ -759,12 +764,6 @@ window.backToFeed = () => {
   lastSeen.posts = Date.now(); saveLastSeen(); updateBadge('feed-badge', 0)
 }
   
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser, sendPasswordResetEmail, updateEmail, updatePassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-import { getDatabase, ref, set, get, query, orderByChild, equalTo, push, onChildAdded, onChildRemoved, remove, off, limitToLast, onValue, increment,
-update } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
-
 const firebaseConfig = {
   apiKey: "AIzaSyD97-el91-ISWGkOhxWy4V_wXyOK6MJl0k",
   authDomain: "chatbeat-71f80.firebaseapp.com",
@@ -776,7 +775,6 @@ const firebaseConfig = {
   measurementId: "G-KZ5KN31YFL"
 };
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getDatabase(app);
 const colors = ['#00C896', '#0077FF', '#00FFD1', '#FF6B6B', '#F7DC6F', '#9B59B6', '#E67E22', '#1ABC9C'];
@@ -907,8 +905,9 @@ window.openProfilePopup = (imgSrc) => {
 window.closeProfilePopup = () => {
   document.getElementById('profile-popup').classList.remove('show');
 }
-document.getElementById('profile-popup').onclick = closeProfilePopup;
-
+document.getElementById('profile-popup').onclick = window.closeProfilePopup;
+document.getElementById('logo-btn').onclick = window.backToFeed;
+  
 function setReply(msgData, msgKey){
   replyToMsg = {...msgData, key: msgKey };
   document.getElementById('reply-label').innerText = `Replying to ${msgData.name || 'User'}`;
@@ -2864,7 +2863,14 @@ function showPostSuggestions(text){
     // mention logic here
   }
   }
-  
+  window.login = login;
+window.signup = signup;
+window.likePost = likePost;
+window.deletePost = deletePost;
+window.showSection = showSection;
+window.logout = logout;
+window.goBack = goBack;
+// Add EVERY function you use in onclick="..."
 </script>
 </body>
 </html>
