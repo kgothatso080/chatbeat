@@ -2866,9 +2866,9 @@ function showPostSuggestions(text){
   }
   
 </script>
-  
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
-  
+  <script src="https://cdn.jsdelivr.net/npm/eruda@3.0.1/eruda.min.js"></script>
+<script>
+  try { eruda.init(); } catch(e) { console.log("Eruda failed, but app still works", e); }
+</script>
 </body>
 </html>
