@@ -1533,8 +1533,7 @@ async function loadDMs(){
       dmList.innerHTML = '<p style="text-align:center; opacity:0.6">No messages yet</p>';
     }
     updateBadge('dm-badge', unread);
-  })
-}
+  }
 window.backToDMList = () => {
   document.getElementById('dm-active-chat').style.display = 'none';
   document.getElementById('dm-list').style.display = 'block';
