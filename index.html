@@ -1502,7 +1502,7 @@ function compressVideo(file){
 }
 
 // DMs - FIXED VERSION
-function loadDMs(){
+async function loadDMs(){
   off(ref(db, 'dmChats'));
   const dmList = document.getElementById('dm-list');
 
