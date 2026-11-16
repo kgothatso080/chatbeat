@@ -410,6 +410,15 @@ to{transform:rotate(360deg);}
 </style>
 </head>
 <body>
+  <div id="debug-box" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#ff0000;color:#fff;font-size:14px;padding:10px;display:none;white-space:pre-wrap;word-break:break-all;max-height:50vh;overflow:auto;"></div>
+<script>
+window.onerror = function(msg, url, line) {
+  var box = document.getElementById('debug-box');
+  box.style.display = 'block';
+  box.innerHTML = 'ERROR: ' + msg + '<br>LINE: ' + line + '<br>' + url;
+  return false;
+};
+</script>
 
 <div id="cover">
   <h1>ChatBeat</h1>
